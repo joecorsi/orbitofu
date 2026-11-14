@@ -59,8 +59,12 @@
   function loadDraft() {
     try {
       const raw = localStorage.getItem(KEY);
-      return raw ? validateDraft(JSON.parse(raw)) : null;
+      if (!raw) return null;
+      const candidate = validateDraft(JSON.parse(raw));
+      if (!candidate) localStorage.removeItem(KEY); // Expire stale names, not just hide them.
+      return candidate;
     } catch {
+      try { localStorage.removeItem(KEY); } catch { /* storage unavailable */ }
       return null;
     }
   }
