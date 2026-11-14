@@ -34,6 +34,7 @@
       .notice:not(.notice-ok), .save-status.error { color: #a00; }
       .notice.visible.name-error { align-self: center; box-sizing: border-box; max-width: 100%; margin: var(--control-gap) 0 0; padding: 3px 7px; border-radius: 2px; background: #a00; color: #fff; font: 13.3333px Arial, sans-serif; text-align: center; overflow-wrap: anywhere; }
       .page { max-width: 1200px; margin: 0 auto; padding-bottom: 4em; }
+      .page:has(#auth-screen:not([hidden])) { padding-bottom: 0; }
       html:has(#workspace:not([hidden])) { overflow: hidden; }
       .page:has(#workspace:not([hidden])) { display: flex; flex-direction: column; height: calc(100dvh - 36px); padding-bottom: 0; }
       .page:has(#workspace:not([hidden])) .content { display: flex; flex: 1; min-height: 0; }
@@ -71,7 +72,7 @@
       }
       #sign-in-form .auth-actions { display: grid; }
       .setup-details { margin: 1em 0; }
-      .demo-graph { --demo-axis-x: 50%; --demo-axis-y: 50%; position: relative; box-sizing: border-box; width: min(500px, 100%); aspect-ratio: 1; overflow: hidden; border: 1px solid rgba(0, 0, 0, .15); border-radius: 8px; background: #fff; color: #000; touch-action: none; }
+      .demo-graph { --demo-axis-x: 50%; --demo-axis-y: 50%; position: relative; box-sizing: border-box; width: min(500px, 100%, var(--demo-available-size, 500px)); aspect-ratio: 1; overflow: hidden; border: 1px solid rgba(0, 0, 0, .15); border-radius: 8px; background: #fff; color: #000; touch-action: none; }
       .demo-graph:focus-within { border-color: #000; }
       .demo-axis-line { position: absolute; pointer-events: none; }
       .demo-axis-horizontal { left: 20px; right: 20px; top: var(--demo-axis-y); border-top: 1px solid #000; }
@@ -2730,8 +2731,23 @@
         return { begin, point, stop };
       }
 
+      function fitDemoGraph(frame, footer) {
+        if (!frame.getClientRects().length) return;
+        const doc = frame.ownerDocument;
+        const win = doc.defaultView;
+        const top = frame.getBoundingClientRect().top + win.scrollY;
+        const footerMargin = parseFloat(win.getComputedStyle(footer).marginTop);
+        const bottomMargin = parseFloat(win.getComputedStyle(doc.body).marginBottom);
+        const size = Math.max(160, win.innerHeight - top - footer.offsetHeight - footerMargin - bottomMargin);
+        const value = `${size}px`;
+        if (frame.style.getPropertyValue("--demo-available-size") !== value) {
+          frame.style.setProperty("--demo-available-size", value);
+        }
+      }
+
       function setupDemoGraph() {
         const frame = document.getElementById("demo-graph");
+        const footer = frame.parentElement.querySelector(".chart-footer");
         const reset = document.getElementById("demo-reset");
         const optionsToggle = document.getElementById("demo-options-toggle");
         const optionsMenu = document.getElementById("demo-options-menu");
@@ -3130,10 +3146,21 @@
           if (reducedMotion.matches) axisTransition.stop();
           draw();
         });
-        new ResizeObserver(() => {
-          axisTransition.stop();
-          draw();
-        }).observe(frame);
+        let resizeFrame = null;
+        const resize = () => {
+          if (resizeFrame !== null) return;
+          resizeFrame = requestAnimationFrame(() => {
+            resizeFrame = null;
+            fitDemoGraph(frame, footer);
+            axisTransition.stop();
+            draw();
+          });
+        };
+        const observer = new ResizeObserver(resize);
+        for (const element of [frame, footer, document.querySelector(".auth-copy"), document.querySelector(".masthead")]) {
+          observer.observe(element);
+        }
+        window.addEventListener("resize", resize);
       }
 
       function displayedChartPoint(point, bounds) {

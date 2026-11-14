@@ -6,6 +6,8 @@ The hosted app is available at [joecorsi.github.io/thepear/](https://joecorsi.gi
 
 The sign-in page includes a sample graph with Me and randomized sample people. Three people start close together, while their initial trait scores are spaced to reduce overlap on any pair of axes. Select or drag a person, scroll to zoom, or drag empty space to pan; use the arrow keys to move a focused person and Shift-arrow keys to pan when zoomed. Offscreen people gray out at the edge and group when they overlap; select a group to choose a person. **Options** changes sample visibility, names, and relationship colors, and **Shuffle axes** changes the sample traits. Axis changes animate dots and labels in both graphs, unless reduced motion is enabled. Sample changes are not saved or added to an account.
 
+The sample graph shrinks on shorter screens to reduce page scrolling. Scrolling remains available when the content cannot otherwise fit.
+
 A retro loading indicator fills in steps as your profile and graphs load, then disappears when loading finishes or fails.
 
 New accounts see a six-step getting-started tour after their first graph loads. Use **Back**, **Next**, **Skip**, or Escape to navigate or close it. **Start over** returns to the first step, and **Restart tutorial** in the email menu reopens it after closing. Completing or skipping the tour is saved with the account, so it stays dismissed across devices. The tour explains the controls without changing graph data. The email menu also contains **Sign out** and a disabled **Account** placeholder.
