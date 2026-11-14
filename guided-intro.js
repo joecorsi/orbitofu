@@ -3,6 +3,7 @@
   "use strict";
 
   const KEY = "the-pear-first-graph-v1";
+  const DISMISSED_KEY = "the-pear-intro-dismissed-v1";
   const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
   const MAX_PEOPLE = 30;
   const colors = ["#1681d4", "#e83c9b", "#35a84d", "#ed8615", "#9d58cd", "#00aeb0"];
@@ -93,17 +94,27 @@
       : null;
   }
 
+  function markSignedIn() {
+    try { localStorage.setItem(DISMISSED_KEY, "1"); } catch { /* optional preference */ }
+  }
+
   function confirmImported() {
     try {
       localStorage.removeItem(KEY);
     } catch {
       // The graph already reached the account; clearing local state is best effort.
     }
+    markSignedIn();
     draft = emptyDraft();
   }
 
+  function wasDismissed() {
+    try { return localStorage.getItem(DISMISSED_KEY) === "1"; }
+    catch { return false; }
+  }
+
   // The authenticated editor reads only a draft explicitly marked ready by Save.
-  window.thePearStarter = { pendingPeople, confirmImported };
+  window.thePearStarter = { pendingPeople, confirmImported, markSignedIn };
 
   function showAuth(hasDraft) {
     ui.flow.hidden = true;
@@ -309,8 +320,12 @@
     ui.authEmail.focus();
   });
 
-  ui.skip.addEventListener("click", () => showAuth(false));
+  ui.skip.addEventListener("click", () => {
+    try { localStorage.setItem(DISMISSED_KEY, "1"); } catch { /* optional preference */ }
+    showAuth(false);
+  });
   ui.tryButton.addEventListener("click", () => {
+    try { localStorage.removeItem(DISMISSED_KEY); } catch { /* optional preference */ }
     draft.ready = false;
     persist();
     showGuide();
@@ -318,5 +333,6 @@
   });
   new ResizeObserver(updateDots).observe(ui.graph);
   if (draft.ready) showAuth(true);
+  else if (wasDismissed()) showAuth(false);
   else showGuide();
 })();
