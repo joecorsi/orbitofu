@@ -3300,7 +3300,7 @@
         context.beginPath();
         context.moveTo(from.x, from.y);
         for (let distance = 0.5; distance < length; distance += 0.5) {
-          const wave = 5 * Math.sin(2 * Math.PI * distance / 10) *
+          const wave = 3 * Math.sin(2 * Math.PI * distance / 10) *
             Math.min(1, distance / 10, (length - distance) / 10);
           context.lineTo(from.x + (dx * distance - dy * wave) / length,
             from.y + (dy * distance + dx * wave) / length);
