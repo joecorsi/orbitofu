@@ -1782,6 +1782,7 @@
       }
 
       function activateGraph(graph) {
+        chartAxisTransition.stop();
         setGraphDate(el.graphCreated, "Created", graph.created_at);
         setGraphDate(el.graphModified, "Modified", graph.updated_at);
         closeGraphOptions();
@@ -2403,6 +2404,7 @@
             }
             const age = ageInput.value === "" ? undefined : ageInput.valueAsNumber;
             if (person.age === age) return;
+            chartAxisTransition.stop();
             if (age === undefined) delete person.age;
             else person.age = age;
             markPersonModified(person);
@@ -2518,6 +2520,7 @@
               updateSliderFill(slider);
               const value = Number(slider.value);
               if (person.values[trait.id] === value) return;
+              chartAxisTransition.stop();
               person.values[trait.id] = value;
               markPersonModified(person);
               drawChart();
@@ -2691,6 +2694,42 @@
         return [traits[x].id, traits[y].id];
       }
 
+      function createAxisTransition(draw) {
+        const duration = 320;
+        let start = null;
+        let started = 0;
+        let frame = null;
+        const stop = () => {
+          if (frame !== null) cancelAnimationFrame(frame);
+          frame = null;
+          start = null;
+        };
+        const point = (id, destination) => {
+          const origin = start?.get(id);
+          if (!origin || !destination) return destination;
+          const progress = Math.min(1, (performance.now() - started) / duration);
+          const eased = 1 - (1 - progress) ** 3;
+          return {
+            x: origin.x + (destination.x - origin.x) * eased,
+            y: origin.y + (destination.y - origin.y) * eased
+          };
+        };
+        const begin = origins => {
+          stop();
+          if (reducedMotion.matches || !origins.size) return;
+          start = origins;
+          started = performance.now();
+          const tick = () => {
+            frame = null;
+            if (performance.now() - started >= duration) start = null;
+            draw();
+            if (start) frame = requestAnimationFrame(tick);
+          };
+          frame = requestAnimationFrame(tick);
+        };
+        return { begin, point, stop };
+      }
+
       function setupDemoGraph() {
         const frame = document.getElementById("demo-graph");
         const reset = document.getElementById("demo-reset");
@@ -2743,6 +2782,7 @@
         let groups = [];
         let openGroup = null;
         const groupButtons = new Map();
+        const axisTransition = createAxisTransition(draw);
         const buttons = people.map(person => {
           const button = document.createElement("button");
           button.type = "button";
@@ -2766,7 +2806,7 @@
           const viewport = { left: inset, top: inset, right: width - inset, bottom: height - inset };
           return { width, height, viewport, viewed: viewedChartBounds(width, height, view, viewport) };
         };
-        const pointFor = (person, viewed) => ({
+        const pointFor = (person, viewed) => axisTransition.point(person.id, {
           x: viewed.left + person.values[xTrait] / 100 * (viewed.right - viewed.left),
           y: viewed.bottom - person.values[yTrait] / 100 * (viewed.bottom - viewed.top)
         });
@@ -2949,6 +2989,7 @@
         }
         frame.addEventListener("wheel", event => {
           if (drag || groupPopover.contains(event.target)) return;
+          axisTransition.stop();
           closeGroup();
           event.preventDefault();
           const { viewport, height } = bounds();
@@ -2966,11 +3007,11 @@
               event.target.closest(".chart-group-button, .chart-group-popover")) return;
           const index = buttons.indexOf(event.target.closest(".demo-person"));
           const point = eventPoint(event);
+          const { viewed, viewport } = bounds();
+          const position = index >= 0 ? displayedChartPoint(pointFor(people[index], viewed), viewport) : null;
           selected = index >= 0 ? index : null;
           draw();
           if (index >= 0) {
-            const { viewed, viewport } = bounds();
-            const position = displayedChartPoint(pointFor(people[index], viewed), viewport);
             drag = { pointerId: event.pointerId, index, offsetX: point.x - position.x, offsetY: point.y - position.y };
             buttons[index].focus({ preventScroll: true });
           } else if (view.zoom > 1) {
@@ -2981,6 +3022,7 @@
         });
         frame.addEventListener("pointermove", event => {
           if (!drag || event.pointerId !== drag.pointerId) return;
+          axisTransition.stop();
           const point = eventPoint(event);
           const { viewport, viewed } = bounds();
           if (drag.index === undefined) {
@@ -3015,6 +3057,7 @@
           }[event.key];
           if (!direction || drag) return;
           if (event.shiftKey && view.zoom > 1) {
+            axisTransition.stop();
             const amount = 0.1 / view.zoom * direction[1];
             if (direction[0] === "x") view.x += amount;
             else view.y -= amount;
@@ -3022,6 +3065,7 @@
           } else {
             const index = buttons.indexOf(event.target);
             if (index < 0 || index !== selected) return;
+            axisTransition.stop();
             const person = people[index];
             const trait = direction[0] === "x" ? xTrait : yTrait;
             person.values[trait] = clamp(person.values[trait] + direction[1]);
@@ -3030,6 +3074,7 @@
           draw();
         });
         reset.addEventListener("click", () => {
+          axisTransition.stop();
           closeGroup();
           view = { zoom: 1, x: 0.5, y: 0.5 };
           draw();
@@ -3075,10 +3120,20 @@
         }));
         for (const input of [relationshipColors, showNames, ...relationshipFilters]) input.addEventListener("change", draw);
         document.getElementById("demo-shuffle").addEventListener("click", () => {
+          const { viewed } = bounds();
+          const origins = new Map(people.map(person => [person.id, pointFor(person, viewed)]));
           [xTrait, yTrait] = shuffledTraitPair(traits, xTrait, yTrait);
+          axisTransition.begin(origins);
           draw();
         });
-        new ResizeObserver(draw).observe(frame);
+        reducedMotion.addEventListener("change", () => {
+          if (reducedMotion.matches) axisTransition.stop();
+          draw();
+        });
+        new ResizeObserver(() => {
+          axisTransition.stop();
+          draw();
+        }).observe(frame);
       }
 
       function displayedChartPoint(point, bounds) {
@@ -3145,10 +3200,20 @@
           if (axis !== AGE_AXIS) return Number(person.values[axis] ?? 50) / 100;
           return range.min === range.max ? 0.5 : (person.age - range.min) / (range.max - range.min);
         };
-        return {
+        return chartAxisTransition.point(person.id, {
           x: bounds.left + score(state.xTrait) * (bounds.right - bounds.left),
           y: bounds.bottom - score(state.yTrait) * (bounds.bottom - bounds.top)
-        };
+        });
+      }
+
+      const chartAxisTransition = createAxisTransition(drawChart);
+
+      function chartAxisOrigins() {
+        const rect = el.chart.getBoundingClientRect();
+        const bounds = viewedChartBounds(rect.width, rect.height);
+        const range = ageRange();
+        return new Map(chartPeople().map(person => [person.id, chartPoint(person, bounds, range)])
+          .filter(([, point]) => point));
       }
 
       function pointerPosition(event) {
@@ -3285,6 +3350,7 @@
 
       chartFrame.addEventListener("wheel", event => {
         if ((!isChartTarget(event.target) && !event.target.closest(".chart-group-button")) || !state || chartDrag) return;
+        chartAxisTransition.stop();
         closeChartGroup();
         event.preventDefault();
         const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? el.chart.clientHeight : 1);
@@ -3296,6 +3362,7 @@
       });
       el.resetZoom.addEventListener("click", () => {
         if (chartDrag) return;
+        chartAxisTransition.stop();
         closeChartGroup();
         el.chart.focus({ preventScroll: true });
         chartView = { zoom: 1, x: 0.5, y: 0.5 };
@@ -3315,6 +3382,7 @@
         if (!isChartTarget(event.target) || !event.isPrimary || event.button !== 0 || chartDrag) return;
         const point = pointerPosition(event);
         const { person, personId } = chartHitAtPoint(point);
+        const position = person && chartPoint(person, viewedChartBounds(point.width, point.height), ageRange());
         const selected = state ? chartPeople().find(item => item.id === personId) ?? null : null;
         if (selected) foregroundPersonId = selected.id;
         selectChartPerson(selected);
@@ -3328,7 +3396,6 @@
         }
         if (state?.xTrait === AGE_AXIS && state?.yTrait === AGE_AXIS) return;
         if (!person) return;
-        const position = chartPoint(person, viewedChartBounds(point.width, point.height), ageRange());
         chartDrag = {
           pointerId: event.pointerId,
           graphId: activeGraphId,
@@ -3365,6 +3432,7 @@
         }
         if (event.pointerId !== chartDrag.pointerId) return;
         if (chartDrag.pan) {
+          chartAxisTransition.stop();
           const bounds = peopleBounds(point.width, point.height);
           panChart(
             -(point.x - chartDrag.x) / ((bounds.right - bounds.left) * chartView.zoom),
@@ -3379,6 +3447,7 @@
             state.xTrait !== chartDrag.xTrait || state.yTrait !== chartDrag.yTrait) return;
         const person = chartPeople().find(item => item.id === chartDrag.personId);
         if (!person) return;
+        chartAxisTransition.stop();
         const bounds = viewedChartBounds(point.width, point.height);
         const clamp = value => Math.max(0, Math.min(100, Math.round(value)));
         const x = (point.x - chartDrag.offsetX - bounds.left) / (bounds.right - bounds.left) * 100;
@@ -3433,6 +3502,7 @@
           ArrowDown: ["y", -1], ArrowUp: ["y", 1]
         }[event.key];
         if (direction && event.shiftKey && chartView.zoom > 1 && !chartDrag) {
+          chartAxisTransition.stop();
           const amount = 0.1 / chartView.zoom;
           panChart(direction[0] === "x" ? direction[1] * amount : 0,
             direction[0] === "y" ? -direction[1] * amount : 0);
@@ -3452,6 +3522,7 @@
         const value = Number(person.values[trait] ?? 50);
         const next = Math.max(0, Math.min(100, value + direction[1]));
         if (next === value) return;
+        chartAxisTransition.stop();
         person.values[trait] = next;
         delete person.awaitingPlacement;
         markPersonModified(person);
@@ -3948,9 +4019,13 @@
         }
       }
 
-      reducedMotion.addEventListener("change", drawChart);
+      reducedMotion.addEventListener("change", () => {
+        if (reducedMotion.matches) chartAxisTransition.stop();
+        drawChart();
+      });
 
       function render() {
+        chartAxisTransition.stop();
         el.relationshipColors.checked = state.colorByRelationship;
         el.showNames.checked = !state.hideNames;
         for (const checkbox of el.graphRelationships) {
@@ -4277,8 +4352,10 @@
       for (const [controls, axis] of [[el.xAxes, "xTrait"], [el.yAxes, "yTrait"]]) {
         for (const select of controls) {
           select.addEventListener("change", () => {
+            const origins = chartAxisOrigins();
             state[axis] = select.value;
             renderAxes();
+            chartAxisTransition.begin(origins);
             drawChart();
             scheduleSave();
           });
@@ -4286,8 +4363,10 @@
       }
 
       el.shuffleAxes.addEventListener("click", () => {
+        const origins = chartAxisOrigins();
         [state.xTrait, state.yTrait] = shuffledTraitPair(state.traits, state.xTrait, state.yTrait);
         renderAxes();
+        chartAxisTransition.begin(origins);
         drawChart();
         scheduleSave();
       });
@@ -4583,11 +4662,13 @@
       }
 
       window.addEventListener("resize", () => {
+        chartAxisTransition.stop();
         alignGraphColumn();
         drawChart();
         alignPeopleList();
       });
-      const layoutObserver = new ResizeObserver(() => {
+      const layoutObserver = new ResizeObserver(entries => {
+        if (entries.some(entry => entry.target === chartFrame)) chartAxisTransition.stop();
         alignGraphColumn();
         drawChart();
         alignPeopleList();
