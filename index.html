@@ -3280,10 +3280,10 @@
                 bestDistance = distance;
               }
             }
-            label = result?.name ?? "No visible people";
+            label = result ? `${mode === "closest" ? "Closest" : "Furthest"}: ${result.name}` : "No visible people";
           }
         }
-        const description = mode ? `Current ${mode}: ${label}` : label;
+        const description = mode ? `Current ${mode}: ${result?.name ?? label}` : label;
         if (el.proximityToggle.firstElementChild.textContent !== label) el.proximityToggle.firstElementChild.textContent = label;
         if (el.proximityToggle.getAttribute("aria-label") !== description) el.proximityToggle.setAttribute("aria-label", description);
         if (el.proximityToggle.title !== description) el.proximityToggle.title = description;
