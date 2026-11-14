@@ -1756,6 +1756,12 @@
           updateLoadingProgress();
           await loadGraphs(load);
           if (!activeGraphLoads.has(load)) return;
+          if (load.importedStarter && currentUser.user_metadata?.thepear_tutorial !== "done") {
+            // The hands-on first graph replaces the passive six-step tour.
+            try { await saveTutorialStatus("done"); }
+            catch (error) { console.warn("Couldn't mark guided onboarding complete:", error); }
+            if (!activeGraphLoads.has(load)) return;
+          }
           load.progress = 75;
           updateLoadingProgress();
           el.workspace.hidden = false;
