@@ -286,6 +286,12 @@
       .graph-options-menu label + label { margin-top: 6px; }
       .graph-options-menu input { margin: 0; }
       .graph-options-separator { display: block; border-top: 1px solid #767676; margin: 6px 0; }
+      .proximity { position: relative; }
+      .proximity-toggle span { display: block; max-width: 150px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+      .proximity-menu:not([hidden]) { position: absolute; z-index: 4; bottom: 100%; left: 0; width: max-content; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; background: #fff; }
+      .proximity-menu button { display: block; width: 100%; border: 0; padding: 4px 8px; background: #fff; color: #000; font: 13.3333px Arial, sans-serif; text-align: left; cursor: pointer; }
+      .proximity-menu button:hover, .proximity-menu button:focus-visible { background: #efefef; }
+      .proximity-menu button[aria-checked="true"]::before { content: "✓ "; }
       .person-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--control-gap); margin: var(--control-gap) 0 0 calc(10px + var(--control-gap)); }
       .person-dates .graph-badge { text-align: center; white-space: normal; overflow-wrap: anywhere; }
       .trait-list { display: grid; grid-template-columns: minmax(0, max-content) minmax(60px, 1fr) minmax(0, max-content); column-gap: .5em; margin: .5em 0 0 calc(10px + .4rem); }
@@ -489,6 +495,13 @@
                         </span>
                       </span>
                       <button id="shuffle-axes" type="button" title="Randomly choose two different traits">Shuffle axes</button>
+                      <span class="proximity">
+                        <button class="graph-options-toggle proximity-toggle" id="proximity-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="proximity-menu"><span aria-live="polite">Proximity</span></button>
+                        <span class="proximity-menu" id="proximity-menu" role="menu" aria-label="Proximity" hidden>
+                          <button type="button" role="menuitemradio" aria-checked="false" data-proximity="overall">Overall closest</button>
+                          <button type="button" role="menuitemradio" aria-checked="false" data-proximity="current">Current graph closest</button>
+                        </span>
+                      </span>
                       <button id="reset-zoom" type="button" hidden>Reset view</button>
                     </span>
                     <span class="history-controls">
@@ -848,6 +861,8 @@
         undo: document.getElementById("undo"),
         redo: document.getElementById("redo"),
         shuffleAxes: document.getElementById("shuffle-axes"),
+        proximityToggle: document.getElementById("proximity-toggle"),
+        proximityMenu: document.getElementById("proximity-menu"),
         relationshipColors: document.getElementById("relationship-colors"),
         showNames: document.getElementById("show-names"),
         graphRelationships: document.querySelectorAll("[data-graph-relationship]"),
@@ -916,6 +931,7 @@
       let foregroundPersonId = null;
       const graphOpenedPeople = new Set();
       let peopleFilter = "";
+      let proximityMode = null;
       let chartLabelHits = [];
       let chartGroups = [];
       let groupedPersonIds = new Set();
@@ -1641,6 +1657,9 @@
         closeAccountMenu();
         closePeopleFilter();
         closeGraphOptions();
+        closeProximityMenu();
+        proximityMode = null;
+        updateProximity();
         graphOpenedPeople.clear();
         focusedNamePersonId = null;
         stopNameFocusRing();
@@ -3222,16 +3241,55 @@
         return min === Infinity ? null : { min, max };
       }
 
+      function axisScore(person, axis, range) {
+        if (axis !== AGE_AXIS) return Number(person.values[axis] ?? 50) / 100;
+        return range.min === range.max ? 0.5 : (person.age - range.min) / (range.max - range.min);
+      }
+
       function chartAxisPosition(person, range) {
         if (!isPersonVisibleOnGraph(person) || ((state.xTrait === AGE_AXIS || state.yTrait === AGE_AXIS) && person.age === undefined)) return null;
-        const score = axis => {
-          if (axis !== AGE_AXIS) return Number(person.values[axis] ?? 50) / 100;
-          return range.min === range.max ? 0.5 : (person.age - range.min) / (range.max - range.min);
-        };
         return chartAxisTransition.point(person.id, {
-          x: score(state.xTrait),
-          y: score(state.yTrait)
+          x: axisScore(person, state.xTrait, range),
+          y: axisScore(person, state.yTrait, range)
         });
+      }
+
+      function updateProximity() {
+        let label = "Proximity";
+        const modeName = proximityMode === "overall" ? "Overall closest" : "Current graph closest";
+        if (proximityMode && state && mePerson) {
+          const axes = proximityMode === "overall" ? state.traits.map(trait => trait.id) : [state.xTrait, state.yTrait];
+          const usesAge = axes.includes(AGE_AXIS);
+          if (!axes.length || axes.some(axis => !axis)) {
+            label = "No traits";
+          } else if (usesAge && mePerson.age === undefined) {
+            label = "Me needs an age";
+          } else {
+            const range = usesAge ? ageRange() : null;
+            let closest = null;
+            let closestDistance = Infinity;
+            for (const [index, person] of state.people.entries()) {
+              if (!isPersonVisibleOnGraph(person) || (usesAge && person.age === undefined)) continue;
+              const distance = axes.reduce((sum, axis) => {
+                const difference = axisScore(person, axis, range) - axisScore(mePerson, axis, range);
+                return sum + difference * difference;
+              }, 0);
+              if (distance < closestDistance) {
+                closest = person.name.trim() || `Person ${index + 1}`;
+                closestDistance = distance;
+              }
+            }
+            label = closest ?? "No visible people";
+          }
+        }
+        const description = proximityMode ? `${modeName}: ${label}` : label;
+        for (const option of el.proximityMenu.children) {
+          const checked = String(option.dataset.proximity === proximityMode);
+          if (option.getAttribute("aria-checked") !== checked) option.setAttribute("aria-checked", checked);
+        }
+        if (el.proximityToggle.firstElementChild.textContent !== label) el.proximityToggle.firstElementChild.textContent = label;
+        if (el.proximityToggle.getAttribute("aria-label") !== description) el.proximityToggle.setAttribute("aria-label", description);
+        if (el.proximityToggle.title !== description) el.proximityToggle.title = description;
       }
 
       function chartPoint(person, bounds, range) {
@@ -3779,6 +3837,7 @@
       }
 
       function drawChart() {
+        updateProximity();
         const canvas = el.chart;
         el.resetZoom.hidden = chartView.zoom === 1;
         const bounds = canvas.getBoundingClientRect();
@@ -4487,6 +4546,55 @@
         if (restoreFocus) el.graphOptionsToggle.focus();
       }
 
+      function closeProximityMenu(restoreFocus = false) {
+        if (el.proximityMenu.hidden) return;
+        el.proximityMenu.hidden = true;
+        el.proximityToggle.setAttribute("aria-expanded", "false");
+        if (restoreFocus) el.proximityToggle.focus();
+      }
+
+      el.proximityToggle.addEventListener("click", () => {
+        if (!el.proximityMenu.hidden) {
+          closeProximityMenu();
+          return;
+        }
+        el.proximityMenu.hidden = false;
+        el.proximityToggle.setAttribute("aria-expanded", "true");
+        el.proximityMenu.style.left = "0px";
+        const overflow = el.proximityMenu.getBoundingClientRect().right - document.documentElement.clientWidth;
+        if (overflow > 0) el.proximityMenu.style.left = `${-overflow}px`;
+        (el.proximityMenu.querySelector('[aria-checked="true"]') ?? el.proximityMenu.firstElementChild).focus();
+      });
+      el.proximityMenu.addEventListener("keydown", event => {
+        const options = [...el.proximityMenu.children];
+        const index = options.indexOf(document.activeElement);
+        let next;
+        if (event.key === "ArrowDown") next = (index + 1) % options.length;
+        else if (event.key === "ArrowUp") next = (index + options.length - 1) % options.length;
+        else if (event.key === "Home") next = 0;
+        else if (event.key === "End") next = options.length - 1;
+        else if (event.key === "Escape") {
+          event.preventDefault();
+          closeProximityMenu(true);
+          return;
+        } else return;
+        event.preventDefault();
+        options[next].focus();
+      });
+      el.proximityMenu.addEventListener("focusout", event => {
+        if (!el.proximityToggle.parentElement.contains(event.relatedTarget)) closeProximityMenu();
+      });
+      document.addEventListener("pointerdown", event => {
+        if (!el.proximityToggle.parentElement.contains(event.target)) closeProximityMenu();
+      });
+      el.proximityMenu.addEventListener("click", event => {
+        const option = event.target.closest("button[data-proximity]");
+        if (!option) return;
+        proximityMode = option.dataset.proximity;
+        updateProximity();
+        closeProximityMenu(true);
+      });
+
       function openGraphOptions() {
         el.graphOptionsMenu.hidden = false;
         el.graphOptionsToggle.setAttribute("aria-expanded", "true");
@@ -4700,6 +4808,7 @@
 
       window.addEventListener("resize", () => {
         chartAxisTransition.stop();
+        closeProximityMenu();
         alignGraphColumn();
         drawChart();
         alignPeopleList();
