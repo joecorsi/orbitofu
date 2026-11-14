@@ -494,7 +494,8 @@
                       <span class="proximity">
                         <button class="graph-options-toggle proximity-toggle" id="proximity-toggle" type="button" aria-expanded="false" aria-controls="proximity-menu"><span aria-live="polite">Proximity</span></button>
                         <span class="graph-options-menu proximity-menu" id="proximity-menu" role="group" aria-label="Proximity" hidden>
-                          <label><input id="proximity-closest" type="checkbox"> Current graph closest</label>
+                          <label><input id="proximity-closest" type="checkbox"> Current closest</label>
+                          <label><input id="proximity-furthest" type="checkbox"> Current furthest</label>
                         </span>
                       </span>
                       <button id="reset-zoom" type="button" hidden>Reset view</button>
@@ -859,6 +860,7 @@
         proximityToggle: document.getElementById("proximity-toggle"),
         proximityMenu: document.getElementById("proximity-menu"),
         proximityClosest: document.getElementById("proximity-closest"),
+        proximityFurthest: document.getElementById("proximity-furthest"),
         relationshipColors: document.getElementById("relationship-colors"),
         showNames: document.getElementById("show-names"),
         graphRelationships: document.querySelectorAll("[data-graph-relationship]"),
@@ -1654,6 +1656,7 @@
         closeGraphOptions();
         closeProximityMenu();
         el.proximityClosest.checked = false;
+        el.proximityFurthest.checked = false;
         updateProximity();
         graphOpenedPeople.clear();
         focusedNamePersonId = null;
@@ -3241,18 +3244,23 @@
         return range.min === range.max ? 0.5 : (person.age - range.min) / (range.max - range.min);
       }
 
-      function chartAxisPosition(person, range) {
-        if (!isPersonVisibleOnGraph(person) || ((state.xTrait === AGE_AXIS || state.yTrait === AGE_AXIS) && person.age === undefined)) return null;
+      function axisPosition(person, range) {
         return chartAxisTransition.point(person.id, {
           x: axisScore(person, state.xTrait, range),
           y: axisScore(person, state.yTrait, range)
         });
       }
 
+      function chartAxisPosition(person, range) {
+        if (!isPersonVisibleOnGraph(person) || ((state.xTrait === AGE_AXIS || state.yTrait === AGE_AXIS) && person.age === undefined)) return null;
+        return axisPosition(person, range);
+      }
+
       function updateProximity() {
         let label = "Proximity";
-        let closest = null;
-        if (el.proximityClosest.checked && state && mePerson) {
+        let result = null;
+        const mode = el.proximityClosest.checked ? "closest" : el.proximityFurthest.checked ? "furthest" : null;
+        if (mode && state && mePerson) {
           const axes = [state.xTrait, state.yTrait];
           const usesAge = axes.includes(AGE_AXIS);
           if (axes.some(axis => !axis)) {
@@ -3261,26 +3269,45 @@
             label = "Me needs an age";
           } else {
             const range = usesAge ? ageRange() : null;
-            let closestDistance = Infinity;
+            const me = axisPosition(mePerson, range);
+            let bestDistance = mode === "closest" ? Infinity : -Infinity;
             for (const [index, person] of state.people.entries()) {
               if (!isPersonVisibleOnGraph(person) || (usesAge && person.age === undefined)) continue;
-              const distance = axes.reduce((sum, axis) => {
-                const difference = axisScore(person, axis, range) - axisScore(mePerson, axis, range);
-                return sum + difference * difference;
-              }, 0);
-              if (distance < closestDistance) {
-                closest = { person, name: person.name.trim() || `Person ${index + 1}` };
-                closestDistance = distance;
+              const position = axisPosition(person, range);
+              const distance = (position.x - me.x) ** 2 + (position.y - me.y) ** 2;
+              if (mode === "closest" ? distance < bestDistance : distance > bestDistance) {
+                result = { person, name: person.name.trim() || `Person ${index + 1}` };
+                bestDistance = distance;
               }
             }
-            label = closest?.name ?? "No visible people";
+            label = result?.name ?? "No visible people";
           }
         }
-        const description = el.proximityClosest.checked ? `Current graph closest: ${label}` : label;
+        const description = mode ? `Current ${mode}: ${label}` : label;
         if (el.proximityToggle.firstElementChild.textContent !== label) el.proximityToggle.firstElementChild.textContent = label;
         if (el.proximityToggle.getAttribute("aria-label") !== description) el.proximityToggle.setAttribute("aria-label", description);
         if (el.proximityToggle.title !== description) el.proximityToggle.title = description;
-        return closest?.person ?? null;
+        return result?.person ?? null;
+      }
+
+      function drawProximityLine(context, from, to) {
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const length = Math.hypot(dx, dy);
+        context.save();
+        context.strokeStyle = "rgba(0, 0, 0, 0.23)";
+        context.lineWidth = 1;
+        context.beginPath();
+        context.moveTo(from.x, from.y);
+        for (let distance = 0.5; distance < length; distance += 0.5) {
+          const wave = 10 * Math.sin(2 * Math.PI * distance / 10) *
+            Math.min(1, distance / 10, (length - distance) / 10);
+          context.lineTo(from.x + (dx * distance - dy * wave) / length,
+            from.y + (dy * distance + dx * wave) / length);
+        }
+        context.lineTo(to.x, to.y);
+        context.stroke();
+        context.restore();
       }
 
       function chartPoint(person, bounds, range) {
@@ -3828,7 +3855,7 @@
       }
 
       function drawChart() {
-        const closestPerson = updateProximity();
+        const proximityPerson = updateProximity();
         const canvas = el.chart;
         el.resetZoom.hidden = chartView.zoom === 1;
         const bounds = canvas.getBoundingClientRect();
@@ -3959,7 +3986,7 @@
           };
         });
         renderChartGroups(overlappingChartGroups(plotted, labels, right, context));
-        if (closestPerson) {
+        if (proximityPerson) {
           const displayPoint = person => {
             const item = plotted.find(entry => entry.person === person);
             if (!item) return null;
@@ -3971,17 +3998,8 @@
             return chartGroupButtons.get(group.key).classList.contains("group-selected") ? chosen.point : group.point;
           };
           const from = displayPoint(mePerson);
-          const to = displayPoint(closestPerson);
-          if (from && to) {
-            context.save();
-            context.strokeStyle = "rgba(0, 0, 0, 0.23)";
-            context.lineWidth = 1;
-            context.beginPath();
-            context.moveTo(from.x, from.y);
-            context.lineTo(to.x, to.y);
-            context.stroke();
-            context.restore();
-          }
+          const to = displayPoint(proximityPerson);
+          if (from && to) drawProximityLine(context, from, to);
         }
         chartLabelHits = labels.flatMap(label => {
           if (groupedPersonIds.has(label.hit.personId)) return label.nameHit ? [label.nameHit] : [];
@@ -4591,7 +4609,12 @@
       document.addEventListener("pointerdown", event => {
         if (!el.proximityToggle.parentElement.contains(event.target)) closeProximityMenu();
       });
-      el.proximityClosest.addEventListener("change", drawChart);
+      for (const [checkbox, other] of [[el.proximityClosest, el.proximityFurthest], [el.proximityFurthest, el.proximityClosest]]) {
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked) other.checked = false;
+          drawChart();
+        });
+      }
 
       function openGraphOptions() {
         el.graphOptionsMenu.hidden = false;
