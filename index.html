@@ -353,6 +353,7 @@
         .relationship-toggle span { font-size: 11px; }
       }
     </style>
+    <link rel="stylesheet" href="./guided-intro.css">
   </head>
   <body>
     <div class="rainbow-decor" aria-hidden="true">
@@ -383,7 +384,32 @@
         <section class="panel auth-panel" id="auth-screen" aria-labelledby="auth-title">
           <div class="auth-copy">
             <h1 id="auth-title">Welcome to The Pear!</h1>
-            <div class="auth-details">
+            <section class="starter-flow" id="starter-flow" aria-labelledby="starter-title" hidden>
+              <div class="tutorial-titlebar"><span><span aria-hidden="true">🍐</span> The Pear</span><span>Your first graph</span></div>
+              <div class="starter-content">
+                <h2 id="starter-title">Think of someone you know.</h2>
+                <p id="starter-description">A friend, someone you admire, or someone who drives you crazy.</p>
+                <p class="starter-step" id="starter-step">Person 1 of 3</p>
+                <div class="tutorial-progress" id="starter-progress" role="progressbar" aria-label="People placed" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><span></span><span></span><span></span></div>
+                <form id="starter-name-form">
+                  <label for="starter-name">Their name</label>
+                  <input id="starter-name" type="text" maxlength="80" autocomplete="off" placeholder="Who comes to mind?" required>
+                  <button class="button button-pink starter-primary" type="submit">Add person</button>
+                </form>
+                <div class="starter-actions" id="starter-place-actions" hidden>
+                  <button class="button button-pink starter-primary" id="starter-continue" type="button">Next person</button>
+                </div>
+                <div class="starter-actions" id="starter-finish-actions" hidden>
+                  <button class="button button-pink starter-primary" id="starter-save" type="button">Save this graph</button>
+                  <button class="button" id="starter-add-more" type="button">Add another person</button>
+                </div>
+                <p class="starter-error" id="starter-error" role="alert" hidden></p>
+                <button class="starter-link" id="starter-skip" type="button">Already have an account? Sign in</button>
+                <p class="starter-privacy">Your draft is private to this browser until you choose to save it.</p>
+              </div>
+            </section>
+            <div class="auth-details" id="auth-details">
+              <div class="starter-auth-note" id="starter-auth-note" role="status" hidden><strong>Your graph is ready to save.</strong>Sign in to add these people to your account. Your existing graphs will not be changed.</div>
               <p class="muted">See your world from a new angle. Your graphs are private and available anywhere.</p>
               <form class="auth-form" id="sign-in-form">
                 <label class="field-label" for="auth-email">Your email address</label>
@@ -393,6 +419,7 @@
                   <button class="button" id="google-sign-in" type="button">Sign in with Google</button>
                 </div>
               </form>
+              <button class="starter-link" id="starter-try" type="button">Try it with people you know first</button>
               <details class="setup-details" id="connection-details" hidden>
                 <summary id="connection-summary">Set up Supabase connection</summary>
                 <form class="auth-form" id="connection-form">
@@ -406,7 +433,17 @@
               <div class="notice" id="auth-notice" role="status" aria-live="polite"></div>
             </div>
           </div>
-          <div class="demo">
+          <div class="demo" id="demo-column">
+            <div class="demo-graph" id="starter-graph" role="group" aria-label="Your first graph. Drag people to place them." aria-describedby="starter-graph-caption" hidden>
+              <span class="demo-axis-line demo-axis-horizontal"></span>
+              <span class="demo-axis-line demo-axis-vertical"></span>
+              <span class="demo-center" aria-hidden="true"></span>
+              <span class="demo-axis-label demo-x-low">Lame</span>
+              <span class="demo-axis-label demo-x-high">Cool</span>
+              <span class="demo-axis-label demo-y-low">Benevolent</span>
+              <span class="demo-axis-label demo-y-high">Malevolent</span>
+            </div>
+            <p class="starter-graph-caption" id="starter-graph-caption" hidden>Your first person will appear on this graph.</p>
             <div class="demo-graph" id="demo-graph" role="group" tabindex="-1" aria-label="Interactive sample graph" aria-describedby="demo-help">
               <span class="demo-axis-line demo-axis-horizontal"></span>
               <span class="demo-axis-line demo-axis-vertical"></span>
@@ -721,6 +758,7 @@
     </aside>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./guided-intro.js"></script>
     <script>
       const CONFIG_KEY = "people-map-supabase-config";
       const BACKGROUND_KEY = "the-pear-background";
@@ -1723,8 +1761,8 @@
           el.workspace.hidden = false;
           drawChart();
           const tutorialStatus = currentUser.user_metadata?.thepear_tutorial;
-          load.startTutorial = tutorialStatus === "pending" || (load.newAccount && !tutorialStatus);
-          if (load.newAccount && !tutorialStatus) {
+          load.startTutorial = !load.importedStarter && (tutorialStatus === "pending" || (load.newAccount && !tutorialStatus));
+          if (load.newAccount && !tutorialStatus && !load.importedStarter) {
             try {
               await saveTutorialStatus("pending");
             } catch (error) {
@@ -1772,6 +1810,25 @@
         else delete mePerson.addedAt;
       }
 
+      function starterGraphData() {
+        const guests = window.thePearStarter?.pendingPeople();
+        if (!guests?.length) return null;
+        const data = initialState();
+        const now = new Date().toISOString();
+        data.people = guests.map((guest, index) => ({
+          id: makeId("person"),
+          name: guest.name,
+          color: COLORS[(index + 1) % COLORS.length],
+          addedAt: now,
+          modifiedAt: now,
+          values: Object.fromEntries(data.traits.map(trait => [
+            trait.id, trait.id === "lame-cool" ? guest.x :
+              trait.id === "benevolent-malevolent" ? guest.y : 50
+          ]))
+        }));
+        return data;
+      }
+
       async function loadGraphs(load) {
         setSaveStatus("Loading your graphs...", { inProgress: true });
         const { data, error } = await client
@@ -1783,9 +1840,23 @@
         graphs = data;
         load.progress = 50;
         updateLoadingProgress();
+        const starterData = starterGraphData();
         if (graphs.length === 0) {
           load.newAccount = true;
-          await createGraph("My first graph", false, false, load);
+          await createGraph("My first graph", false, false, load, starterData);
+          if (!activeGraphLoads.has(load)) return;
+          if (starterData) {
+            window.thePearStarter.confirmImported();
+            load.importedStarter = true;
+          }
+          return;
+        }
+        if (starterData) {
+          // Import into a new graph: never overwrite the user's existing data.
+          await createGraph("My people", false, false, load, starterData);
+          if (!activeGraphLoads.has(load)) return;
+          window.thePearStarter.confirmImported();
+          load.importedStarter = true;
           return;
         }
         activateGraph(graphs[0]);
@@ -1834,10 +1905,10 @@
         graphDropdown.sync();
       }
 
-      async function createGraph(name, flush = true, copyPeople = false, load = null) {
+      async function createGraph(name, flush = true, copyPeople = false, load = null, starterData = null) {
         const sourceGraphId = activeGraphId;
         if (flush) await flushPendingSave();
-        const data = initialState();
+        const data = starterData ?? initialState();
         if (copyPeople) {
           if (!state || !sourceGraphId || activeGraphId !== sourceGraphId) {
             throw new Error("The source graph is no longer available.");
