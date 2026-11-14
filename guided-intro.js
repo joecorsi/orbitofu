@@ -157,7 +157,6 @@
   }
 
   function createDot(index) {
-    const person = draft.answers[index];
     const button = document.createElement("button");
     button.type = "button";
     button.className = "demo-person starter-person";
@@ -180,6 +179,7 @@
     button.addEventListener("pointermove", event => {
       if (!drag || drag.pointerId !== event.pointerId || drag.index !== index) return;
       const point = pointFromEvent(event);
+      const person = draft.answers[index];
       person.x = point.x;
       person.y = point.y;
       updateDots();
@@ -200,6 +200,7 @@
       }[event.key];
       if (!direction) return;
       event.preventDefault();
+      const person = draft.answers[index];
       person.x = clamp(person.x + direction[0]);
       person.y = clamp(person.y + direction[1]);
       selectedIndex = index;
@@ -309,6 +310,11 @@
     if (!relationship) {
       error("Choose Lover or Foe to continue.");
       ui.lover.focus();
+      return;
+    }
+    if (role !== "me" && name.toLocaleLowerCase() === "me") {
+      error("Me is reserved for the final step. Choose a different name.");
+      ui.name.focus();
       return;
     }
     if (draft.answers.some((person, i) => i !== index && person.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
