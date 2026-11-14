@@ -3222,25 +3222,31 @@
         return min === Infinity ? null : { min, max };
       }
 
-      function chartPoint(person, bounds, range) {
+      function chartAxisPosition(person, range) {
         if (!isPersonVisibleOnGraph(person) || ((state.xTrait === AGE_AXIS || state.yTrait === AGE_AXIS) && person.age === undefined)) return null;
         const score = axis => {
           if (axis !== AGE_AXIS) return Number(person.values[axis] ?? 50) / 100;
           return range.min === range.max ? 0.5 : (person.age - range.min) / (range.max - range.min);
         };
         return chartAxisTransition.point(person.id, {
-          x: bounds.left + score(state.xTrait) * (bounds.right - bounds.left),
-          y: bounds.bottom - score(state.yTrait) * (bounds.bottom - bounds.top)
+          x: score(state.xTrait),
+          y: score(state.yTrait)
         });
+      }
+
+      function chartPoint(person, bounds, range) {
+        const position = chartAxisPosition(person, range);
+        return position && {
+          x: bounds.left + position.x * (bounds.right - bounds.left),
+          y: bounds.bottom - position.y * (bounds.bottom - bounds.top)
+        };
       }
 
       const chartAxisTransition = createAxisTransition(drawChart);
 
       function chartAxisOrigins() {
-        const rect = el.chart.getBoundingClientRect();
-        const bounds = viewedChartBounds(rect.width, rect.height);
         const range = ageRange();
-        return new Map(chartPeople().map(person => [person.id, chartPoint(person, bounds, range)])
+        return new Map(chartPeople().map(person => [person.id, chartAxisPosition(person, range)])
           .filter(([, point]) => point));
       }
 
@@ -4698,8 +4704,7 @@
         drawChart();
         alignPeopleList();
       });
-      const layoutObserver = new ResizeObserver(entries => {
-        if (entries.some(entry => entry.target === chartFrame)) chartAxisTransition.stop();
+      const layoutObserver = new ResizeObserver(() => {
         alignGraphColumn();
         drawChart();
         alignPeopleList();
