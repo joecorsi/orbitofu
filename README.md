@@ -4,13 +4,22 @@ A no-build HTML/CSS/JavaScript app for rating people on adjustable traits and co
 
 The hosted app is available at [joecorsi.github.io/thepear/](https://joecorsi.github.io/thepear/).
 
-The sign-in page includes a sample graph with Me and randomized sample people. Three people start close together, while their initial trait scores are spaced to reduce overlap on any pair of axes. Select or drag a person, scroll to zoom, or drag empty space to pan; use the arrow keys to move a focused person and Shift-arrow keys to pan when zoomed. Offscreen people gray out at the edge and group when they overlap; select a group to choose a person. **Options** changes sample visibility, names, and relationship colors, and **Shuffle axes** changes the sample traits. Axis changes animate dots and labels in both graphs, unless reduced motion is enabled. Sample changes are not saved or added to an account.
+## First-use guided graph
+
+Signed-out first-time visitors can try The Pear before creating an account. The Pear asks them to name someone, then drag (or use arrow keys to move) that person's dot on the familiar Lame–Cool and Benevolent–Malevolent axes. After three people, they can compare the dots, add more people, or choose **Save this graph** to sign in. Existing accounts can skip directly to sign-in.
+
+This guest draft stays in the browser's local storage for up to seven days; it is **not uploaded** until the visitor chooses **Save this graph** and authenticates. After successful authentication, the app saves those people atomically in a real graph with their two trait scores and default scores for other traits. For new accounts it populates the first graph; for existing accounts it creates a separate **My people** graph, without replacing existing data. Only after the Supabase insert succeeds does the browser draft clear. The hands-on flow suppresses the old six-step tour for imported accounts. Skipping the guest flow or successfully signing in is remembered so returning visitors see the familiar sign-in instead; **Try it with people you know first** reopens the guest flow.
+
+The intro is implemented in `guided-intro.js` and `guided-intro.css`, with no additional dependencies. Run `node --test tests/guided-intro.test.mjs` for draft, placement, skip, re-entry, and import-handoff tests.
+
+
+The direct sign-in view includes a sample graph with Me and randomized sample people. Three people start close together, while their initial trait scores are spaced to reduce overlap on any pair of axes. Select or drag a person, scroll to zoom, or drag empty space to pan; use the arrow keys to move a focused person and Shift-arrow keys to pan when zoomed. Offscreen people gray out at the edge and group when they overlap; select a group to choose a person. **Options** changes sample visibility, names, and relationship colors, and **Shuffle axes** changes the sample traits. Axis changes animate dots and labels in both graphs, unless reduced motion is enabled. Sample changes are not saved or added to an account.
 
 The sample graph shrinks on shorter screens to reduce page scrolling. Scrolling remains available when the content cannot otherwise fit.
 
 A retro loading indicator fills in steps as your profile and graphs load, then disappears when loading finishes or fails.
 
-New accounts see a six-step getting-started tour after their first graph loads. Use **Back**, **Next**, **Skip**, or Escape to navigate or close it. **Start over** returns to the first step, and **Restart tutorial** in the email menu reopens it after closing. Completing or skipping the tour is saved with the account, so it stays dismissed across devices. The tour explains the controls without changing graph data. The email menu also contains **Sign out** and a disabled **Account** placeholder.
+New accounts that sign in without importing a guided guest graph see the existing six-step getting-started tour after their first graph loads. Use **Back**, **Next**, **Skip**, or Escape to navigate or close it. **Start over** returns to the first step, and **Restart tutorial** in the email menu reopens it after closing. Completing or skipping the tour is saved with the account, so it stays dismissed across devices. The tour explains the controls without changing graph data. The email menu also contains **Sign out** and a disabled **Account** placeholder.
 
 Use **Undo** and **Redo** at the bottom right below the graph, or Cmd/Ctrl-Z and Shift-Cmd/Ctrl-Z, to reverse or restore changes during the current session. A drag or slider gesture is one action. Text fields keep their normal typing undo. Each graph has its own history, and edits to the shared Me profile have a separate history available from any graph. Each history keeps up to 100 actions. Undo and redo save their changes; history is cleared on reload or account change. Graph creation and deletion cannot be undone.
 
