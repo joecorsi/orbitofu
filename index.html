@@ -1326,7 +1326,7 @@
         {
           title: "Adjust their traits",
           description: "Expand a person and move their sliders to adjust traits.",
-          target: () => el.peopleScroll,
+          target: () => el.meRow,
           enter: () => {
             const card = el.meRow.querySelector(".person-card");
             const wasOpen = card.open;
@@ -1385,12 +1385,14 @@
 
       function positionTutorial() {
         if (!el.tutorialDialog.open) return;
-        const target = tutorialSteps[tutorialIndex].target().getBoundingClientRect();
+        const targetElement = tutorialSteps[tutorialIndex].target();
+        const target = targetElement.getBoundingClientRect();
+        const clip = targetElement === el.meRow ? el.peopleScroll.getBoundingClientRect() : target;
         const spotlight = el.tutorialSpotlight;
-        const left = Math.max(0, target.left);
-        const top = Math.max(0, target.top);
-        const right = Math.min(window.innerWidth, target.right);
-        const bottom = Math.min(window.innerHeight, target.bottom);
+        const left = Math.max(0, target.left, clip.left);
+        const top = Math.max(0, target.top, clip.top);
+        const right = Math.min(window.innerWidth, target.right, clip.right);
+        const bottom = Math.min(window.innerHeight, target.bottom, clip.bottom);
         spotlight.hidden = right <= left || bottom <= top;
         el.tutorialShade.hidden = !spotlight.hidden;
         if (!spotlight.hidden) {
