@@ -387,21 +387,37 @@
             <section class="starter-flow" id="starter-flow" aria-labelledby="starter-title" hidden>
               <div class="tutorial-titlebar"><span><span aria-hidden="true">🍐</span> The Pear</span><span>Your first graph</span></div>
               <div class="starter-content">
-                <h2 id="starter-title">Think of someone you know.</h2>
-                <p id="starter-description">A friend, someone you admire, or someone who drives you crazy.</p>
-                <p class="starter-step" id="starter-step">Person 1 of 3</p>
-                <div class="tutorial-progress" id="starter-progress" role="progressbar" aria-label="People placed" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><span></span><span></span><span></span></div>
-                <form id="starter-name-form">
-                  <label for="starter-name">Their name</label>
-                  <input id="starter-name" type="text" maxlength="80" autocomplete="off" placeholder="Who comes to mind?" required>
-                  <button class="button button-pink starter-primary" type="submit">Add person</button>
+                <h2 id="starter-title">Think of a friend.</h2>
+                <p id="starter-description">Choose someone you know well. How do you see them?</p>
+                <p class="starter-step" id="starter-step">Step 1 of 4</p>
+                <div class="tutorial-progress" id="starter-progress" role="progressbar" aria-label="People rated" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0"><span></span><span></span><span></span><span></span></div>
+                <form id="starter-answer-form">
+                  <div class="starter-name-field" id="starter-name-field">
+                    <label for="starter-name">Their name</label>
+                    <input id="starter-name" type="text" maxlength="80" autocomplete="off" placeholder="Who comes to mind?">
+                  </div>
+                  <fieldset id="starter-kind-field" class="starter-kind" hidden>
+                    <legend>Who are you thinking of?</legend>
+                    <label><input id="starter-lover" type="radio" name="starter-kind" value="lover"> Lover</label>
+                    <label><input id="starter-foe" type="radio" name="starter-kind" value="enemy"> Foe</label>
+                  </fieldset>
+                  <p class="starter-slider-heading" id="starter-slider-heading">Where would you put them on these two scales?</p>
+                  <div class="starter-trait">
+                    <div class="starter-trait-ends"><label for="starter-cool">Lame</label><span>Cool</span></div>
+                    <input id="starter-cool" type="range" min="0" max="100" step="1" value="50" aria-label="Lame to Cool">
+                  </div>
+                  <div class="starter-trait">
+                    <div class="starter-trait-ends"><label for="starter-benevolence">Benevolent</label><span>Malevolent</span></div>
+                    <input id="starter-benevolence" type="range" min="0" max="100" step="1" value="50" aria-label="Benevolent to Malevolent">
+                  </div>
+                  <div class="starter-actions">
+                    <button class="button" id="starter-back" type="button" hidden>Back</button>
+                    <button class="button button-pink starter-primary" id="starter-next" type="submit">Next person</button>
+                  </div>
                 </form>
-                <div class="starter-actions" id="starter-place-actions" hidden>
-                  <button class="button button-pink starter-primary" id="starter-continue" type="button">Next person</button>
-                </div>
                 <div class="starter-actions" id="starter-finish-actions" hidden>
                   <button class="button button-pink starter-primary" id="starter-save" type="button">Save this graph</button>
-                  <button class="button" id="starter-add-more" type="button">Add another person</button>
+                  <button class="button" id="starter-edit" type="button">Edit my answers</button>
                 </div>
                 <p class="starter-error" id="starter-error" role="alert" hidden></p>
                 <button class="starter-link" id="starter-skip" type="button">Already have an account? Sign in</button>
@@ -409,7 +425,7 @@
               </div>
             </section>
             <div class="auth-details" id="auth-details">
-              <div class="starter-auth-note" id="starter-auth-note" role="status" hidden><strong>Your graph is ready to save.</strong>Sign in to add these people to your account. Your existing graphs will not be changed.</div>
+              <div class="starter-auth-note" id="starter-auth-note" role="status" hidden><strong>Your graph is ready to save.</strong>Sign in to save a new graph with these three people and your self-ratings. If you have an existing account, its shared Me profile will use your two new ratings across your graphs.</div>
               <p class="muted">See your world from a new angle. Your graphs are private and available anywhere.</p>
               <form class="auth-form" id="sign-in-form">
                 <label class="field-label" for="auth-email">Your email address</label>
@@ -434,7 +450,7 @@
             </div>
           </div>
           <div class="demo" id="demo-column">
-            <div class="demo-graph" id="starter-graph" role="group" aria-label="Your first graph. Drag people to place them." aria-describedby="starter-graph-caption" hidden>
+            <div class="demo-graph" id="starter-graph" role="group" aria-label="Your revealed graph of three people and yourself. Drag people to adjust their ratings." aria-describedby="starter-graph-caption" hidden>
               <span class="demo-axis-line demo-axis-horizontal"></span>
               <span class="demo-axis-line demo-axis-vertical"></span>
               <span class="demo-center" aria-hidden="true"></span>
@@ -443,7 +459,7 @@
               <span class="demo-axis-label demo-y-low">Benevolent</span>
               <span class="demo-axis-label demo-y-high">Malevolent</span>
             </div>
-            <p class="starter-graph-caption" id="starter-graph-caption" hidden>Your first person will appear on this graph.</p>
+            <p class="starter-graph-caption" id="starter-graph-caption" hidden>You can drag the dots to adjust your ratings before saving.</p>
             <div class="demo-graph" id="demo-graph" role="group" tabindex="-1" aria-label="Interactive sample graph" aria-describedby="demo-help">
               <span class="demo-axis-line demo-axis-horizontal"></span>
               <span class="demo-axis-line demo-axis-vertical"></span>
