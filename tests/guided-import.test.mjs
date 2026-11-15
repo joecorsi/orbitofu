@@ -232,7 +232,7 @@ test("overlapping proximity lines hit the topmost visible line", () => {
   assert.equal(atPoint({ hit: false }), null);
 });
 
-test("hovered proximity label uses the person label style at the line midpoint", () => {
+test("hovered proximity label follows the pointer without the person's name", () => {
   const raisedStart = html.indexOf("        const drawRaisedLabel = ");
   const raisedEnd = html.indexOf("        const drawLabel = ", raisedStart);
   const labelStart = html.indexOf("        if (hoveredLine && width > 14 && height > 25) {");
@@ -246,15 +246,44 @@ test("hovered proximity label uses the person label style at the line midpoint",
     stroke() { calls.push(["border", this.strokeStyle]); },
     fillText(...args) { calls.push(["text", this.fillStyle, ...args]); }
   };
-  new Function("labelContext", "hoveredLine", "width", "height", "modeLabels",
-    html.slice(raisedStart, raisedEnd) + html.slice(labelStart, labelEnd))(
-    labelContext, { mode: "furthest", name: "Alice", from: { x: 100, y: 100 }, to: { x: 200, y: 200 } },
-    400, 400, { furthest: "Furthest" }
-  );
+  const draw = new Function("labelContext", "hoveredLine", "hoveredProximityPoint", "width", "height", "modeLabels",
+    html.slice(raisedStart, raisedEnd) + html.slice(labelStart, labelEnd));
+  const line = { mode: "furthest", name: "Alice" };
+  draw(labelContext, line, { x: 150, y: 150 }, 400, 400, { furthest: "Furthest" });
   assert.deepEqual(calls, [
     ["box", 94.5, 116.5, 111, 23, 3], ["border", "#000"],
-    ["text", "#000", "Furthest: Alice", 100, 132, 100]
+    ["text", "#000", "Furthest", 100, 132, 100]
   ]);
+  calls.length = 0;
+  draw(labelContext, line, { x: 220, y: 160 }, 400, 400, { furthest: "Furthest" });
+  assert.deepEqual(calls[0], ["box", 164.5, 126.5, 111, 23, 3]);
+  calls.length = 0;
+  draw(labelContext, line, { x: 395, y: 10 }, 400, 400, { furthest: "Furthest" });
+  assert.deepEqual(calls[0], ["box", 287.5, 20.5, 111, 23, 3]);
+});
+
+test("moving along the same proximity line redraws the label", () => {
+  const start = html.indexOf('      chartFrame.addEventListener("pointermove", event => {');
+  const end = html.indexOf("      function endChartDrag(", start);
+  assert.ok(start >= 0 && end > start);
+  const testHover = new Function(`
+    let chartDrag = null, hoveredPersonId = null, hoveredProximityPoint = null, hoveredProximityMode = null;
+    let draws = 0;
+    const chartFrame = { style: {}, addEventListener(_type, listener) { this.move = listener; } };
+    const isChartTarget = () => true;
+    const pointerPosition = event => event.point;
+    const chartHitAtPoint = () => ({ person: null, personId: null });
+    const proximityAtPoint = point => point.x < 200 ? { mode: "furthest" } : null;
+    const drawChart = () => { draws++; hoveredProximityMode = hoveredProximityPoint
+      ? proximityAtPoint(hoveredProximityPoint)?.mode ?? null : null; };
+    const chartView = { zoom: 1 };
+    ${html.slice(start, end)}
+    return { move: chartFrame.move, draws: () => draws };
+  `)();
+  for (const x of [100, 120, 120, 220]) {
+    testHover.move({ target: {}, pointerType: "mouse", point: { x, y: 100 } });
+  }
+  assert.equal(testHover.draws(), 3);
 });
 
 const navigationStart = html.indexOf("      async function openHomepage(");

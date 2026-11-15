@@ -3971,9 +3971,10 @@
         const point = pointerPosition(event);
         if (!chartDrag) {
           const { person: pointPerson, personId } = chartHitAtPoint(point);
+          const moved = !hoveredProximityPoint || point.x !== hoveredProximityPoint.x || point.y !== hoveredProximityPoint.y;
           hoveredProximityPoint = !personId && event.pointerType !== "touch" ? point : null;
           const mode = hoveredProximityPoint ? proximityAtPoint(hoveredProximityPoint)?.mode ?? null : null;
-          if (personId !== hoveredPersonId || mode !== hoveredProximityMode) {
+          if (personId !== hoveredPersonId || mode !== hoveredProximityMode || (mode && moved)) {
             hoveredPersonId = personId;
             drawChart();
           }
@@ -4598,16 +4599,15 @@
           }
         }
         if (hoveredLine && width > 14 && height > 25) {
-          const text = `${modeLabels[hoveredLine.mode]}: ${hoveredLine.name}`;
+          const text = modeLabels[hoveredLine.mode];
           labelContext.save();
           labelContext.font = "bold 16px serif";
           labelContext.textBaseline = "alphabetic";
           const metrics = labelContext.measureText(text);
           const boxWidth = Math.min(metrics.width + 12, width - 2);
-          const midpointX = (hoveredLine.from.x + hoveredLine.to.x) / 2;
-          const midpointY = (hoveredLine.from.y + hoveredLine.to.y) / 2;
-          const boxLeft = Math.max(1, Math.min(midpointX - boxWidth / 2, width - boxWidth - 1));
-          const boxTop = midpointY >= 35 ? midpointY - 34 : Math.min(height - 25, midpointY + 10);
+          const boxLeft = Math.max(1, Math.min(hoveredProximityPoint.x - boxWidth / 2, width - boxWidth - 1));
+          const boxTop = hoveredProximityPoint.y >= 35 ? hoveredProximityPoint.y - 34 :
+            Math.min(height - 25, hoveredProximityPoint.y + 10);
           labelContext.globalAlpha = 1;
           drawRaisedLabel(labelContext, text, {
             left: boxLeft, top: boxTop, right: boxLeft + boxWidth, bottom: boxTop + 24,
