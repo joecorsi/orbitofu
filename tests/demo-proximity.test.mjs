@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 const source = readFileSync(new URL("../proximity.js", import.meta.url), "utf8");
 const window = {};
 new Function("window", "document", source)(window, {});
-const { findProximity, setProximityLabel, drawProximityLine, drawProximityCanvas } = window.thePearProximity;
+const { findProximity, setProximityLabel, drawProximityLine, drawProximityCanvas, hitProximityLine } = window.thePearProximity;
 
 test("closest and furthest use both graph axes and skip hidden people", () => {
   const people = [
@@ -156,6 +156,21 @@ test("symmetry uses a doubled wavelength while retaining the sweeping line", () 
     assert.ok(Math.abs(points.at(-1)[2] - 3) < 1e-10);
     assert.equal(context.calls.find(call => call[0] === "stroke")[1], 1);
   }
+});
+
+test("hover uses the drawn path and highlights it black", () => {
+  const context = drawingContext();
+  context.isPointInStroke = (x, y) => {
+    assert.equal(context.lineWidth, 12);
+    assert.deepEqual([x, y], [20, 10]);
+    return true;
+  };
+  assert.equal(hitProximityLine(context, { x: 0, y: 0 }, { x: 40, y: 0 }, "closest", 0.5, { x: 20, y: 10 }), true);
+  assert.ok(context.calls.some(call => call[0] === "setLineDash"));
+  assert.equal(hitProximityLine(context, { x: 0, y: 0 }, { x: 40, y: 0 }, "closest", 0, { x: 20, y: 10 }), false);
+  const highlighted = drawingContext();
+  drawProximityLine(highlighted, { x: 0, y: 0 }, { x: 40, y: 0 }, "furthest", 1, true);
+  assert.deepEqual(highlighted.calls.find(call => call[0] === "stroke"), ["stroke", 1, "#000"]);
 });
 
 test("proximity modes sweep and pulse independently, including cancellation and reduced motion", () => {

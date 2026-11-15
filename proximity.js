@@ -21,10 +21,11 @@
     return result;
   }
 
+  const modeLabels = { closest: "Closest", furthest: "Furthest",
+    verticalSymmetry: "Vertical symmetry", horizontalSymmetry: "Horizontal symmetry" };
+
   function setProximityLabel(toggle, mode, name, emptyLabel) {
-    const labels = { closest: "Closest", furthest: "Furthest",
-      verticalSymmetry: "Vertical symmetry", horizontalSymmetry: "Horizontal symmetry" };
-    const modeLabel = labels[mode];
+    const modeLabel = modeLabels[mode];
     const label = modeLabel ? (name ? `${modeLabel}: ${name}` :
       emptyLabel ?? (mode.endsWith("Symmetry") ? "No opposite-side match" : "No visible people")) : "Proximity";
     const description = modeLabel ? `Current ${modeLabel.toLowerCase()}: ${name ?? label}` : label;
@@ -117,12 +118,10 @@
     return { close, start, progress: mode => sweeps[mode].progress, pulseFor };
   }
 
-  function drawProximityLine(context, from, to, mode, progress = 1) {
+  function traceProximityLine(context, from, to, mode, progress) {
     const dx = to.x - from.x;
     const dy = to.y - from.y;
     const length = Math.hypot(dx, dy);
-    context.save();
-    context.strokeStyle = "rgba(0, 0, 0, 0.23)";
     context.beginPath();
     if (mode === "closest") {
       const radius = 10;
@@ -132,8 +131,7 @@
       context.lineWidth = 2;
       if (progress < 1) {
         if (progress <= 0) {
-          context.restore();
-          return;
+          return false;
         }
         const perimeter = 2 * length + 2 * Math.PI * radius;
         context.setLineDash([perimeter * progress, perimeter]);
@@ -161,8 +159,24 @@
       }
       if (length) pointAt(end);
     }
-    context.stroke();
+    return true;
+  }
+
+  function drawProximityLine(context, from, to, mode, progress = 1, highlighted = false) {
+    context.save();
+    context.strokeStyle = highlighted ? "#000" : "rgba(0, 0, 0, 0.23)";
+    if (traceProximityLine(context, from, to, mode, progress)) context.stroke();
     context.restore();
+  }
+
+  function hitProximityLine(context, from, to, mode, progress, point) {
+    context.save();
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    const traced = traceProximityLine(context, from, to, mode, progress);
+    context.lineWidth += 10;
+    const hit = traced && context.isPointInStroke(point.x, point.y);
+    context.restore();
+    return hit;
   }
 
   function drawProximityCanvas(canvas, context, width, height, from, lines) {
@@ -179,6 +193,7 @@
   }
 
   window.thePearProximity = {
-    findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas
+    findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
+    hitProximityLine, modeLabels
   };
 })();

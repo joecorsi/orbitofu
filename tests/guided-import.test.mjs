@@ -216,6 +216,47 @@ test("saved graph menu lists current targets even when modes are disabled", () =
   assert.equal(names.horizontalSymmetry.textContent, "");
 });
 
+test("overlapping proximity lines hit the topmost visible line", () => {
+  const start = html.indexOf("      function proximityAtPoint(point) {");
+  const end = html.indexOf("      function updatePersonSliders(", start);
+  assert.ok(start >= 0 && end > start);
+  const lines = [
+    { mode: "closest", from: {}, to: {}, progress: 1 },
+    { mode: "furthest", from: {}, to: {}, progress: 0.5 }
+  ];
+  const atPoint = new Function("chartProximityLines", "proximityHitContext", "hitProximityLine",
+    html.slice(start, end) + "\nreturn proximityAtPoint;")(
+    lines, {}, (_context, _from, _to, _mode, _progress, point) => point.hit
+  );
+  assert.equal(atPoint({ hit: true }).mode, "furthest");
+  assert.equal(atPoint({ hit: false }), null);
+});
+
+test("hovered proximity label uses the person label style at the line midpoint", () => {
+  const raisedStart = html.indexOf("        const drawRaisedLabel = ");
+  const raisedEnd = html.indexOf("        const drawLabel = ", raisedStart);
+  const labelStart = html.indexOf("        if (hoveredLine && width > 14 && height > 25) {");
+  const labelEnd = html.indexOf("        if (awaitingPlacement.length", labelStart);
+  assert.ok(raisedStart >= 0 && raisedEnd > raisedStart && labelStart >= 0 && labelEnd > labelStart);
+  const calls = [];
+  const labelContext = {
+    save() {}, restore() {}, beginPath() {}, fill() {},
+    measureText: () => ({ width: 100, actualBoundingBoxAscent: 12, actualBoundingBoxDescent: 4 }),
+    roundRect(...args) { calls.push(["box", ...args]); },
+    stroke() { calls.push(["border", this.strokeStyle]); },
+    fillText(...args) { calls.push(["text", this.fillStyle, ...args]); }
+  };
+  new Function("labelContext", "hoveredLine", "width", "height", "modeLabels",
+    html.slice(raisedStart, raisedEnd) + html.slice(labelStart, labelEnd))(
+    labelContext, { mode: "furthest", name: "Alice", from: { x: 100, y: 100 }, to: { x: 200, y: 200 } },
+    400, 400, { furthest: "Furthest" }
+  );
+  assert.deepEqual(calls, [
+    ["box", 94.5, 116.5, 111, 23, 3], ["border", "#000"],
+    ["text", "#000", "Furthest: Alice", 100, 132, 100]
+  ]);
+});
+
 const navigationStart = html.indexOf("      async function openHomepage(");
 const navigationEnd = html.indexOf("      el.homeLink.addEventListener", navigationStart);
 assert.ok(navigationStart >= 0 && navigationEnd > navigationStart, "homepage navigation helpers are present");
