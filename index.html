@@ -128,9 +128,6 @@
       .account-menu button:not(:disabled):is(:hover, :focus-visible) { background: var(--highlight-blue); color: #fff; }
       .account-menu [role="separator"] { display: block; border-top: 1px solid #767676; margin: 4px 0; }
       .graph-edit { position: relative; }
-      #edit-graph-toggle { position: relative; display: grid; place-items: center; }
-      #edit-graph-toggle::before { content: "New graph"; visibility: hidden; grid-area: 1 / 1; }
-      #edit-graph-toggle span { grid-area: 1 / 1; }
       .save-status { flex: none; align-self: center; box-sizing: border-box; max-width: 100%; margin-top: .5em; text-align: center; white-space: normal; overflow-wrap: anywhere; }
       .status-spinner:not([hidden]) { display: inline-block; width: 1ch; margin-right: .5em; font-family: monospace; font-weight: bold; animation: status-spin .8s steps(8) infinite; }
       @keyframes status-spin { to { transform: rotate(360deg); } }
@@ -299,7 +296,7 @@
       .graph-footer-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--control-gap); }
       .history-controls { display: flex; gap: var(--control-gap); margin-left: auto; }
       .graph-options, .proximity { position: relative; display: flex; align-items: center; }
-      .graph-options-toggle { position: relative; padding-right: 24px; padding-left: 2px; text-align: left; }
+      #edit-graph-toggle, .graph-options-toggle { position: relative; padding-right: 24px; padding-left: 2px; text-align: left; }
       .graph-options-toggle::after { content: ""; position: absolute; right: 6px; top: 50%; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 5px solid currentColor; transform: translateY(-50%); pointer-events: none; }
       .graph-options-menu:not([hidden]) { position: absolute; z-index: 4; bottom: calc(100% + var(--control-gap)); left: 0; min-width: 100%; width: max-content; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; padding: 4px; background: #fff; color: #000; }
       .graph-options-menu label { display: flex; align-items: center; gap: 4px; padding: 4px 6px; white-space: nowrap; font: 13.3333px Arial, sans-serif; cursor: pointer; }
