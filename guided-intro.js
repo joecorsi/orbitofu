@@ -31,6 +31,7 @@
     save: $("starter-save"),
     skip: $("starter-skip"),
     error: $("starter-error"),
+    privacy: $("starter-privacy"),
     authDetails: $("auth-details"),
     authNote: $("starter-auth-note"),
     tryButton: $("starter-try"),
@@ -142,6 +143,7 @@
     ui.flow.hidden = true;
     ui.authDetails.hidden = false;
     ui.authNote.hidden = !hasDraft;
+    ui.privacy.hidden = !hasDraft;
     ui.demo.hidden = false;
     ui.demo.classList.toggle("starter-active", hasDraft);
     ui.graph.hidden = !hasDraft;
@@ -153,6 +155,7 @@
 
   function showGuide() {
     ui.flow.hidden = false;
+    ui.privacy.hidden = false;
     ui.authDetails.hidden = true;
     ui.demo.classList.add("starter-active");
     render();
@@ -264,6 +267,7 @@
   function render() {
     const reveal = draft.phase === "reveal";
     const index = draft.step;
+    ui.title.hidden = reveal;
     ui.answerForm.hidden = reveal;
     ui.finishActions.hidden = !reveal;
     ui.demo.hidden = !reveal;
@@ -273,7 +277,6 @@
     ui.progress.setAttribute("aria-valuenow", String(complete));
     [...ui.progress.children].forEach((part, i) => part.classList.toggle("filled", i < complete));
     if (reveal) {
-      ui.title.textContent = "Here's how you see your world.";
       ui.description.textContent = "Three people, and you. Move any dot to change your answers before saving.";
       selectedIndex = -1;
       updateDots();

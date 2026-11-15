@@ -6,9 +6,9 @@
 .starter-flow:has(#starter-finish-actions:not([hidden])) .starter-step,
 .starter-flow:has(#starter-finish-actions:not([hidden])) .tutorial-progress { display: none; }
 .starter-flow:has(#starter-finish-actions:not([hidden])) .starter-content { padding: 0; }
-.starter-flow:has(#starter-finish-actions:not([hidden])) .starter-content h2 { font-size: 1.25em; }
-.starter-flow:has(#starter-finish-actions:not([hidden])) .starter-actions button { padding: 6px 10px; border: 1px solid #767676; border-radius: 4px; background: #fff; color: #000; font: inherit; cursor: pointer; }
-.starter-flow:has(#starter-finish-actions:not([hidden])) .starter-actions .starter-primary { border-color: #000; background: #000; color: #fff; }
+.starter-flow:has(#starter-finish-actions:not([hidden])) #starter-description { line-height: normal; text-align: justify; }
+.starter-flow:has(#starter-finish-actions:not([hidden])) #starter-finish-actions { display: grid; gap: .5em; margin: 1em 0; }
+.starter-flow:has(#starter-finish-actions:not([hidden])) .starter-actions .starter-primary { font-weight: normal; }
 .starter-content { padding: 12px 10px 10px; }
 .starter-content h2 { margin: 0 0 .6em; font-size: 16px; }
 .starter-content p { margin: 0 0 1em; line-height: 1.4; }
@@ -29,7 +29,9 @@
 .starter-actions > button { flex: none; }
 .starter-actions .starter-primary { font-weight: bold; }
 .starter-link { margin-top: 14px; border: 0; padding: 2px 0; background: none; color: #000080; text-decoration: underline; cursor: pointer; font: inherit; }
-.starter-content .starter-privacy { margin-top: 8px; margin-bottom: 0; font-size: 11px; color: #383838; }
+.starter-privacy { display: none; margin: 0; text-align: center; font-size: .85em; }
+.page:has(#auth-screen:not([hidden])):has(#starter-privacy:not([hidden])) .masthead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr); }
+.page:has(#auth-screen:not([hidden])) .starter-privacy:not([hidden]) { display: block; grid-column: 2; }
 .starter-content .starter-error { margin: 10px 0 0; color: #a00; }
 .starter-auth-note { border: 1px solid #767676; padding: 9px; background: #f2f2f2; font: 13px Arial, sans-serif; line-height: 1.45; }
 .starter-auth-note strong { display: block; margin-bottom: 4px; }

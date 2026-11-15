@@ -115,6 +115,8 @@ test("the graph stays hidden until friend, family, lover or foe, and Me are rate
   answer(ui, "", 62, 33);
   assert.equal(ui.el("starter-graph").hidden, false);
   assert.equal(ui.el("demo-column").hidden, false);
+  assert.equal(ui.el("starter-title").hidden, true);
+  assert.equal(ui.el("starter-privacy").hidden, false);
   assert.equal(ui.el("starter-graph").children.length, 4);
   assert.equal(ui.el("starter-answer-form").hidden, true);
   assert.equal(ui.el("starter-finish-actions").hidden, false);
@@ -128,6 +130,7 @@ test("save hands off four ratings and the correct relationships without signing 
   ui.el("starter-save").dispatch("click");
   assert.equal(ui.el("auth-details").hidden, false);
   assert.equal(ui.el("starter-auth-note").hidden, false);
+  assert.equal(ui.el("starter-privacy").hidden, false);
   assert.equal(ui.el("starter-graph").hidden, false);
   assert.equal(ui.el("demo-column").classList.contains("starter-active"), true);
   assert.deepEqual(ui.api.pendingPeople(), [
@@ -156,6 +159,7 @@ test("back and edit permit changing ratings before reveal and after reveal", () 
   answer(ui, "", 62, 33);
   ui.el("starter-edit").dispatch("click");
   assert.equal(ui.el("starter-graph").hidden, true);
+  assert.equal(ui.el("starter-title").hidden, false);
   assert.equal(ui.el("starter-cool").value, "62");
   answer(ui, "", 33, 64);
   ui.el("starter-save").dispatch("click");
@@ -199,12 +203,14 @@ test("ready draft survives refresh and clears only after confirmed account impor
 test("skip is remembered but visitors can reopen the questionnaire", () => {
   const ui = mount();
   ui.el("starter-skip").dispatch("click");
+  assert.equal(ui.el("starter-privacy").hidden, true);
   const again = mount(Object.fromEntries(ui.store));
   assert.equal(again.el("auth-details").hidden, false);
   assert.equal(again.el("starter-graph").hidden, true);
   assert.equal(again.el("demo-column").classList.contains("starter-active"), false);
   again.el("starter-try").dispatch("click");
   assert.equal(again.el("starter-flow").hidden, false);
+  assert.equal(again.el("starter-privacy").hidden, false);
   assert.equal(again.el("demo-column").hidden, true);
   assert.equal(again.store.get(DISMISSED_KEY), undefined);
 });

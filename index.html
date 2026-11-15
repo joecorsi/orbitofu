@@ -369,6 +369,7 @@
       <header class="masthead">
         <p class="brand"><span aria-hidden="true">🍐</span> The Pear</p>
         <p class="privacy-note">Your graphs are private to your account</p>
+        <p class="starter-privacy" id="starter-privacy" hidden>Your draft is private to this browser until you choose to save it.</p>
         <div class="account-bar" id="account-bar" hidden>
           <button class="account-email" id="account-email" type="button" aria-expanded="false" aria-controls="account-menu"></button>
           <div class="account-menu" id="account-menu" role="group" aria-label="Account options" hidden>
@@ -384,7 +385,7 @@
         <section class="panel auth-panel" id="auth-screen" aria-labelledby="auth-title">
           <div class="auth-copy">
             <h1 id="auth-title">Welcome to The Pear!</h1>
-            <section class="starter-flow" id="starter-flow" aria-labelledby="starter-title" hidden>
+            <section class="starter-flow" id="starter-flow" aria-label="Your first graph" hidden>
               <div class="tutorial-titlebar"><span><span aria-hidden="true">🍐</span> The Pear</span><span>Your first graph</span></div>
               <div class="starter-content">
                 <h2 id="starter-title">Think of a friend.</h2>
@@ -421,7 +422,6 @@
                 </div>
                 <p class="starter-error" id="starter-error" role="alert" hidden></p>
                 <button class="starter-link" id="starter-skip" type="button">Already have an account? Sign in</button>
-                <p class="starter-privacy">Your draft is private to this browser until you choose to save it.</p>
               </div>
             </section>
             <div class="auth-details" id="auth-details">
