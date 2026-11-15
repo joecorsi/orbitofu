@@ -89,12 +89,15 @@ function mount(initialStorage = {}, initialHash = "", navigationType = "navigate
   el("starter-proximity-menu").hidden = true;
   el("starter-proximity-closest").checked = true;
   el("auth-intro").textContent = "See your world from a new angle. Your graphs are private and only accesible in your account.";
+  let now = 0;
+  let nextFrame = 0;
+  const frames = new Map();
   const win = {
     location: { pathname: "/", search: "", hash: initialHash },
-    performance: { getEntriesByType: () => [{ type: navigationType }], now: () => 0 },
+    performance: { getEntriesByType: () => [{ type: navigationType }], now: () => now },
     matchMedia: () => ({ matches: false, addEventListener() {} }),
-    requestAnimationFrame: () => 1,
-    cancelAnimationFrame() {},
+    requestAnimationFrame: callback => { const id = ++nextFrame; frames.set(id, callback); return id; },
+    cancelAnimationFrame: id => frames.delete(id),
     listeners: {},
     addEventListener(type, fn) { this.listeners[type] = fn; }
   };
@@ -110,7 +113,13 @@ function mount(initialStorage = {}, initialHash = "", navigationType = "navigate
   new Function("document", "window", "localStorage", "ResizeObserver", "console", source)(
     doc, win, storage, ResizeObserverStub, { error() {} }
   );
-  return { el, store, api: win.thePearStarter, win };
+  const advance = time => {
+    now = time;
+    const callbacks = [...frames.values()];
+    frames.clear();
+    callbacks.forEach(callback => callback(time));
+  };
+  return { el, store, api: win.thePearStarter, win, advance };
 }
 
 function answer(ui, name, x, y, kind = null) {
@@ -447,6 +456,25 @@ test("the revealed graph shows closest and furthest proximity without exposing i
   assert.equal(ui.el("starter-footer").hidden, false);
   assert.equal(ui.el("starter-proximity").hidden, true);
   assert.equal(ui.el("starter-proximity-line").hidden, true);
+});
+
+test("selecting a pulsing proximity target keeps its selected size until deselected", () => {
+  const ui = startGuide();
+  complete(ui);
+  const graph = ui.el("starter-graph");
+  const person = graph.children[2];
+  const dot = person.querySelector(".demo-person-dot");
+  ui.advance(700 / 1.15 + 100);
+  assert.match(dot.style.transform, /^scale\(/);
+  person.dispatch("pointerdown");
+  assert.equal(person.classList.contains("selected"), true);
+  assert.equal(dot.style.transform, "");
+  ui.advance(700 / 1.15 + 200);
+  assert.equal(dot.style.transform, "");
+  person.dispatch("pointerup");
+  graph.dispatch("pointerdown");
+  assert.equal(person.classList.contains("selected"), false);
+  assert.equal(dot.style.transform, "scale(1.5)");
 });
 
 test("dragging an offscreen person starts from their actual rating", () => {

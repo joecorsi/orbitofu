@@ -102,7 +102,7 @@
       .demo-person.selected { z-index: 4; }
       .demo-person-dot { position: relative; box-sizing: border-box; flex: none; width: 12px; height: 12px; border: 2px solid #fff; border-radius: 50%; background: var(--person-color); }
       .demo-person.sticky .demo-person-dot { background: rgba(0, 0, 0, .23); }
-      .demo-person.selected .demo-person-dot::after { content: ""; position: absolute; inset: -5px; border: 1.5px dotted #333; border-radius: 50%; pointer-events: none; }
+      .demo-person.selected .demo-person-dot { transform: scale(1.5); }
       .demo-person.selected .demo-person-name { position: absolute; top: -4px; left: 6px; padding: 2px 6px; border: 1px solid currentColor; border-radius: 3px; background: #fff; font: bold 16px serif; line-height: 18px; transform: translate(-50%, -100%); }
       .demo-person.selected.label-left .demo-person-name { right: 6px; left: auto; transform: translate(50%, -100%); }
       .demo-graph .chart-groups { z-index: 3; }
@@ -823,7 +823,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./proximity.js?v=proximity-pulse"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
-    <script src="./guided-intro.js?v=proximity-pulse"></script>
+    <script src="./guided-intro.js?v=selected-dot"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas } = window.thePearProximity;
       const CONFIG_KEY = "people-map-supabase-config";
@@ -3369,7 +3369,7 @@
           renderGroups(nextGroups);
           buttons.forEach((button, index) => {
             button.querySelector(".demo-person-dot").style.transform =
-              target?.index === index && !button.hidden && pulse !== 1 ? `scale(${pulse})` : "";
+              index !== selected && target?.index === index && !button.hidden && pulse !== 1 ? `scale(${pulse})` : "";
           });
           for (const group of nextGroups) {
             const button = groupButtons.get(group.key);
@@ -4372,7 +4372,7 @@
           context.fillStyle = sticky ? stickyColor : state.colorByRelationship
             ? relationshipColor(person) : person.color;
           context.strokeStyle = "#fff";
-          const scale = person === proximityPerson ? pulse : 1;
+          const scale = index === selectedIndex ? 1.5 : person === proximityPerson ? pulse : 1;
           context.lineWidth = personDotBorderWidth * scale;
           context.beginPath();
           context.arc(x, y, personDotRadius * scale, 0, Math.PI * 2);
@@ -4427,6 +4427,7 @@
         if (focusedIndex !== -1 && focusedIndex !== selectedIndex) drawDot(focusedIndex);
         const drawHighlight = index => {
           if (!state.hideNames) drawLabel(index, true);
+          if (index === selectedIndex) return;
           const { x, y } = plotted[index].point;
           context.globalAlpha = 1;
           context.strokeStyle = "#333";
