@@ -324,7 +324,8 @@
       #traits-dialog[open] { display: flex; flex-direction: column; box-sizing: border-box; overflow-y: auto; }
       #traits-dialog > :not(#dimensions) { flex-shrink: 0; }
       #dimensions { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
-      .dimension-row .icon-button, #add-trait-form button[type="submit"] { box-sizing: border-box; flex: none; width: 4em; }
+      .dimension-row .person-actions { flex: none; width: calc(44px + var(--control-gap)); }
+      #add-trait-form button[type="submit"] { box-sizing: border-box; flex: none; width: 4em; }
       .graph-dialog { width: calc(25em + 40px); box-sizing: border-box; }
       .graph-dialog input { min-width: 0; }
       .graph-dialog .auth-form { margin-bottom: 0; }
@@ -834,6 +835,8 @@
       const PLACEMENT_RING_INTERVAL = 1450;
       const RELATIONSHIP_COLORS = { friend: "#009b4f", enemy: "#382110", lover: "#f25416", family: "#7441a6" };
       const UNCLASSIFIED_COLOR = "#d3d3d3";
+      const VISIBILITY_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/><path class="visibility-slash" d="M2 14 14 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+      const REMOVE_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
       const relationshipColor = person => person.id === ME_ID ? person.color : RELATIONSHIP_COLORS[person.relationship] ?? UNCLASSIFIED_COLOR;
       const DEFAULT_CONFIG = {
         url: "https://auhvnhytuxhhzdsjiugt.supabase.co",
@@ -1368,7 +1371,8 @@
         return value &&
           Array.isArray(value.traits) &&
           value.traits.every(trait => trait && typeof trait.id === "string" && typeof trait.name === "string" &&
-            (trait.opposite === undefined || typeof trait.opposite === "string")) &&
+            (trait.opposite === undefined || typeof trait.opposite === "string") &&
+            (trait.hidden === undefined || typeof trait.hidden === "boolean")) &&
           Array.isArray(value.people) &&
           (value.colorByRelationship === undefined || typeof value.colorByRelationship === "boolean") &&
           (value.hideNames === undefined || typeof value.hideNames === "boolean") &&
@@ -1387,6 +1391,14 @@
           );
       }
 
+      function resolveTraitAxes(traits, x, y) {
+        const visible = traits.filter(trait => !trait.hidden);
+        const valid = axis => axis === AGE_AXIS || visible.some(trait => trait.id === axis);
+        if (!valid(x)) x = visible.find(trait => trait.id !== y)?.id ?? visible[0]?.id ?? AGE_AXIS;
+        if (!valid(y)) y = visible.find(trait => trait.id !== x)?.id ?? visible[0]?.id ?? AGE_AXIS;
+        return [x, y];
+      }
+
       function normalizeState(value) {
         if (!isValidState(value)) {
           throw new Error("This graph's saved data is not in the expected format.");
@@ -1402,7 +1414,7 @@
           }
           if (!existing) traits.push({ ...FUNNY_TRAIT });
         }
-        const traitIds = new Set(traits.map(trait => trait.id));
+        const [xTrait, yTrait] = resolveTraitAxes(traits, value.xTrait, value.yTrait);
         const people = value.people.map((person, index) => ({
           ...person,
           color: person.color ?? COLORS[index % COLORS.length],
@@ -1415,8 +1427,8 @@
           funnyTraitMigrated: true,
           traits,
           people,
-          xTrait: value.xTrait === AGE_AXIS || traitIds.has(value.xTrait) ? value.xTrait : traits[0]?.id,
-          yTrait: value.yTrait === AGE_AXIS || traitIds.has(value.yTrait) ? value.yTrait : (traits[1]?.id ?? traits[0]?.id),
+          xTrait,
+          yTrait,
           colorByRelationship: value.colorByRelationship ?? false,
           hideNames: value.hideNames ?? false,
           hiddenRelationships: value.hiddenRelationships ? [...value.hiddenRelationships] : []
@@ -2484,13 +2496,13 @@
       }
 
       function renderAxes() {
-        state.xTrait = state.xTrait === AGE_AXIS || state.traits.some(trait => trait.id === state.xTrait) ? state.xTrait : state.traits[0]?.id;
-        state.yTrait = state.yTrait === AGE_AXIS || state.traits.some(trait => trait.id === state.yTrait) ? state.yTrait : state.traits[1]?.id ?? state.traits[0]?.id;
-        el.shuffleAxes.disabled = state.traits.length < 2;
+        const visibleTraits = state.traits.filter(trait => !trait.hidden);
+        [state.xTrait, state.yTrait] = resolveTraitAxes(state.traits, state.xTrait, state.yTrait);
+        el.shuffleAxes.disabled = visibleTraits.length < 2;
         for (const [controls, selected] of [[el.xAxes, state.xTrait], [el.yAxes, state.yTrait]]) {
           controls.forEach(select => {
             const age = new Option("Age", AGE_AXIS, false, selected === AGE_AXIS);
-            select.replaceChildren(...state.traits.map(item => createOption(item, selected)), age);
+            select.replaceChildren(...visibleTraits.map(item => createOption(item, selected)), age);
             select.value = selected ?? "";
             select.disabled = false;
             axisDropdowns.get(select).sync();
@@ -2765,7 +2777,7 @@
             visibility.title = `${person.hidden ? "Show" : "Hide"} ${person.name || "person"} ${person.hidden ? "on" : "from"} graph`;
           }
           updateVisibilityButton();
-          visibility.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/><path class="visibility-slash" d="M2 14 14 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+          visibility.innerHTML = VISIBILITY_ICON;
           visibility.addEventListener("click", event => {
             event.preventDefault();
             event.stopPropagation();
@@ -2784,7 +2796,7 @@
           remove.className = "icon-button person-remove";
           remove.type = "button";
           remove.setAttribute("aria-label", `Remove ${person.name || "person"}`);
-          remove.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+          remove.innerHTML = REMOVE_ICON;
           remove.addEventListener("click", event => {
             event.preventDefault();
             event.stopPropagation();
@@ -2836,7 +2848,7 @@
             event.preventDefault();
             sliders[index + (event.key === "ArrowUp" ? -1 : 1)]?.focus();
           });
-          for (const trait of state.traits) {
+          for (const trait of state.traits.filter(item => !item.hidden)) {
             const row = document.createElement("label");
             row.className = "trait-row";
             const lowLabel = document.createElement("span");
@@ -2958,6 +2970,7 @@
             low.setAttribute("aria-label", `Low end for ${trait.name}`);
             remove.setAttribute("aria-label", `Remove ${trait.name} trait`);
             swap.setAttribute("aria-label", `Swap ends for ${trait.name || "trait"}`);
+            updateVisibilityButton();
           });
           const swap = document.createElement("button");
           swap.className = "swap-trait";
@@ -2966,16 +2979,34 @@
           swap.title = "Swap trait ends";
           swap.setAttribute("aria-label", `Swap ends for ${trait.name}`);
           swap.addEventListener("click", () => swapTraitFields(low, name));
+          const actions = document.createElement("span");
+          actions.className = "person-actions";
+          const visibility = document.createElement("button");
+          visibility.className = "person-visibility";
+          visibility.type = "button";
+          function updateVisibilityButton() {
+            visibility.setAttribute("aria-label", `Show ${trait.name || "trait"} in sliders and graph axes`);
+            visibility.setAttribute("aria-pressed", String(!trait.hidden));
+            visibility.title = `${trait.hidden ? "Show" : "Hide"} ${trait.name || "trait"} in sliders and graph axes`;
+          }
+          updateVisibilityButton();
+          visibility.innerHTML = VISIBILITY_ICON;
+          visibility.addEventListener("click", () => {
+            if (trait.hidden) delete trait.hidden;
+            else trait.hidden = true;
+            updateVisibilityButton();
+          });
           const remove = document.createElement("button");
           remove.className = "icon-button";
           remove.type = "button";
           remove.setAttribute("aria-label", `Remove ${trait.name} trait`);
-          remove.textContent = "Delete";
+          remove.innerHTML = REMOVE_ICON;
           remove.addEventListener("click", () => {
             traitsDraft = traitsDraft.filter(item => item.id !== trait.id);
             renderDimensions();
           });
-          row.append(low, swap, name, remove);
+          actions.append(visibility, remove);
+          row.append(low, swap, name, actions);
           el.dimensions.append(row);
         }
         el.dimensions.scrollTop = scrollTop;
@@ -4777,7 +4808,7 @@
 
       el.shuffleAxes.addEventListener("click", () => {
         const origins = chartAxisOrigins();
-        [state.xTrait, state.yTrait] = shuffledTraitPair(state.traits, state.xTrait, state.yTrait);
+        [state.xTrait, state.yTrait] = shuffledTraitPair(state.traits.filter(trait => !trait.hidden), state.xTrait, state.yTrait);
         renderAxes();
         chartAxisTransition.begin(origins);
         drawChart();

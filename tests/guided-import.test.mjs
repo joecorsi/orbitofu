@@ -82,6 +82,54 @@ const navigationEnd = html.indexOf("      el.homeLink.addEventListener", navigat
 assert.ok(navigationStart >= 0 && navigationEnd > navigationStart, "homepage navigation helpers are present");
 const navigation = html.slice(navigationStart, navigationEnd);
 
+test("hidden traits keep scores and selected axes use visible alternatives or age", () => {
+  const start = html.indexOf("      function isValidState(value)");
+  const end = html.indexOf("      function showNotice(", start);
+  assert.ok(start >= 0 && end > start);
+  const normalize = new Function("AGE_AXIS", "COLORS", "FUNNY_TRAIT", "RELATIONSHIP_COLORS",
+    html.slice(start, end) + "\nreturn normalizeState;")("__age__", ["#111111"], {}, {});
+  const base = {
+    funnyTraitMigrated: true,
+    traits: [{ id: "a", name: "A", hidden: true }, { id: "b", name: "B" }, { id: "c", name: "C" }],
+    people: [{ id: "p", name: "Person", values: { a: 12, b: 34, c: 56 } }],
+    xTrait: "a", yTrait: "b"
+  };
+  const hidden = normalize(base);
+  assert.deepEqual([hidden.xTrait, hidden.yTrait], ["c", "b"]);
+  assert.equal(hidden.people[0].values.a, 12);
+  assert.equal(hidden.traits[0].hidden, true);
+  const allHidden = normalize({ ...base, traits: base.traits.map(trait => ({ ...trait, hidden: true })) });
+  assert.deepEqual([allHidden.xTrait, allHidden.yTrait], ["__age__", "__age__"]);
+  const shown = normalize({ ...hidden, traits: hidden.traits.map(trait => ({ ...trait, hidden: false })) });
+  assert.equal(shown.people[0].values.a, 12);
+  assert.throws(() => normalize({ ...base, traits: [{ id: "a", name: "A", hidden: "yes" }] }), /expected format/);
+});
+
+test("axis menus and shuffle exclude hidden traits", () => {
+  const resolveStart = html.indexOf("      function resolveTraitAxes(");
+  const resolveEnd = html.indexOf("      function normalizeState(", resolveStart);
+  const axesStart = html.indexOf("      function renderAxes()");
+  const axesEnd = html.indexOf("      function updatePeopleScrollHint()", axesStart);
+  assert.ok(resolveStart >= 0 && resolveEnd > resolveStart && axesStart >= 0 && axesEnd > axesStart);
+  const x = { replaceChildren(...options) { this.options = options; } };
+  const y = { replaceChildren(...options) { this.options = options; } };
+  const state = { traits: [{ id: "a" }, { id: "b", hidden: true }], xTrait: "b", yTrait: "a" };
+  const el = { xAxes: [x], yAxes: [y], shuffleAxes: {} };
+  const dropdowns = new Map([[x, { sync() {} }], [y, { sync() {} }]]);
+  const render = new Function("state", "el", "axisDropdowns", "createOption", "Option", "AGE_AXIS",
+    html.slice(resolveStart, resolveEnd) + html.slice(axesStart, axesEnd) + "\nreturn renderAxes;")(
+    state, el, dropdowns, trait => ({ value: trait.id }),
+    function Option(_name, value) { this.value = value; }, "__age__");
+  render();
+  assert.deepEqual(x.options.map(option => option.value), ["a", "__age__"]);
+  assert.equal(state.xTrait, "a");
+  assert.equal(el.shuffleAxes.disabled, true);
+  state.traits[1].hidden = false;
+  render();
+  assert.deepEqual(x.options.map(option => option.value), ["a", "b", "__age__"]);
+  assert.equal(el.shuffleAxes.disabled, false);
+});
+
 test("people expand button uses short labels and toggles only visible people", () => {
   const start = html.indexOf("      function updatePeopleExpandButton()");
   const end = html.indexOf("      function updatePeopleSearch()", start);
