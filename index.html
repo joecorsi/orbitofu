@@ -44,8 +44,8 @@
       .background-toggle { display: block; margin-left: auto; }
       .background-toggle::after { content: " ▴"; }
       #background-select, #graph-select, #people-sort-select, .axis-end select, .person-relationship select { position: absolute; z-index: 2; min-width: 100%; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; outline: none; color: #000; background: #fff; }
-      #background-select { right: 0; bottom: 100%; max-height: calc(100dvh - 5em); }
-      #graph-select { left: 0; top: 100%; padding: 4px; }
+      #background-select { right: 0; bottom: calc(100% + var(--control-gap)); max-height: calc(100dvh - 5em); }
+      #graph-select { left: 0; top: calc(100% + var(--control-gap)); padding: 4px; }
       #background-select option, #graph-select option, #people-sort-select option, .axis-end option, .person-relationship option { padding: 1px 4px; }
       .dropdown-highlight { position: absolute; z-index: 3; overflow: hidden; color: #fff; background: var(--highlight-blue); pointer-events: none; }
       .dropdown-highlight span { position: absolute; box-sizing: border-box; padding: 1px 4px; overflow: hidden; white-space: nowrap; }
@@ -188,7 +188,7 @@
       .axis-toggle { appearance: none; border: 0; padding: 3px 26px 3px 8px; background: transparent; color: inherit; cursor: pointer; font: 13.333px Arial, sans-serif; }
       .axis-toggle:focus-visible { outline: 2px solid; outline-offset: 1px; }
       .axis-toggle::after { content: ""; right: 10px; width: 6px; height: 6px; border-right: 1px solid; border-bottom: 1px solid; transform: translateY(-65%) rotate(45deg); pointer-events: none; }
-      .axis-end select { top: 100%; left: 0; overflow-y: scroll; scrollbar-gutter: stable; }
+      .axis-end select { top: calc(100% + var(--control-gap)); left: 0; overflow-y: scroll; scrollbar-gutter: stable; }
       .axis-end select::-webkit-scrollbar { width: 12px; }
       .axis-end select::-webkit-scrollbar-track { background: #efefef; }
       .axis-end select::-webkit-scrollbar-thumb { border: 2px solid #efefef; border-radius: 6px; background: #999; }
@@ -225,8 +225,8 @@
       .people-count-content > span, .people-count-content::before, .people-count-content::after { grid-area: 1 / 1; }
       .people-count-content::before { content: "1 person"; visibility: hidden; }
       .people-count-content::after { content: attr(data-size); visibility: hidden; }
-      #people-sort-select { top: 100%; right: 0; width: max-content; }
-      #people-filter-menu:not([hidden]) { position: absolute; z-index: 2; top: 100%; right: 0; min-width: 110px; box-sizing: border-box; padding: 4px; border: 1px solid #767676; border-radius: 2px; background: #fff; }
+      #people-sort-select { top: calc(100% + var(--control-gap)); right: 0; width: max-content; }
+      #people-filter-menu:not([hidden]) { position: absolute; z-index: 2; top: calc(100% + var(--control-gap)); right: 0; min-width: 110px; box-sizing: border-box; padding: 4px; border: 1px solid #767676; border-radius: 2px; background: #fff; }
       #people-filter-menu button { display: grid; grid-template-columns: 1fr auto; gap: 1em; width: 100%; border: 0; padding: 4px 6px; background: #fff; color: #000; font: 13.3333px Arial, sans-serif; text-align: left; cursor: pointer; }
       #people-filter-menu button[aria-checked="true"], #people-filter-menu button:hover, #people-filter-menu button:focus-visible { outline: none; background: var(--highlight-blue); color: #fff; }
       #people-filter-menu button span:last-child { text-align: right; }
@@ -291,7 +291,7 @@
       .graph-options, .proximity { position: relative; display: flex; align-items: center; }
       .graph-options-toggle { position: relative; padding-right: 24px; padding-left: 2px; text-align: left; }
       .graph-options-toggle::after { content: ""; position: absolute; right: 6px; top: 50%; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 5px solid currentColor; transform: translateY(-50%); pointer-events: none; }
-      .graph-options-menu:not([hidden]) { position: absolute; z-index: 4; bottom: 100%; left: 0; min-width: 100%; width: max-content; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; padding: 4px; background: #fff; color: #000; }
+      .graph-options-menu:not([hidden]) { position: absolute; z-index: 4; bottom: calc(100% + var(--control-gap)); left: 0; min-width: 100%; width: max-content; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; padding: 4px; background: #fff; color: #000; }
       .graph-options-menu label { display: flex; align-items: center; gap: 4px; padding: 4px 6px; white-space: nowrap; font: 13.3333px Arial, sans-serif; cursor: pointer; }
       .graph-options-menu input { margin: 0; }
       .graph-options-separator { display: block; border-top: 1px solid #767676; margin: 4px 0; }
@@ -1224,35 +1224,35 @@
             const visibleOptionCount = [...select.options].filter(option => !option.hidden).length;
             select.size = Math.min(9, Math.max(2, visibleOptionCount));
             select.style.height = "";
-            select.style.maxHeight = options.autoDirection || options.fixed ? "" : `${Math.max(0, window.innerHeight - bounds.bottom - 20)}px`;
+            select.style.maxHeight = options.autoDirection || options.fixed ? "" : `max(0px, calc(${Math.max(0, window.innerHeight - bounds.bottom - 20)}px - var(--control-gap)))`;
             const availableWidth = options.alignRight ? bounds.right - 16 : window.innerWidth - bounds.left - 16;
             select.style.maxWidth = `${Math.max(bounds.width, availableWidth)}px`;
           }
           select.hidden = false;
-          if (options.fixed) {
-            const bounds = toggle.getBoundingClientRect();
-            select.style.left = `${bounds.left}px`;
-            select.style.minWidth = `${bounds.width}px`;
-            const below = Math.max(0, window.innerHeight - bounds.bottom - 20);
-            const above = Math.max(0, bounds.top - 20);
-            const opensUp = select.getBoundingClientRect().height > below && above > below;
-            select.style.top = opensUp ? "auto" : `${bounds.bottom}px`;
-            select.style.bottom = opensUp ? `${window.innerHeight - bounds.top}px` : "auto";
-            select.style.maxHeight = `${opensUp ? above : below}px`;
-          }
           if (deferChange && select.options.length === 1) {
             const style = getComputedStyle(select);
             const borderAndPadding = ["borderTopWidth", "borderBottomWidth", "paddingTop", "paddingBottom"]
               .reduce((total, property) => total + parseFloat(style[property]), 0);
             select.style.height = `${select.options[0].getBoundingClientRect().height + borderAndPadding}px`;
           }
-          if (options.autoDirection) {
+          if (options.fixed || options.autoDirection) {
             const bounds = toggle.getBoundingClientRect();
-            const below = Math.max(0, window.innerHeight - bounds.bottom - 20);
-            const above = Math.max(0, bounds.top - 20);
+            if (options.fixed) {
+              select.style.left = `${bounds.left}px`;
+              select.style.minWidth = `${bounds.width}px`;
+            }
+            select.style.top = options.fixed ? `calc(${bounds.bottom}px + var(--control-gap))` : "calc(100% + var(--control-gap))";
+            select.style.bottom = "auto";
+            const gap = Math.max(0, select.getBoundingClientRect().top - bounds.bottom);
+            const below = Math.max(0, window.innerHeight - bounds.bottom - gap - 20);
+            const above = Math.max(0, bounds.top - gap - 20);
             const opensUp = select.getBoundingClientRect().height > below && above > below;
-            select.style.top = opensUp ? "auto" : "100%";
-            select.style.bottom = opensUp ? "100%" : "auto";
+            if (opensUp) {
+              select.style.top = "auto";
+              select.style.bottom = options.fixed
+                ? `calc(${window.innerHeight - bounds.top}px + var(--control-gap))`
+                : "calc(100% + var(--control-gap))";
+            }
             select.style.maxHeight = `${opensUp ? above : below}px`;
           }
           toggle.setAttribute("aria-expanded", "true");
