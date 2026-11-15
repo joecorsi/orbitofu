@@ -105,7 +105,7 @@ test("furthest sweep ends on the original wave at the requested progress", () =>
   assert.ok(points.every(call => call[1] <= 27.5 + 1e-10));
 });
 
-test("both modes sweep 15% faster on enable and respect reduced motion", () => {
+test("both modes pulse their target after the sweep and respect reduced motion", () => {
   let now = 100;
   let nextId = 0;
   const frames = new Map();
@@ -127,8 +127,13 @@ test("both modes sweep 15% faster on enable and respect reduced motion", () => {
   const closest = element();
   const furthest = element();
   const draws = [];
+  const scales = [];
+  let target = "person";
   const control = fakeWindow.thePearProximity.setupProximityMenu(
-    toggle, { hidden: true }, closest, furthest, () => draws.push(control.progress())
+    toggle, { hidden: true }, closest, furthest, () => {
+      draws.push(control.progress());
+      scales.push(control.pulseFor(target));
+    }
   );
   const advance = time => {
     now = time;
@@ -142,8 +147,15 @@ test("both modes sweep 15% faster on enable and respect reduced motion", () => {
   const duration = 700 / 1.15;
   advance(100 + duration / 2);
   assert.ok(Math.abs(draws.at(-1) - 0.5) < 1e-10);
-  advance(100 + duration);
+  assert.equal(scales.at(-1), 1);
+  advance(100 + duration + 0.001);
   assert.equal(draws.at(-1), 1);
+  assert.ok(Math.abs(scales.at(-1) - 1) < 1e-8);
+  advance(100 + duration + 200);
+  assert.equal(scales.at(-1), 1.5);
+  assert.equal(control.pulseFor("someone else"), 1);
+  advance(100 + duration + 400.001);
+  assert.equal(scales.at(-1), 1);
   assert.equal(frames.size, 0);
   furthest.checked = false;
   furthest.listeners.change();
@@ -157,9 +169,12 @@ test("both modes sweep 15% faster on enable and respect reduced motion", () => {
   assert.equal(frames.size, 1);
   advance(now + duration / 2);
   assert.ok(Math.abs(draws.at(-1) - 0.5) < 1e-10);
+  advance(now + duration / 2 + 200);
+  assert.ok(Math.abs(scales.at(-1) - 1.5) < 1e-10);
   furthest.checked = true;
   furthest.listeners.change();
   assert.equal(closest.checked, false);
+  assert.equal(scales.at(-1), 1);
   motion.matches = true;
   motion.change();
   assert.equal(draws.at(-1), 1);
@@ -169,5 +184,16 @@ test("both modes sweep 15% faster on enable and respect reduced motion", () => {
   furthest.checked = true;
   furthest.listeners.change();
   assert.equal(draws.at(-1), 1);
+  assert.equal(scales.at(-1), 1);
   assert.equal(frames.size, 0);
+  motion.matches = false;
+  furthest.checked = false;
+  furthest.listeners.change();
+  target = null;
+  furthest.checked = true;
+  furthest.listeners.change();
+  advance(now + duration + 1);
+  target = "person";
+  advance(now + 100);
+  assert.equal(scales.at(-1), 1);
 });

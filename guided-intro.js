@@ -352,6 +352,11 @@
     setProximityLabel(ui.proximityToggle, mode, target?.name);
     drawProximityCanvas(ui.proximityCanvas, proximityContext, size, size,
       me && displayedPoint(me), target && displayedPoint(target), mode, proximityControl.progress());
+    const targetIndex = target && me ? draft.answers.indexOf(target) : null;
+    const pulse = proximityControl.pulseFor(targetIndex);
+    for (const [index, button] of nodes) {
+      button.querySelector(".demo-person-dot").style.transform = index === targetIndex && pulse !== 1 ? `scale(${pulse})` : "";
+    }
   }
 
   ui.graph.addEventListener("wheel", event => {

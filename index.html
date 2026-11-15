@@ -821,9 +821,9 @@
     </aside>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./proximity.js?v=proximity-sweeps"></script>
+    <script src="./proximity.js?v=proximity-pulse"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
-    <script src="./guided-intro.js?v=proximity-sweeps"></script>
+    <script src="./guided-intro.js?v=proximity-pulse"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas } = window.thePearProximity;
       const CONFIG_KEY = "people-map-supabase-config";
@@ -3355,6 +3355,7 @@
             entry => entry.person.id === ME_ID ? null : entry.actual);
           setProximityLabel(proximityToggle, mode, target?.person.name);
           drawProximityCanvas(proximityCanvas, proximityContext, width, height, me?.point, target?.point, mode, proximityControl.progress());
+          const pulse = proximityControl.pulseFor(me && target ? target.person.id : null);
           const labels = showNames.checked ? plotted.map(({ person, point }) => {
             const metrics = measure.measureText(person.name);
             const left = point.x > width - 90 ? point.x - 9 - metrics.width : point.x + 9;
@@ -3366,6 +3367,16 @@
           const grouped = new Set(nextGroups.flatMap(group => group.members.map(member => member.index)));
           plotted.forEach(({ index }) => { if (grouped.has(index) && index !== selected) buttons[index].hidden = true; });
           renderGroups(nextGroups);
+          buttons.forEach((button, index) => {
+            button.querySelector(".demo-person-dot").style.transform =
+              target?.index === index && !button.hidden && pulse !== 1 ? `scale(${pulse})` : "";
+          });
+          for (const group of nextGroups) {
+            const button = groupButtons.get(group.key);
+            const isTarget = target && group.members.some(member => member.index === target.index);
+            button.querySelector(".chart-group-dot").style.transform =
+              isTarget && !button.classList.contains("group-selected") && pulse !== 1 ? `scale(${pulse})` : "";
+          }
           reset.hidden = view.zoom === 1;
         }
         frame.addEventListener("wheel", event => {
@@ -4310,6 +4321,7 @@
           };
         });
         renderChartGroups(overlappingChartGroups(plotted, labels, right, context));
+        let pulse = 1;
         if (proximityPerson) {
           const displayPoint = person => {
             const item = plotted.find(entry => entry.person === person);
@@ -4323,8 +4335,15 @@
           };
           const from = displayPoint(mePerson);
           const to = displayPoint(proximityPerson);
+          pulse = proximityControl.pulseFor(from && to ? proximityPerson.id : null);
           if (from && to) drawProximityLine(context, from, to,
             el.proximityClosest.checked ? "closest" : "furthest", proximityControl.progress());
+        } else proximityControl.pulseFor(null);
+        for (const group of chartGroups) {
+          const button = chartGroupButtons.get(group.key);
+          const isTarget = proximityPerson && group.members.some(member => member.person.id === proximityPerson.id);
+          button.querySelector(".chart-group-dot").style.transform =
+            isTarget && !button.classList.contains("group-selected") && pulse !== 1 ? `scale(${pulse})` : "";
         }
         chartLabelHits = labels.flatMap(label => {
           if (groupedPersonIds.has(label.hit.personId)) return label.nameHit ? [label.nameHit] : [];
@@ -4353,9 +4372,10 @@
           context.fillStyle = sticky ? stickyColor : state.colorByRelationship
             ? relationshipColor(person) : person.color;
           context.strokeStyle = "#fff";
-          context.lineWidth = personDotBorderWidth;
+          const scale = person === proximityPerson ? pulse : 1;
+          context.lineWidth = personDotBorderWidth * scale;
           context.beginPath();
-          context.arc(x, y, personDotRadius, 0, Math.PI * 2);
+          context.arc(x, y, personDotRadius * scale, 0, Math.PI * 2);
           context.fill();
           context.stroke();
         };

@@ -28,22 +28,29 @@
   function setupProximityMenu(toggle, menu, closest, furthest, draw) {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const duration = 700 / 1.15;
+    const pulseDuration = 400;
     let frame = null;
     let start = 0;
     let progress = 1;
+    let pulseProgress = -1;
+    let pulseTarget;
     let active = null;
     const stopSweep = () => {
       if (frame !== null) window.cancelAnimationFrame(frame);
       frame = null;
       progress = 1;
+      pulseProgress = -1;
+      pulseTarget = undefined;
       active = null;
     };
     const tick = time => {
       frame = null;
       if (!active.checked) return stopSweep();
-      progress = Math.min(1, Math.max(0, (time - start) / duration));
+      const elapsed = Math.max(0, time - start);
+      progress = Math.min(1, elapsed / duration);
+      pulseProgress = elapsed >= duration ? Math.min(1, (elapsed - duration) / pulseDuration) : -1;
       draw();
-      if (progress < 1) frame = window.requestAnimationFrame(tick);
+      if (pulseProgress < 1) frame = window.requestAnimationFrame(tick);
     };
     const startSweep = () => {
       stopSweep();
@@ -93,7 +100,13 @@
         startSweep();
       });
     }
-    return { close, start: startSweep, progress: () => progress };
+    const pulseFor = target => {
+      if (pulseProgress < 0) return 1;
+      if (pulseTarget === undefined) pulseTarget = target;
+      if (target == null || target !== pulseTarget) return 1;
+      return 1 + 0.5 * Math.sin(Math.PI * pulseProgress) ** 2;
+    };
+    return { close, start: startSweep, progress: () => progress, pulseFor };
   }
 
   function drawProximityLine(context, from, to, mode, progress = 1) {
