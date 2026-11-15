@@ -103,6 +103,7 @@
       .demo-person.selected .demo-person-name { position: absolute; top: -4px; left: 6px; padding: 2px 6px; border: 1px solid currentColor; border-radius: 3px; background: #fff; font: bold 16px serif; line-height: 18px; transform: translate(-50%, -100%); }
       .demo-person.selected.label-left .demo-person-name { right: 6px; left: auto; transform: translate(50%, -100%); }
       .demo-graph .chart-groups { z-index: 3; }
+      .demo-proximity { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
       .layout { --layout-gap: calc(1em + 5px); display: grid; flex: 1; min-height: 0; grid-template-columns: minmax(0, min(calc(100% - min(40%, 21rem) - var(--layout-gap)), var(--chart-available-width, 100%))) min(40%, 21rem); grid-template-rows: minmax(0, 1fr); justify-content: space-between; gap: var(--layout-gap); }
       .graph-select { position: relative; flex: 1 1 90px; min-width: 90px; }
       .graph-dates { display: flex; flex-wrap: wrap; gap: var(--control-gap); }
@@ -476,6 +477,7 @@
               <span class="demo-axis-label demo-x-high">Cool</span>
               <span class="demo-axis-label demo-y-low">Benevolent</span>
               <span class="demo-axis-label demo-y-high">Malevolent</span>
+              <canvas class="demo-proximity" id="demo-proximity-line" aria-hidden="true"></canvas>
               <span class="chart-info">
                 <button class="chart-info-button" type="button" aria-label="Graph controls information" aria-describedby="demo-info-tooltip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="currentColor"/></svg></button>
                 <span class="chart-info-tooltip" id="demo-info-tooltip" role="tooltip">Scroll to zoom, drag empty space or use Shift and arrow keys to pan. Select a dot, then use the mouse or arrow keys to adjust values.</span>
@@ -499,6 +501,13 @@
                   </span>
                 </span>
                 <button type="button" id="demo-shuffle" title="Randomly choose two different traits">Shuffle axes</button>
+                <span class="proximity">
+                  <button class="graph-options-toggle proximity-toggle" id="demo-proximity-toggle" type="button" aria-expanded="false" aria-controls="demo-proximity-menu"><span aria-live="polite">Proximity</span></button>
+                  <span class="graph-options-menu proximity-menu" id="demo-proximity-menu" role="group" aria-label="Sample graph proximity" hidden>
+                    <label><input id="demo-proximity-closest" type="checkbox" checked> Current closest</label>
+                    <label><input id="demo-proximity-furthest" type="checkbox"> Current furthest</label>
+                  </span>
+                </span>
                 <button type="button" id="demo-reset" hidden>Reset view</button>
               </span>
             </div>
@@ -2990,9 +2999,76 @@
         return { begin, point, stop };
       }
 
+      function findProximity(people, origin, mode, getPoint) {
+        if (!origin || !mode) return null;
+        let result = null;
+        let bestDistance = mode === "closest" ? Infinity : -Infinity;
+        for (const person of people) {
+          const point = getPoint(person);
+          if (!point) continue;
+          const distance = (point.x - origin.x) ** 2 + (point.y - origin.y) ** 2;
+          if (mode === "closest" ? distance < bestDistance : distance > bestDistance) {
+            result = person;
+            bestDistance = distance;
+          }
+        }
+        return result;
+      }
+
+      function setProximityLabel(toggle, mode, name, emptyLabel = "No visible people") {
+        const label = mode ? (name ? `${mode === "closest" ? "Closest" : "Furthest"}: ${name}` : emptyLabel) : "Proximity";
+        const description = mode ? `Current ${mode}: ${name ?? label}` : label;
+        if (toggle.firstElementChild.textContent !== label) toggle.firstElementChild.textContent = label;
+        if (toggle.getAttribute("aria-label") !== description) toggle.setAttribute("aria-label", description);
+        if (toggle.title !== description) toggle.title = description;
+      }
+
+      function setupProximityMenu(toggle, menu, closest, furthest, draw) {
+        const close = (restoreFocus = false) => {
+          if (menu.hidden) return;
+          menu.hidden = true;
+          toggle.setAttribute("aria-expanded", "false");
+          if (restoreFocus) toggle.focus();
+        };
+        toggle.addEventListener("click", () => {
+          if (!menu.hidden) return close();
+          menu.hidden = false;
+          toggle.setAttribute("aria-expanded", "true");
+          menu.style.left = "0px";
+          const overflow = menu.getBoundingClientRect().right - document.documentElement.clientWidth;
+          if (overflow > 0) menu.style.left = `${-overflow}px`;
+        });
+        toggle.parentElement.addEventListener("keydown", event => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            close(true);
+          }
+        });
+        toggle.parentElement.addEventListener("focusout", event => {
+          if (!toggle.parentElement.contains(event.relatedTarget)) close();
+        });
+        document.addEventListener("pointerdown", event => {
+          if (!toggle.parentElement.contains(event.target)) close();
+        });
+        for (const [checkbox, other] of [[closest, furthest], [furthest, closest]]) {
+          checkbox.addEventListener("change", () => {
+            if (checkbox.checked) other.checked = false;
+            draw();
+          });
+        }
+        return close;
+      }
+
       function setupDemoGraph() {
         const frame = document.getElementById("demo-graph");
         const reset = document.getElementById("demo-reset");
+        const proximityToggle = document.getElementById("demo-proximity-toggle");
+        const proximityMenu = document.getElementById("demo-proximity-menu");
+        const proximityClosest = document.getElementById("demo-proximity-closest");
+        const proximityFurthest = document.getElementById("demo-proximity-furthest");
+        const proximityCanvas = document.getElementById("demo-proximity-line");
+        const proximityContext = proximityCanvas.getContext("2d");
+        setupProximityMenu(proximityToggle, proximityMenu, proximityClosest, proximityFurthest, draw);
         const optionsToggle = document.getElementById("demo-options-toggle");
         const optionsMenu = document.getElementById("demo-options-menu");
         const relationshipColors = document.getElementById("demo-relationship-colors");
@@ -3232,8 +3308,21 @@
             button.classList.toggle("label-left", point.x > width - 90);
             button.classList.toggle("selected", index === selected);
             button.classList.toggle("sticky", sticky);
-            if (!button.hidden) plotted.push({ person, index, point, sticky });
+            if (!button.hidden) plotted.push({ person, index, point, actual, sticky });
           });
+          const mode = proximityClosest.checked ? "closest" : proximityFurthest.checked ? "furthest" : null;
+          const me = plotted.find(entry => entry.person.id === ME_ID);
+          const target = findProximity(plotted, me?.actual, mode,
+            entry => entry.person.id === ME_ID ? null : entry.actual);
+          setProximityLabel(proximityToggle, mode, target?.person.name);
+          const scale = window.devicePixelRatio || 1;
+          const canvasWidth = Math.round(width * scale);
+          const canvasHeight = Math.round(height * scale);
+          if (proximityCanvas.width !== canvasWidth) proximityCanvas.width = canvasWidth;
+          if (proximityCanvas.height !== canvasHeight) proximityCanvas.height = canvasHeight;
+          proximityContext.setTransform(scale, 0, 0, scale, 0, 0);
+          proximityContext.clearRect(0, 0, width, height);
+          if (me && target) drawProximityLine(proximityContext, me.point, target.point);
           const labels = showNames.checked ? plotted.map(({ person, point }) => {
             const metrics = measure.measureText(person.name);
             const left = point.x > width - 90 ? point.x - 9 - metrics.width : point.x + 9;
@@ -3481,36 +3570,30 @@
       }
 
       function updateProximity() {
-        let label = "Proximity";
+        let emptyLabel = "Proximity";
         let result = null;
         const mode = el.proximityClosest.checked ? "closest" : el.proximityFurthest.checked ? "furthest" : null;
         if (mode && state && mePerson) {
           const axes = [state.xTrait, state.yTrait];
           const usesAge = axes.includes(AGE_AXIS);
           if (axes.some(axis => !axis)) {
-            label = "No traits";
+            emptyLabel = "No traits";
           } else if (usesAge && mePerson.age === undefined) {
-            label = "Me needs an age";
+            emptyLabel = "Me needs an age";
           } else {
             const range = usesAge ? ageRange() : null;
             const me = axisPosition(mePerson, range);
-            let bestDistance = mode === "closest" ? Infinity : -Infinity;
-            for (const [index, person] of state.people.entries()) {
-              if (!isPersonVisibleOnGraph(person) || (usesAge && person.age === undefined)) continue;
-              const position = axisPosition(person, range);
-              const distance = (position.x - me.x) ** 2 + (position.y - me.y) ** 2;
-              if (mode === "closest" ? distance < bestDistance : distance > bestDistance) {
-                result = { person, name: person.name.trim() || `Person ${index + 1}` };
-                bestDistance = distance;
-              }
+            const person = findProximity(state.people, me, mode, candidate =>
+              !isPersonVisibleOnGraph(candidate) || (usesAge && candidate.age === undefined)
+                ? null : axisPosition(candidate, range));
+            if (person) {
+              const index = state.people.indexOf(person);
+              result = { person, name: person.name.trim() || `Person ${index + 1}` };
             }
-            label = result ? `${mode === "closest" ? "Closest" : "Furthest"}: ${result.name}` : "No visible people";
+            emptyLabel = "No visible people";
           }
         }
-        const description = mode ? `Current ${mode}: ${result?.name ?? label}` : label;
-        if (el.proximityToggle.firstElementChild.textContent !== label) el.proximityToggle.firstElementChild.textContent = label;
-        if (el.proximityToggle.getAttribute("aria-label") !== description) el.proximityToggle.setAttribute("aria-label", description);
-        if (el.proximityToggle.title !== description) el.proximityToggle.title = description;
+        setProximityLabel(el.proximityToggle, mode, result?.name, emptyLabel);
         return result?.person ?? null;
       }
 
@@ -4799,42 +4882,9 @@
         if (restoreFocus) el.graphOptionsToggle.focus();
       }
 
-      function closeProximityMenu(restoreFocus = false) {
-        if (el.proximityMenu.hidden) return;
-        el.proximityMenu.hidden = true;
-        el.proximityToggle.setAttribute("aria-expanded", "false");
-        if (restoreFocus) el.proximityToggle.focus();
-      }
-
-      el.proximityToggle.addEventListener("click", () => {
-        if (!el.proximityMenu.hidden) {
-          closeProximityMenu();
-          return;
-        }
-        el.proximityMenu.hidden = false;
-        el.proximityToggle.setAttribute("aria-expanded", "true");
-        el.proximityMenu.style.left = "0px";
-        const overflow = el.proximityMenu.getBoundingClientRect().right - document.documentElement.clientWidth;
-        if (overflow > 0) el.proximityMenu.style.left = `${-overflow}px`;
-      });
-      el.proximityToggle.parentElement.addEventListener("keydown", event => {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          closeProximityMenu(true);
-        }
-      });
-      el.proximityToggle.parentElement.addEventListener("focusout", event => {
-        if (!el.proximityToggle.parentElement.contains(event.relatedTarget)) closeProximityMenu();
-      });
-      document.addEventListener("pointerdown", event => {
-        if (!el.proximityToggle.parentElement.contains(event.target)) closeProximityMenu();
-      });
-      for (const [checkbox, other] of [[el.proximityClosest, el.proximityFurthest], [el.proximityFurthest, el.proximityClosest]]) {
-        checkbox.addEventListener("change", () => {
-          if (checkbox.checked) other.checked = false;
-          drawChart();
-        });
-      }
+      const closeProximityMenu = setupProximityMenu(
+        el.proximityToggle, el.proximityMenu, el.proximityClosest, el.proximityFurthest, drawChart
+      );
 
       function openGraphOptions() {
         el.graphOptionsMenu.hidden = false;
