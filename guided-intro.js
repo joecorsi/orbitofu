@@ -4,6 +4,7 @@
 
   const KEY = "the-pear-first-graph-v2";
   const OLD_KEY = "the-pear-first-graph-v1";
+  const FLOW_ROUTE = "#/try";
   const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
   const ROLES = ["friend", "family", "choice", "me"];
   const COLORS = ["#e83c9b", "#35a84d", "#ed8615", "#145c92"];
@@ -132,7 +133,10 @@
   }
 
   // Only an explicitly saved questionnaire can be read by the authenticated editor.
-  window.thePearStarter = { pendingPeople, confirmImported };
+  window.thePearStarter = {
+    pendingPeople, confirmImported, showHomepage,
+    inFlow: () => window.location.hash === FLOW_ROUTE
+  };
 
   function showAuth(hasDraft) {
     ui.flow.hidden = true;
@@ -156,6 +160,18 @@
     ui.authDetails.hidden = true;
     ui.demo.classList.add("starter-active");
     render();
+  }
+
+  function showHomepage() {
+    if (window.location.hash === FLOW_ROUTE) {
+      window.history.pushState(null, "", window.location.pathname + window.location.search);
+    }
+    showAuth(draft.ready);
+  }
+
+  function syncRoute() {
+    if (window.location.hash === FLOW_ROUTE) showGuide();
+    else showAuth(draft.ready);
   }
 
   function createDot(index) {
@@ -454,24 +470,28 @@
     if (draft.phase !== "reveal" || draft.answers.length !== 4) return;
     draft.ready = true;
     if (!persist()) return;
-    showAuth(true);
+    showHomepage();
     ui.authEmail.focus();
   });
 
   ui.skip.addEventListener("click", () => {
     if (!ui.flow.hidden) {
-      showAuth(false);
+      showHomepage();
     }
     ui.authEmail.focus();
   });
 
-  ui.tryButton.addEventListener("click", () => {
+  ui.tryButton.addEventListener("click", event => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
     draft.ready = false;
     persist();
+    window.history.pushState(null, "", FLOW_ROUTE);
     showGuide();
     if (draft.phase === "questions" && draft.step < 3) ui.name.focus();
   });
 
   new ResizeObserver(updateDots).observe(ui.graph);
-  showAuth(draft.ready);
+  window.addEventListener("popstate", syncRoute);
+  syncRoute();
 })();

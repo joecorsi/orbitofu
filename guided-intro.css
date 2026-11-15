@@ -30,7 +30,8 @@
 #starter-answer-form .starter-actions { margin-top: auto; }
 .starter-sign-in { display: none; justify-self: end; }
 .page:has(#auth-screen:not([hidden])):has(#account-bar[hidden]) .starter-sign-in { display: block; }
-.starter-link { margin-top: 14px; border: 0; padding: 2px 0; background: none; color: #000080; text-decoration: underline; cursor: pointer; font: inherit; }
+.starter-link { display: inline-block; margin-top: 14px; border: 0; padding: 2px 0; background: none; color: #000080; text-decoration: underline; cursor: pointer; font: inherit; }
+.starter-link[hidden] { display: none; }
 .starter-privacy { display: none; margin: 0; text-align: center; font-size: .85em; }
 .page:has(#auth-screen:not([hidden])):has(#starter-privacy:not([hidden])) .masthead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr); }
 .page:has(#auth-screen:not([hidden])) .starter-privacy:not([hidden]) { display: block; grid-column: 2; }

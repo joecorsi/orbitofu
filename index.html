@@ -55,6 +55,7 @@
       .masthead { justify-content: space-between; }
       .page:has(#workspace:not([hidden])) .masthead { display: grid; width: min(100%, var(--workspace-width, 100%)); grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
       .masthead .brand { align-self: start; }
+      .brand a { color: inherit; text-decoration: none; }
       .account-bar:not([hidden]) { position: relative; justify-content: flex-end; min-width: 0; max-width: 100%; }
       .masthead .account-bar { justify-self: end; }
       .privacy-note { display: none; margin: 0; text-align: center; font-size: .85em; }
@@ -367,7 +368,7 @@
     <div class="space-planets" aria-hidden="true"></div>
     <main class="page">
       <header class="masthead">
-        <p class="brand"><span aria-hidden="true">🍐</span> The Pear</p>
+        <p class="brand"><a id="home-link" href="./"><span aria-hidden="true">🍐</span> The Pear</a></p>
         <p class="privacy-note">Your graphs are private to your account</p>
         <p class="starter-privacy" id="starter-privacy" hidden>Your draft is private to this browser until you choose to save it.</p>
         <button class="starter-sign-in" id="starter-skip" type="button">Sign in</button>
@@ -436,7 +437,7 @@
                 </div>
               </form>
               <div class="starter-auth-note" id="starter-auth-note" role="status" hidden><strong>Your graph is ready to save.</strong>Sign in to save a new graph with these three people and your self-ratings.</div>
-              <button class="starter-link" id="starter-try" type="button">Try it with people you know first</button>
+              <a class="starter-link" id="starter-try" href="#/try">Try it with people you know first</a>
               <details class="setup-details" id="connection-details" hidden>
                 <summary id="connection-summary">Set up Supabase connection</summary>
                 <form class="auth-form" id="connection-form">
@@ -820,6 +821,8 @@
 
       const el = {
         authScreen: document.getElementById("auth-screen"),
+        homeLink: document.getElementById("home-link"),
+        starterSignIn: document.getElementById("starter-skip"),
         loadingOverlay: document.getElementById("loading-overlay"),
         loadingProgress: document.querySelector(".loading-progress"),
         backgroundToggle: document.getElementById("background-toggle"),
@@ -953,6 +956,7 @@
 
       let client = null;
       let currentUser = null;
+      let showingHomepage = window.thePearStarter.inFlow();
       let tutorialIndex = 0;
       let tutorialSaving = false;
       let tutorialSaveFailed = false;
@@ -1709,9 +1713,17 @@
         await applySession(data.session);
       }
 
-      async function applySession(session) {
+      async function applySession(session, returnFromHomepage = false) {
         const nextUser = session?.user ?? null;
-        if (currentUser?.id === nextUser?.id && nextUser && !el.workspace.hidden) return;
+        if (!currentUser && nextUser && showingHomepage && window.thePearStarter.inFlow() && !returnFromHomepage) {
+          currentUser = nextUser;
+          return;
+        }
+        if (currentUser?.id === nextUser?.id && nextUser &&
+            (!el.workspace.hidden || (showingHomepage && !returnFromHomepage))) {
+          currentUser = nextUser;
+          return;
+        }
         const unsavedMe = Boolean(currentUser && currentUser.id !== nextUser?.id && meSaveVersion !== meSavedVersion);
         closeAccountMenu();
         closePeopleFilter();
@@ -1820,6 +1832,61 @@
           }
         }
       }
+
+      async function openHomepage(preserveRoute = false) {
+        if (!el.workspace.hidden) await flushPendingSave();
+        showingHomepage = true;
+        closeAccountMenu();
+        closePeopleFilter();
+        closeGraphOptions();
+        closeProximityMenu();
+        el.workspace.hidden = true;
+        el.accountBar.hidden = true;
+        el.authScreen.hidden = false;
+        if (!preserveRoute) window.thePearStarter.showHomepage();
+      }
+
+      async function returnToAccount() {
+        if (!client) return;
+        const { data, error } = await client.auth.getSession();
+        if (error) throw error;
+        const session = data.session;
+        if (!session?.user) {
+          if (currentUser) await applySession(null);
+          return;
+        }
+        if (showingHomepage && currentUser?.id === session.user.id && state &&
+            !window.thePearStarter.pendingPeople()) {
+          currentUser = session.user;
+          el.authScreen.hidden = true;
+          el.accountBar.hidden = false;
+          el.workspace.hidden = false;
+          showingHomepage = false;
+          drawChart();
+          return;
+        }
+        try {
+          await applySession(session, true);
+        } finally {
+          showingHomepage = false;
+        }
+      }
+
+      el.homeLink.addEventListener("click", event => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        void openHomepage().catch(error => reportError(error));
+      });
+      window.addEventListener("popstate", () => {
+        if (el.workspace.hidden) return;
+        void openHomepage(true).catch(error => reportError(error));
+      });
+      el.starterSignIn.addEventListener("click", () => {
+        el.starterSignIn.disabled = true;
+        void returnToAccount()
+          .catch(error => showNotice(el.authNotice, `Couldn't check your sign-in: ${error.message}`))
+          .finally(() => { el.starterSignIn.disabled = false; });
+      });
 
       async function loadMe(load) {
         const user = currentUser;

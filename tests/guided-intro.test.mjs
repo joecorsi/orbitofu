@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 const source = readFileSync(new URL("../guided-intro.js", import.meta.url), "utf8");
 const DRAFT_KEY = "the-pear-first-graph-v2";
 
-function mount(initialStorage = {}) {
+function mount(initialStorage = {}, initialHash = "") {
   const store = new Map(Object.entries(initialStorage));
   const storage = {
     getItem: key => store.get(key) ?? null,
@@ -73,12 +73,22 @@ function mount(initialStorage = {}) {
   const el = id => doc.getElementById(id);
   el("starter-progress").children = Array.from({ length: 4 }, () => new Element("span"));
   el("auth-intro").textContent = "See your world from a new angle. Your graphs are private and available anywhere.";
-  const win = {};
+  const win = {
+    location: { pathname: "/", search: "", hash: initialHash },
+    listeners: {},
+    addEventListener(type, fn) { this.listeners[type] = fn; }
+  };
+  win.history = { pushState(_state, _title, url) {
+    const parsed = new URL(url, "https://example.invalid" + win.location.pathname + win.location.search);
+    win.location.pathname = parsed.pathname;
+    win.location.search = parsed.search;
+    win.location.hash = parsed.hash;
+  } };
   const ResizeObserverStub = class { observe() {} };
   new Function("document", "window", "localStorage", "ResizeObserver", source)(
     doc, win, storage, ResizeObserverStub
   );
-  return { el, store, api: win.thePearStarter };
+  return { el, store, api: win.thePearStarter, win };
 }
 
 function answer(ui, name, x, y, kind = null) {
@@ -111,6 +121,7 @@ test("the homepage appears first and the graph stays empty until everyone is rat
   assert.equal(ui.el("starter-graph").hidden, true);
   assert.equal(ui.el("demo-column").classList.contains("starter-active"), false);
   ui.el("starter-try").dispatch("click");
+  assert.equal(ui.win.location.hash, "#/try");
   assert.equal(ui.el("starter-flow").hidden, false);
   assert.equal(ui.el("demo-column").hidden, false);
   assert.equal(ui.el("starter-graph").hidden, false);
@@ -148,6 +159,7 @@ test("save hands off four ratings and the correct relationships without signing 
   assert.equal(ui.api.pendingPeople(), null);
   assert.equal(ui.el("auth-details").hidden, true);
   ui.el("starter-save").dispatch("click");
+  assert.equal(ui.win.location.hash, "");
   assert.equal(ui.el("auth-details").hidden, false);
   assert.equal(ui.el("starter-auth-note").hidden, false);
   assert.equal(ui.el("starter-try").hidden, true);
@@ -249,6 +261,30 @@ test("an unfinished draft resumes from the homepage without being imported", () 
   assert.equal(again.el("starter-privacy").hidden, true);
   assert.equal(again.el("starter-try").hidden, false);
   assert.equal(again.api.pendingPeople(), null);
+});
+
+test("the walkthrough route supports direct visits and browser navigation", () => {
+  const ui = mount({}, "#/try");
+  assert.equal(ui.el("starter-flow").hidden, false);
+  answer(ui, "Alex", 85, 10);
+  ui.win.location.hash = "";
+  ui.win.listeners.popstate();
+  assert.equal(ui.el("starter-flow").hidden, true);
+  assert.equal(ui.el("starter-try").hidden, false);
+  ui.win.location.hash = "#/try";
+  ui.win.listeners.popstate();
+  assert.equal(ui.el("starter-flow").hidden, false);
+  assert.match(ui.el("starter-title").textContent, /family/i);
+  ui.api.showHomepage();
+  assert.equal(ui.win.location.hash, "");
+  assert.equal(ui.el("starter-flow").hidden, true);
+});
+
+test("other URL fragments remain available to authentication", () => {
+  const ui = mount({}, "#access_token=example");
+  assert.equal(ui.el("starter-flow").hidden, true);
+  ui.api.showHomepage();
+  assert.equal(ui.win.location.hash, "#access_token=example");
 });
 
 test("the personalized graph zooms, pans, resets, and keeps ratings unchanged", () => {

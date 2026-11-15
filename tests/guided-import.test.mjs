@@ -76,3 +76,64 @@ test("failed Me save rejects rather than pretending import finished", async () =
   );
   await assert.rejects(action, /Access denied/);
 });
+
+const navigationStart = html.indexOf("      async function openHomepage(");
+const navigationEnd = html.indexOf("      el.homeLink.addEventListener", navigationStart);
+assert.ok(navigationStart >= 0 && navigationEnd > navigationStart, "homepage navigation helpers are present");
+const navigation = html.slice(navigationStart, navigationEnd);
+
+function navigationHarness({ session = { user: { id: "user-1" } }, saveError = null, pending = null } = {}) {
+  const calls = [];
+  const el = { workspace: { hidden: false }, accountBar: { hidden: false }, authScreen: { hidden: true } };
+  const client = { auth: { getSession: async () => ({ data: { session }, error: null }) } };
+  const window = { thePearStarter: {
+    showHomepage: () => calls.push("homepage"),
+    pendingPeople: () => pending
+  } };
+  const flushPendingSave = async () => {
+    calls.push("flush");
+    if (saveError) throw saveError;
+  };
+  const closeMenu = () => {};
+  const applySession = async (...args) => { calls.push(["session", ...args]); };
+  const drawChart = () => calls.push("draw");
+  const api = new Function("el", "client", "window", "flushPendingSave", "closeAccountMenu",
+    "closePeopleFilter", "closeGraphOptions", "closeProximityMenu", "applySession", "drawChart",
+    `let showingHomepage = false, currentUser = { id: "user-1" }, state = {};
+     ${navigation}
+     return { openHomepage, returnToAccount };`)(
+    el, client, window, flushPendingSave, closeMenu, closeMenu, closeMenu, closeMenu, applySession, drawChart
+  );
+  return { ...api, el, calls };
+}
+
+test("the logo opens the homepage and sign-in restores an active account", async () => {
+  const ui = navigationHarness();
+  await ui.openHomepage();
+  assert.deepEqual(ui.calls, ["flush", "homepage"]);
+  assert.equal(ui.el.workspace.hidden, true);
+  assert.equal(ui.el.authScreen.hidden, false);
+  await ui.returnToAccount();
+  assert.equal(ui.el.workspace.hidden, false);
+  assert.equal(ui.el.accountBar.hidden, false);
+  assert.equal(ui.calls.at(-1), "draw");
+});
+
+test("homepage navigation stops if pending changes cannot be saved", async () => {
+  const ui = navigationHarness({ saveError: new Error("Save failed") });
+  await assert.rejects(ui.openHomepage(), /Save failed/);
+  assert.equal(ui.el.workspace.hidden, false);
+  assert.equal(ui.el.authScreen.hidden, true);
+});
+
+test("sign-in falls back to options without a session and imports an explicitly saved draft", async () => {
+  const expired = navigationHarness({ session: null });
+  await expired.openHomepage();
+  await expired.returnToAccount();
+  assert.deepEqual(expired.calls.at(-1), ["session", null]);
+  const session = { user: { id: "user-1" } };
+  const ready = navigationHarness({ session, pending: guests });
+  await ready.openHomepage();
+  await ready.returnToAccount();
+  assert.deepEqual(ready.calls.at(-1), ["session", session, true]);
+});
