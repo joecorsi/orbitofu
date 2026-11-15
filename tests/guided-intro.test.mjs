@@ -6,12 +6,15 @@ const source = readFileSync(new URL("../guided-intro.js", import.meta.url), "utf
 const proximitySource = readFileSync(new URL("../proximity.js", import.meta.url), "utf8");
 const DRAFT_KEY = "the-pear-first-graph-v2";
 
-function mount(initialStorage = {}, initialHash = "") {
+function mount(initialStorage = {}, initialHash = "", navigationType = "navigate", failRemoval = false) {
   const store = new Map(Object.entries(initialStorage));
   const storage = {
     getItem: key => store.get(key) ?? null,
     setItem: (key, value) => store.set(key, String(value)),
-    removeItem: key => store.delete(key)
+    removeItem: key => {
+      if (failRemoval) throw new Error("storage blocked");
+      store.delete(key);
+    }
   };
   class Element {
     constructor(tag, id = "") {
@@ -88,6 +91,7 @@ function mount(initialStorage = {}, initialHash = "") {
   el("auth-intro").textContent = "See your world from a new angle. Your graphs are private and available anywhere.";
   const win = {
     location: { pathname: "/", search: "", hash: initialHash },
+    performance: { getEntriesByType: () => [{ type: navigationType }] },
     listeners: {},
     addEventListener(type, fn) { this.listeners[type] = fn; }
   };
@@ -97,10 +101,11 @@ function mount(initialStorage = {}, initialHash = "") {
     win.location.search = parsed.search;
     win.location.hash = parsed.hash;
   } };
+  win.history.replaceState = win.history.pushState;
   const ResizeObserverStub = class { observe() {} };
   new Function("window", "document", proximitySource)(win, doc);
-  new Function("document", "window", "localStorage", "ResizeObserver", source)(
-    doc, win, storage, ResizeObserverStub
+  new Function("document", "window", "localStorage", "ResizeObserver", "console", source)(
+    doc, win, storage, ResizeObserverStub, { error() {} }
   );
   return { el, store, api: win.thePearStarter, win };
 }
@@ -233,25 +238,74 @@ test("dragging after editing answers changes the current saved dot", () => {
   assert.ok(ui.api.pendingPeople()[3].y > 60);
 });
 
-test("ready draft survives refresh and clears only after confirmed account import", () => {
+test("ready draft survives a sign-in navigation and clears after confirmed account import", () => {
   const ui = startGuide();
   complete(ui);
   ui.el("starter-save").dispatch("click");
-  const afterReload = mount(Object.fromEntries(ui.store));
-  assert.equal(afterReload.el("auth-details").hidden, false);
-  assert.equal(afterReload.el("starter-graph").hidden, false);
-  assert.equal(afterReload.el("demo-column").classList.contains("starter-active"), true);
-  assert.equal(afterReload.el("starter-try").hidden, true);
-  assert.equal(afterReload.el("starter-privacy").hidden, true);
-  assert.equal(afterReload.el("starter-graph").children.length, 4);
-  afterReload.el("starter-graph").children[0].dispatch("keydown", { key: "ArrowRight" });
-  assert.equal(afterReload.api.pendingPeople()[0].x, 87);
-  assert.equal(afterReload.api.pendingPeople().length, 4);
-  afterReload.api.confirmImported();
-  const nextVisit = mount(Object.fromEntries(afterReload.store));
+  const afterNavigation = mount(Object.fromEntries(ui.store));
+  assert.equal(afterNavigation.el("auth-details").hidden, false);
+  assert.equal(afterNavigation.el("starter-graph").hidden, false);
+  assert.equal(afterNavigation.el("demo-column").classList.contains("starter-active"), true);
+  assert.equal(afterNavigation.el("starter-try").hidden, true);
+  assert.equal(afterNavigation.el("starter-privacy").hidden, true);
+  assert.equal(afterNavigation.el("starter-graph").children.length, 4);
+  afterNavigation.el("starter-graph").children[0].dispatch("keydown", { key: "ArrowRight" });
+  assert.equal(afterNavigation.api.pendingPeople()[0].x, 87);
+  assert.equal(afterNavigation.api.pendingPeople().length, 4);
+  afterNavigation.api.confirmImported();
+  const nextVisit = mount(Object.fromEntries(afterNavigation.store));
   assert.equal(nextVisit.api.pendingPeople(), null);
   assert.equal(nextVisit.el("auth-details").hidden, false);
   assert.equal(nextVisit.el("starter-try").hidden, false);
+});
+
+test("reload clears saved flow data and returns to the homepage demo", () => {
+  const ui = startGuide();
+  complete(ui);
+  ui.el("starter-save").dispatch("click");
+  for (const hash of ["", "#/try"]) {
+    const reloaded = mount(Object.fromEntries(ui.store), hash, "reload");
+    assert.equal(reloaded.store.has(DRAFT_KEY), false);
+    assert.equal(reloaded.api.pendingPeople(), null);
+    assert.equal(reloaded.api.returnedHomeAfterReload, true);
+    assert.equal(reloaded.win.location.hash, "");
+    assert.equal(reloaded.el("starter-flow").hidden, true);
+    assert.equal(reloaded.el("starter-graph").hidden, true);
+    assert.equal(reloaded.el("demo-column").classList.contains("starter-active"), false);
+    assert.equal(reloaded.el("starter-try").hidden, false);
+  }
+});
+
+test("reloading an unfinished walkthrough clears its route and starts over", () => {
+  const reloaded = mount({}, "#/try", "reload");
+  assert.equal(reloaded.api.returnedHomeAfterReload, true);
+  assert.equal(reloaded.win.location.hash, "");
+  assert.equal(reloaded.el("starter-flow").hidden, true);
+  assert.equal(reloaded.el("demo-column").classList.contains("starter-active"), false);
+  reloaded.el("starter-try").dispatch("click");
+  assert.match(reloaded.el("starter-title").textContent, /friend/i);
+});
+
+test("reload preserves authentication fragments and does not redirect an unrelated visit", () => {
+  const ui = startGuide();
+  complete(ui);
+  ui.el("starter-save").dispatch("click");
+  const authReload = mount(Object.fromEntries(ui.store), "#access_token=example", "reload");
+  assert.equal(authReload.win.location.hash, "#access_token=example");
+  assert.equal(authReload.api.pendingPeople(), null);
+  const unrelatedReload = mount({}, "", "reload");
+  assert.equal(unrelatedReload.api.returnedHomeAfterReload, false);
+});
+
+test("reload does not import an old draft when storage cannot be cleared", () => {
+  const ui = startGuide();
+  complete(ui);
+  ui.el("starter-save").dispatch("click");
+  const reloaded = mount(Object.fromEntries(ui.store), "", "reload", true);
+  assert.equal(reloaded.api.pendingPeople(), null);
+  assert.equal(reloaded.api.returnedHomeAfterReload, true);
+  assert.equal(reloaded.el("demo-column").classList.contains("starter-active"), false);
+  assert.match(reloaded.el("auth-notice").textContent, /couldn't clear/i);
 });
 
 test("unfinished answers resume during the visit but are discarded on reload", () => {

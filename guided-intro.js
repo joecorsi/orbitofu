@@ -109,7 +109,27 @@
     }
   }
 
-  let draft = loadDraft() || emptyDraft();
+  const isReload = window.performance.getEntriesByType("navigation")[0]?.type === "reload";
+  let returnedHomeAfterReload = isReload && window.location.hash === FLOW_ROUTE;
+  if (isReload) {
+    try {
+      returnedHomeAfterReload ||= localStorage.getItem(KEY) !== null || localStorage.getItem(OLD_KEY) !== null;
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(OLD_KEY);
+    } catch (storageError) {
+      returnedHomeAfterReload = true;
+      console.error("Could not clear the guided graph draft on reload:", storageError);
+      const notice = $("auth-notice");
+      notice.textContent = "This browser couldn't clear the saved draft. Check your browser storage settings.";
+      notice.classList.add("visible");
+    }
+    if (window.location.hash === FLOW_ROUTE) {
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    }
+  }
+
+  let ignoreStoredDraft = isReload;
+  let draft = isReload ? emptyDraft() : loadDraft() || emptyDraft();
   let hasStoredDraft = draft.ready;
   let selectedIndex = -1;
   let drag = null;
@@ -127,6 +147,7 @@
       if (draft.ready) {
         localStorage.setItem(KEY, JSON.stringify(draft));
         hasStoredDraft = true;
+        ignoreStoredDraft = false;
       } else if (hasStoredDraft) {
         localStorage.removeItem(KEY);
         hasStoredDraft = false;
@@ -140,6 +161,7 @@
   }
 
   function pendingPeople() {
+    if (ignoreStoredDraft) return null;
     const saved = loadDraft();
     return saved?.ready && saved.answers.length === 4
       ? saved.answers.map(person => ({ ...person })) : null;
@@ -154,7 +176,7 @@
 
   // Only an explicitly saved questionnaire can be read by the authenticated editor.
   window.thePearStarter = {
-    pendingPeople, confirmImported, showHomepage,
+    pendingPeople, confirmImported, showHomepage, returnedHomeAfterReload,
     inFlow: () => window.location.hash === FLOW_ROUTE
   };
 

@@ -999,7 +999,7 @@
 
       let client = null;
       let currentUser = null;
-      let showingHomepage = window.thePearStarter.inFlow();
+      let showingHomepage = window.thePearStarter.inFlow() || window.thePearStarter.returnedHomeAfterReload;
       let tutorialIndex = 0;
       let tutorialSaving = false;
       let tutorialSaveFailed = false;
@@ -1822,7 +1822,8 @@
           el.accountEmail.textContent = nextUser.email || "Account";
           el.accountBar.hidden = false;
         }
-        if (!currentUser && nextUser && showingHomepage && window.thePearStarter.inFlow() && !returnFromHomepage) {
+        if (!currentUser && nextUser && showingHomepage &&
+            (window.thePearStarter.inFlow() || window.thePearStarter.returnedHomeAfterReload) && !returnFromHomepage) {
           currentUser = nextUser;
           return;
         }
