@@ -84,6 +84,7 @@
       if (!menu.hidden) return close();
       menu.hidden = false;
       toggle.setAttribute("aria-expanded", "true");
+      draw();
       menu.style.left = "0px";
       const overflow = menu.getBoundingClientRect().right - document.documentElement.clientWidth;
       if (overflow > 0) menu.style.left = `${-overflow}px`;

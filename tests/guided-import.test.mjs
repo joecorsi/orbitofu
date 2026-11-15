@@ -171,7 +171,7 @@ test("hovered and selected dots match the proximity pulse peak", () => {
   ]);
 });
 
-test("saved graph symmetry uses the selected axes and excludes hidden people", () => {
+test("saved graph menu lists current targets even when modes are disabled", () => {
   const start = html.indexOf("      function axisScore(person, axis, range) {");
   const end = html.indexOf("      function chartPoint(person, bounds, range) {", start);
   assert.ok(start >= 0 && end > start);
@@ -184,16 +184,21 @@ test("saved graph symmetry uses the selected axes and excludes hidden people", (
     { name: "horizontal", values: { x: 80, y: 75 } },
     { name: "hidden", hidden: true, values: { x: 20, y: 25 } }
   ];
-  const checks = Object.fromEntries(["closest", "furthest", "verticalSymmetry", "horizontalSymmetry"]
-    .map(mode => [mode, { checked: false }]));
+  const names = Object.fromEntries(["closest", "furthest", "verticalSymmetry", "horizontalSymmetry"]
+    .map(mode => [mode, { textContent: "", title: "" }]));
+  const checks = Object.fromEntries(Object.keys(names)
+    .map(mode => [mode, { checked: false, parentElement: { querySelector: () => names[mode] } }]));
   const toggle = { firstElementChild: {}, getAttribute() {}, setAttribute() {} };
+  const menu = { hidden: false };
   const update = new Function("state", "mePerson", "proximityChecks", "el", "chartAxisTransition",
     "isPersonVisibleOnGraph", "findProximity", "setProximityLabel", "AGE_AXIS", "ageRange",
     html.slice(start, end) + "\nreturn updateProximity;")(
-    { xTrait: "x", yTrait: "y", people }, me, checks, { proximityToggle: toggle },
+    { xTrait: "x", yTrait: "y", people }, me, checks, { proximityToggle: toggle, proximityMenu: menu },
     { point: (_id, point) => point }, person => !person.hidden,
     window.thePearProximity.findProximity, window.thePearProximity.setProximityLabel, "__age__", () => null
   );
+  assert.deepEqual(update(), []);
+  assert.deepEqual(Object.values(names).map(name => name.textContent), ["same", "vertical", "vertical", "horizontal"]);
   checks.verticalSymmetry.checked = true;
   assert.equal(update()[0].person.name, "vertical");
   assert.equal(toggle.firstElementChild.textContent, "Vertical symmetry: vertical");
@@ -204,6 +209,11 @@ test("saved graph symmetry uses the selected axes and excludes hidden people", (
   me.values.x = 50;
   assert.deepEqual(update(), []);
   assert.equal(toggle.firstElementChild.textContent, "No opposite-side match");
+  assert.equal(names.verticalSymmetry.textContent, "");
+  assert.equal(names.horizontalSymmetry.textContent, "horizontal");
+  me.values.y = 50;
+  update();
+  assert.equal(names.horizontalSymmetry.textContent, "");
 });
 
 const navigationStart = html.indexOf("      async function openHomepage(");

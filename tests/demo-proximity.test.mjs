@@ -169,6 +169,7 @@ test("proximity modes sweep and pulse independently, including cancellation and 
     cancelAnimationFrame(id) { frames.delete(id); }
   };
   const document = { addEventListener() {} };
+  document.documentElement = { clientWidth: 1000 };
   new Function("window", "document", source)(fakeWindow, document);
   const element = () => ({
     listeners: {}, checked: false,
@@ -182,8 +183,9 @@ test("proximity modes sweep and pulse independently, including cancellation and 
   const symmetry = element();
   const targets = { closest: "near", furthest: "far" };
   const draws = [];
+  const menu = { hidden: true, style: {}, getBoundingClientRect: () => ({ right: 100 }) };
   const control = fakeWindow.thePearProximity.setupProximityMenu(
-    toggle, { hidden: true }, closest, furthest, () => {
+    toggle, menu, closest, furthest, () => {
       draws.push({
         closest: control.progress("closest"), furthest: control.progress("furthest"),
         near: control.pulseFor("closest", targets.closest), far: control.pulseFor("furthest", targets.furthest)
@@ -196,6 +198,11 @@ test("proximity modes sweep and pulse independently, including cancellation and 
     frames.clear();
     callbacks.forEach(callback => callback(time));
   };
+  toggle.listeners.click();
+  assert.equal(menu.hidden, false);
+  assert.equal(draws.length, 1);
+  toggle.listeners.click();
+  assert.equal(menu.hidden, true);
   const duration = 700 / 1.15;
   closest.checked = true;
   closest.listeners.change();
