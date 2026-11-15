@@ -821,9 +821,9 @@
     </aside>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./proximity.js?v=furthest-sweep"></script>
+    <script src="./proximity.js?v=proximity-sweeps"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
-    <script src="./guided-intro.js?v=furthest-sweep"></script>
+    <script src="./guided-intro.js?v=proximity-sweeps"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas } = window.thePearProximity;
       const CONFIG_KEY = "people-map-supabase-config";
@@ -3513,12 +3513,17 @@
           draw();
         });
         let resizeFrame = null;
+        let initialSweepPlayed = false;
         const resize = () => {
           if (resizeFrame !== null) return;
           resizeFrame = requestAnimationFrame(() => {
             resizeFrame = null;
             axisTransition.stop();
-            draw();
+            if (!initialSweepPlayed && frame.clientWidth && frame.clientHeight) {
+              initialSweepPlayed = true;
+              if (proximityClosest.checked) proximityControl.start();
+              else draw();
+            } else draw();
           });
         };
         const observer = new ResizeObserver(resize);

@@ -27,21 +27,33 @@
 
   function setupProximityMenu(toggle, menu, closest, furthest, draw) {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const duration = 700;
+    const duration = 700 / 1.15;
     let frame = null;
     let start = 0;
     let progress = 1;
+    let active = null;
     const stopSweep = () => {
       if (frame !== null) window.cancelAnimationFrame(frame);
       frame = null;
       progress = 1;
+      active = null;
     };
     const tick = time => {
       frame = null;
-      if (!furthest.checked) return stopSweep();
+      if (!active.checked) return stopSweep();
       progress = Math.min(1, Math.max(0, (time - start) / duration));
       draw();
       if (progress < 1) frame = window.requestAnimationFrame(tick);
+    };
+    const startSweep = () => {
+      stopSweep();
+      active = closest.checked ? closest : furthest.checked ? furthest : null;
+      if (active && !reducedMotion.matches) {
+        progress = 0;
+        start = window.performance.now();
+        frame = window.requestAnimationFrame(tick);
+      }
+      draw();
     };
     reducedMotion.addEventListener("change", () => {
       if (reducedMotion.matches && frame !== null) {
@@ -78,16 +90,10 @@
     for (const [checkbox, other] of [[closest, furthest], [furthest, closest]]) {
       checkbox.addEventListener("change", () => {
         if (checkbox.checked) other.checked = false;
-        stopSweep();
-        if (checkbox === furthest && checkbox.checked && !reducedMotion.matches) {
-          progress = 0;
-          start = window.performance.now();
-          frame = window.requestAnimationFrame(tick);
-        }
-        draw();
+        startSweep();
       });
     }
-    return { close, progress: () => progress };
+    return { close, start: startSweep, progress: () => progress };
   }
 
   function drawProximityLine(context, from, to, mode, progress = 1) {
@@ -103,6 +109,15 @@
       const offsetX = -Math.sin(angle) * radius;
       const offsetY = Math.cos(angle) * radius;
       context.lineWidth = 2;
+      if (progress < 1) {
+        if (progress <= 0) {
+          context.restore();
+          return;
+        }
+        const perimeter = 2 * length + 2 * Math.PI * radius;
+        context.setLineDash([perimeter * progress, perimeter]);
+        context.lineDashOffset = 0;
+      }
       context.moveTo(from.x + offsetX, from.y + offsetY);
       context.lineTo(to.x + offsetX, to.y + offsetY);
       context.arc(to.x, to.y, radius, angle + Math.PI / 2, angle - Math.PI / 2, true);

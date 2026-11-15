@@ -39,7 +39,7 @@ test("proximity label reflects the active mode and empty results", () => {
 function drawingContext() {
   const calls = [];
   const context = { calls };
-  for (const method of ["save", "restore", "beginPath", "moveTo", "lineTo", "arc", "closePath", "setTransform", "clearRect"]) {
+  for (const method of ["save", "restore", "beginPath", "moveTo", "lineTo", "arc", "closePath", "setTransform", "setLineDash", "clearRect"]) {
     context[method] = (...args) => calls.push([method, ...args]);
   }
   context.stroke = () => calls.push(["stroke", context.lineWidth, context.strokeStyle]);
@@ -70,6 +70,20 @@ test("closest slot rotates with the dots and handles coincident points", () => {
   assert.deepEqual(coincident.calls.filter(call => call[0] === "arc").map(call => call.slice(1, 4)), [[8, 9, 10], [8, 9, 10]]);
 });
 
+test("closest sweep traces one continuous outline from Me and leaves the completed slot solid", () => {
+  const start = drawingContext();
+  drawProximityLine(start, { x: 10, y: 20 }, { x: 40, y: 20 }, "closest", 0);
+  assert.equal(start.calls.some(call => call[0] === "stroke"), false);
+  const halfway = drawingContext();
+  drawProximityLine(halfway, { x: 10, y: 20 }, { x: 40, y: 20 }, "closest", 0.5);
+  const perimeter = 60 + 20 * Math.PI;
+  assert.deepEqual(halfway.calls.find(call => call[0] === "setLineDash"), ["setLineDash", [perimeter / 2, perimeter]]);
+  assert.deepEqual(halfway.calls.find(call => call[0] === "moveTo"), ["moveTo", 10, 30]);
+  const complete = drawingContext();
+  drawProximityLine(complete, { x: 10, y: 20 }, { x: 40, y: 20 }, "closest", 1);
+  assert.equal(complete.calls.some(call => call[0] === "setLineDash"), false);
+});
+
 test("furthest retains its wavy line and canvas forwards the proximity mode", () => {
   const context = drawingContext();
   drawProximityCanvas({}, context, 100, 100, { x: 0, y: 0 }, { x: 20, y: 0 }, "furthest");
@@ -91,7 +105,7 @@ test("furthest sweep ends on the original wave at the requested progress", () =>
   assert.ok(points.every(call => call[1] <= 27.5 + 1e-10));
 });
 
-test("furthest sweeps on enable, cancels on mode change, and respects reduced motion", () => {
+test("both modes sweep 15% faster on enable and respect reduced motion", () => {
   let now = 100;
   let nextId = 0;
   const frames = new Map();
@@ -125,9 +139,10 @@ test("furthest sweeps on enable, cancels on mode change, and respects reduced mo
   furthest.checked = true;
   furthest.listeners.change();
   assert.equal(draws.at(-1), 0);
-  advance(450);
-  assert.equal(draws.at(-1), 0.5);
-  advance(800);
+  const duration = 700 / 1.15;
+  advance(100 + duration / 2);
+  assert.ok(Math.abs(draws.at(-1) - 0.5) < 1e-10);
+  advance(100 + duration);
   assert.equal(draws.at(-1), 1);
   assert.equal(frames.size, 0);
   furthest.checked = false;
@@ -138,10 +153,13 @@ test("furthest sweeps on enable, cancels on mode change, and respects reduced mo
   closest.checked = true;
   closest.listeners.change();
   assert.equal(furthest.checked, false);
-  assert.equal(draws.at(-1), 1);
-  assert.equal(frames.size, 0);
+  assert.equal(draws.at(-1), 0);
+  assert.equal(frames.size, 1);
+  advance(now + duration / 2);
+  assert.ok(Math.abs(draws.at(-1) - 0.5) < 1e-10);
   furthest.checked = true;
   furthest.listeners.change();
+  assert.equal(closest.checked, false);
   motion.matches = true;
   motion.change();
   assert.equal(draws.at(-1), 1);

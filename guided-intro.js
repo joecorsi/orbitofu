@@ -497,8 +497,10 @@
     draft.ready = false;
     persist();
     render();
-    if (draft.phase === "reveal") ui.save.focus();
-    else ui.name.focus();
+    if (draft.phase === "reveal") {
+      proximityControl.start();
+      ui.save.focus();
+    } else ui.name.focus();
   });
 
   ui.back.addEventListener("click", () => {

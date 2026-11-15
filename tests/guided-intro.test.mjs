@@ -65,7 +65,7 @@ function mount(initialStorage = {}, initialHash = "", navigationType = "navigate
     contains(target) { return target === this || this.children.includes(target); }
     getContext() {
       return { setTransform() {}, clearRect() {}, save() {}, beginPath() {}, moveTo() {},
-        lineTo() {}, arc() {}, closePath() {}, stroke() {}, restore() {} };
+        lineTo() {}, arc() {}, closePath() {}, setLineDash() {}, stroke() {}, restore() {} };
     }
     focus() {}
     setPointerCapture() {}
