@@ -346,17 +346,21 @@
         " out of 100. Drag or use arrow keys to reposition.");
     }
     ui.graph.classList.toggle("has-selection", selectedIndex >= 0);
-    const mode = ui.proximityClosest.checked ? "closest" : ui.proximityFurthest.checked ? "furthest" : null;
+    const modes = [["closest", ui.proximityClosest], ["furthest", ui.proximityFurthest]]
+      .filter(([, checkbox]) => checkbox.checked).map(([mode]) => mode);
     const me = reveal ? draft.answers.find(person => person.relationship === "me") : null;
-    const target = findProximity(draft.answers, me, mode, person => person === me ? null : person);
-    setProximityLabel(ui.proximityToggle, mode, target?.name);
-    drawProximityCanvas(ui.proximityCanvas, proximityContext, size, size,
-      me && displayedPoint(me), target && displayedPoint(target), mode, proximityControl.progress());
-    const targetIndex = target && me ? draft.answers.indexOf(target) : null;
-    const pulse = proximityControl.pulseFor(targetIndex);
+    const targets = modes.map(mode => ({ mode,
+      person: findProximity(draft.answers, me, mode, person => person === me ? null : person) }));
+    setProximityLabel(ui.proximityToggle, modes.length > 1 ? "both" : modes[0], targets[0]?.person?.name);
+    drawProximityCanvas(ui.proximityCanvas, proximityContext, size, size, me && displayedPoint(me),
+      targets.map(({ mode, person }) => ({ mode, to: person && displayedPoint(person), progress: proximityControl.progress(mode) })));
+    const pulses = targets.map(({ mode, person }) => {
+      const index = person && me ? draft.answers.indexOf(person) : null;
+      return { index, scale: proximityControl.pulseFor(mode, index) };
+    });
     for (const [index, button] of nodes) {
       button.querySelector(".demo-person-dot").style.setProperty("--proximity-scale",
-        index !== selectedIndex && index === targetIndex ? pulse : 1);
+        index !== selectedIndex ? Math.max(1, ...pulses.filter(pulse => pulse.index === index).map(pulse => pulse.scale)) : 1);
     }
   }
 

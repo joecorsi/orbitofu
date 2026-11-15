@@ -18,8 +18,8 @@
   }
 
   function setProximityLabel(toggle, mode, name, emptyLabel = "No visible people") {
-    const label = mode ? (name ? `${mode === "closest" ? "Closest" : "Furthest"}: ${name}` : emptyLabel) : "Proximity";
-    const description = mode ? `Current ${mode}: ${name ?? label}` : label;
+    const label = mode && mode !== "both" ? (name ? `${mode === "closest" ? "Closest" : "Furthest"}: ${name}` : emptyLabel) : "Proximity";
+    const description = mode && mode !== "both" ? `Current ${mode}: ${name ?? label}` : label;
     if (toggle.firstElementChild.textContent !== label) toggle.firstElementChild.textContent = label;
     if (toggle.getAttribute("aria-label") !== description) toggle.setAttribute("aria-label", description);
     if (toggle.title !== description) toggle.title = description;
@@ -29,42 +29,42 @@
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const duration = 700 / 1.15;
     const pulseDuration = 400;
-    let frame = null;
-    let start = 0;
-    let progress = 1;
-    let pulseProgress = -1;
-    let pulseTarget;
-    let active = null;
-    const stopSweep = () => {
-      if (frame !== null) window.cancelAnimationFrame(frame);
-      frame = null;
-      progress = 1;
-      pulseProgress = -1;
-      pulseTarget = undefined;
-      active = null;
+    const sweeps = {
+      closest: { checkbox: closest },
+      furthest: { checkbox: furthest }
     };
-    const tick = time => {
-      frame = null;
-      if (!active.checked) return stopSweep();
-      const elapsed = Math.max(0, time - start);
-      progress = Math.min(1, elapsed / duration);
-      pulseProgress = elapsed >= duration ? Math.min(1, (elapsed - duration) / pulseDuration) : -1;
+    const stopSweep = sweep => {
+      if (sweep.frame != null) window.cancelAnimationFrame(sweep.frame);
+      sweep.frame = null;
+      sweep.progress = 1;
+      sweep.pulseProgress = -1;
+      sweep.pulseTarget = undefined;
+    };
+    for (const sweep of Object.values(sweeps)) stopSweep(sweep);
+    const tick = (sweep, time) => {
+      sweep.frame = null;
+      if (!sweep.checkbox.checked) return stopSweep(sweep);
+      const elapsed = Math.max(0, time - sweep.start);
+      sweep.progress = Math.min(1, elapsed / duration);
+      sweep.pulseProgress = elapsed >= duration ? Math.min(1, (elapsed - duration) / pulseDuration) : -1;
       draw();
-      if (pulseProgress < 1) frame = window.requestAnimationFrame(tick);
+      if (sweep.pulseProgress < 1) sweep.frame = window.requestAnimationFrame(time => tick(sweep, time));
     };
-    const startSweep = () => {
-      stopSweep();
-      active = closest.checked ? closest : furthest.checked ? furthest : null;
-      if (active && !reducedMotion.matches) {
-        progress = 0;
-        start = window.performance.now();
-        frame = window.requestAnimationFrame(tick);
+    const startSweep = sweep => {
+      stopSweep(sweep);
+      if (sweep.checkbox.checked && !reducedMotion.matches) {
+        sweep.progress = 0;
+        sweep.start = window.performance.now();
+        sweep.frame = window.requestAnimationFrame(time => tick(sweep, time));
       }
+    };
+    const start = () => {
+      for (const sweep of Object.values(sweeps)) startSweep(sweep);
       draw();
     };
     reducedMotion.addEventListener("change", () => {
-      if (reducedMotion.matches && frame !== null) {
-        stopSweep();
+      if (reducedMotion.matches) {
+        for (const sweep of Object.values(sweeps)) stopSweep(sweep);
         draw();
       }
     });
@@ -94,19 +94,20 @@
     document.addEventListener("pointerdown", event => {
       if (!toggle.parentElement.contains(event.target)) close();
     });
-    for (const [checkbox, other] of [[closest, furthest], [furthest, closest]]) {
-      checkbox.addEventListener("change", () => {
-        if (checkbox.checked) other.checked = false;
-        startSweep();
+    for (const sweep of Object.values(sweeps)) {
+      sweep.checkbox.addEventListener("change", () => {
+        startSweep(sweep);
+        draw();
       });
     }
-    const pulseFor = target => {
-      if (pulseProgress < 0) return 1;
-      if (pulseTarget === undefined) pulseTarget = target;
-      if (target == null || target !== pulseTarget) return 1;
-      return 1 + 0.5 * Math.sin(Math.PI * pulseProgress) ** 2;
+    const pulseFor = (mode, target) => {
+      const sweep = sweeps[mode];
+      if (sweep.pulseProgress < 0) return 1;
+      if (sweep.pulseTarget === undefined) sweep.pulseTarget = target;
+      if (target == null || target !== sweep.pulseTarget) return 1;
+      return 1 + 0.5 * Math.sin(Math.PI * sweep.pulseProgress) ** 2;
     };
-    return { close, start: startSweep, progress: () => progress, pulseFor };
+    return { close, start, progress: mode => sweeps[mode].progress, pulseFor };
   }
 
   function drawProximityLine(context, from, to, mode, progress = 1) {
@@ -156,7 +157,7 @@
     context.restore();
   }
 
-  function drawProximityCanvas(canvas, context, width, height, from, to, mode, progress = 1) {
+  function drawProximityCanvas(canvas, context, width, height, from, lines) {
     const scale = window.devicePixelRatio || 1;
     const canvasWidth = Math.round(width * scale);
     const canvasHeight = Math.round(height * scale);
@@ -164,7 +165,9 @@
     if (canvas.height !== canvasHeight) canvas.height = canvasHeight;
     context.setTransform(scale, 0, 0, scale, 0, 0);
     context.clearRect(0, 0, width, height);
-    if (from && to) drawProximityLine(context, from, to, mode, progress);
+    if (from) for (const { to, mode, progress } of lines) {
+      if (to) drawProximityLine(context, from, to, mode, progress);
+    }
   }
 
   window.thePearProximity = {

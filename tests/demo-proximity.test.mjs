@@ -32,6 +32,9 @@ test("proximity label reflects the active mode and empty results", () => {
   assert.equal(attributes["aria-label"], "Current furthest: Alex");
   setProximityLabel(toggle, "closest", undefined);
   assert.equal(toggle.firstElementChild.textContent, "No visible people");
+  setProximityLabel(toggle, "both", "Alex");
+  assert.equal(toggle.firstElementChild.textContent, "Proximity");
+  assert.equal(attributes["aria-label"], "Proximity");
   setProximityLabel(toggle, null, undefined);
   assert.equal(toggle.firstElementChild.textContent, "Proximity");
 });
@@ -86,13 +89,23 @@ test("closest sweep traces one continuous outline from Me and leaves the complet
 
 test("furthest retains its wavy line and canvas forwards the proximity mode", () => {
   const context = drawingContext();
-  drawProximityCanvas({}, context, 100, 100, { x: 0, y: 0 }, { x: 20, y: 0 }, "furthest");
+  drawProximityCanvas({}, context, 100, 100, { x: 0, y: 0 }, [{ to: { x: 20, y: 0 }, mode: "furthest", progress: 1 }]);
   assert.equal(context.calls.some(call => call[0] === "arc"), false);
   assert.ok(context.calls.some(call => call[0] === "lineTo" && Math.abs(call[2]) > 0.1));
   assert.equal(context.calls.find(call => call[0] === "stroke")[1], 1);
   const closest = drawingContext();
-  drawProximityCanvas({}, closest, 100, 100, { x: 0, y: 0 }, { x: 20, y: 0 }, "closest");
+  drawProximityCanvas({}, closest, 100, 100, { x: 0, y: 0 }, [{ to: { x: 20, y: 0 }, mode: "closest", progress: 1 }]);
   assert.equal(closest.calls.filter(call => call[0] === "arc").length, 2);
+});
+
+test("canvas draws both proximity lines without clearing between them", () => {
+  const context = drawingContext();
+  drawProximityCanvas({}, context, 100, 100, { x: 0, y: 0 }, [
+    { to: { x: 10, y: 0 }, mode: "closest", progress: 1 },
+    { to: { x: 20, y: 0 }, mode: "furthest", progress: 1 }
+  ]);
+  assert.equal(context.calls.filter(call => call[0] === "clearRect").length, 1);
+  assert.deepEqual(context.calls.filter(call => call[0] === "stroke").map(call => call[1]), [2, 1]);
 });
 
 test("furthest sweep ends on the original wave at the requested progress", () => {
@@ -105,7 +118,7 @@ test("furthest sweep ends on the original wave at the requested progress", () =>
   assert.ok(points.every(call => call[1] <= 27.5 + 1e-10));
 });
 
-test("both modes pulse their target after the sweep and respect reduced motion", () => {
+test("proximity modes sweep and pulse independently, including cancellation and reduced motion", () => {
   let now = 100;
   let nextId = 0;
   const frames = new Map();
@@ -126,74 +139,61 @@ test("both modes pulse their target after the sweep and respect reduced motion",
   toggle.parentElement = { addEventListener() {} };
   const closest = element();
   const furthest = element();
+  const targets = { closest: "near", furthest: "far" };
   const draws = [];
-  const scales = [];
-  let target = "person";
   const control = fakeWindow.thePearProximity.setupProximityMenu(
     toggle, { hidden: true }, closest, furthest, () => {
-      draws.push(control.progress());
-      scales.push(control.pulseFor(target));
+      draws.push({
+        closest: control.progress("closest"), furthest: control.progress("furthest"),
+        near: control.pulseFor("closest", targets.closest), far: control.pulseFor("furthest", targets.furthest)
+      });
     }
   );
   const advance = time => {
     now = time;
-    const [id, callback] = frames.entries().next().value;
-    frames.delete(id);
-    callback(time);
+    const callbacks = [...frames.values()];
+    frames.clear();
+    callbacks.forEach(callback => callback(time));
   };
-  furthest.checked = true;
-  furthest.listeners.change();
-  assert.equal(draws.at(-1), 0);
   const duration = 700 / 1.15;
-  advance(100 + duration / 2);
-  assert.ok(Math.abs(draws.at(-1) - 0.5) < 1e-10);
-  assert.equal(scales.at(-1), 1);
-  advance(100 + duration + 0.001);
-  assert.equal(draws.at(-1), 1);
-  assert.ok(Math.abs(scales.at(-1) - 1) < 1e-8);
-  advance(100 + duration + 200);
-  assert.equal(scales.at(-1), 1.5);
-  assert.equal(control.pulseFor("someone else"), 1);
-  advance(100 + duration + 400.001);
-  assert.equal(scales.at(-1), 1);
-  assert.equal(frames.size, 0);
-  furthest.checked = false;
-  furthest.listeners.change();
-  furthest.checked = true;
-  furthest.listeners.change();
-  assert.equal(draws.at(-1), 0);
   closest.checked = true;
   closest.listeners.change();
-  assert.equal(furthest.checked, false);
-  assert.equal(draws.at(-1), 0);
-  assert.equal(frames.size, 1);
-  advance(now + duration / 2);
-  assert.ok(Math.abs(draws.at(-1) - 0.5) < 1e-10);
-  advance(now + duration / 2 + 200);
-  assert.ok(Math.abs(scales.at(-1) - 1.5) < 1e-10);
+  advance(100 + duration / 2);
   furthest.checked = true;
   furthest.listeners.change();
-  assert.equal(closest.checked, false);
-  assert.equal(scales.at(-1), 1);
+  assert.equal(closest.checked, true);
+  assert.ok(Math.abs(draws.at(-1).closest - 0.5) < 1e-10);
+  assert.equal(draws.at(-1).furthest, 0);
+  assert.equal(frames.size, 2);
+  advance(100 + duration + 200);
+  assert.ok(Math.abs(draws.at(-1).near - 1.5) < 1e-10);
+  assert.ok(draws.at(-1).furthest < 1);
+  assert.equal(draws.at(-1).far, 1);
+  assert.equal(control.pulseFor("closest", "other"), 1);
+  closest.checked = false;
+  closest.listeners.change();
+  assert.equal(draws.at(-1).near, 1);
+  assert.equal(frames.size, 1);
+  advance(100 + duration / 2 + duration + 200);
+  assert.ok(Math.abs(draws.at(-1).far - 1.5) < 1e-10);
+  assert.equal(furthest.checked, true);
   motion.matches = true;
   motion.change();
-  assert.equal(draws.at(-1), 1);
+  assert.equal(draws.at(-1).furthest, 1);
+  assert.equal(draws.at(-1).far, 1);
   assert.equal(frames.size, 0);
-  furthest.checked = false;
-  furthest.listeners.change();
-  furthest.checked = true;
-  furthest.listeners.change();
-  assert.equal(draws.at(-1), 1);
-  assert.equal(scales.at(-1), 1);
+  closest.checked = true;
+  closest.listeners.change();
+  assert.equal(draws.at(-1).closest, 1);
   assert.equal(frames.size, 0);
   motion.matches = false;
   furthest.checked = false;
   furthest.listeners.change();
-  target = null;
+  targets.furthest = null;
   furthest.checked = true;
   furthest.listeners.change();
   advance(now + duration + 1);
-  target = "person";
+  targets.furthest = "far";
   advance(now + 100);
-  assert.equal(scales.at(-1), 1);
+  assert.equal(draws.at(-1).far, 1);
 });

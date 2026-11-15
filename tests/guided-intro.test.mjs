@@ -64,8 +64,8 @@ function mount(initialStorage = {}, initialHash = "", navigationType = "navigate
     getAttribute(name) { return this.attributes[name] ?? null; }
     contains(target) { return target === this || this.children.includes(target); }
     getContext() {
-      return { setTransform() {}, clearRect() {}, save() {}, beginPath() {}, moveTo() {},
-        lineTo() {}, arc() {}, closePath() {}, setLineDash() {}, stroke() {}, restore() {} };
+      return this.context ??= { strokes: [], setTransform() {}, clearRect() {}, save() {}, beginPath() {}, moveTo() {},
+        lineTo() {}, arc() {}, closePath() {}, setLineDash() {}, stroke() { this.strokes.push(this.lineWidth); }, restore() {} };
     }
     focus() {}
     setPointerCapture() {}
@@ -448,9 +448,15 @@ test("the revealed graph shows closest and furthest proximity without exposing i
   assert.equal(ui.el("starter-proximity").hidden, false);
   assert.equal(ui.el("starter-reset").hidden, false);
   assert.equal(ui.el("starter-proximity-toggle").firstElementChild.textContent, "Closest: Casey");
+  ui.el("starter-proximity-line").getContext().strokes.length = 0;
   ui.el("starter-proximity-furthest").checked = true;
   ui.el("starter-proximity-furthest").dispatch("change");
-  assert.equal(ui.el("starter-proximity-closest").checked, false);
+  assert.equal(ui.el("starter-proximity-closest").checked, true);
+  assert.equal(ui.el("starter-proximity-toggle").firstElementChild.textContent, "Proximity");
+  ui.advance(700 / 1.15 + 1);
+  assert.deepEqual(ui.el("starter-proximity-line").getContext().strokes.slice(-2), [2, 1]);
+  ui.el("starter-proximity-closest").checked = false;
+  ui.el("starter-proximity-closest").dispatch("change");
   assert.equal(ui.el("starter-proximity-toggle").firstElementChild.textContent, "Furthest: Blair");
   ui.el("starter-edit").dispatch("click");
   assert.equal(ui.el("starter-footer").hidden, false);

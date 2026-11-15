@@ -160,9 +160,9 @@ test("hovered and selected dots match the proximity pulse peak", () => {
     person: { id, color: "#123456" }, point: { x: id, y: id }, sticky: false
   }));
   const draw = new Function("context", "plotted", "hoveredIndex", "hoveredPersonId", "selectedIndex",
-    "focusedIndex", "proximityPerson", "pulse", "state", "personDotBorderWidth", "personDotRadius",
+    "focusedIndex", "pulses", "state", "personDotBorderWidth", "personDotRadius",
     html.slice(start, end) + "\nreturn drawDot;")(
-    context, plotted, 0, 0, 1, -1, plotted[2].person, 1.5, { colorByRelationship: false }, 2, 6
+    context, plotted, 0, 0, 1, -1, [{ person: plotted[2].person, scale: 1.5 }], { colorByRelationship: false }, 2, 6
   );
   [0, 1, 2, 3].forEach(draw);
   assert.deepEqual(dots, [
