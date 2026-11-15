@@ -45,12 +45,12 @@
       .background-toggle::after { content: " ▴"; }
       #background-select, #graph-select, #people-sort-select, .axis-end select, .person-relationship select { position: absolute; z-index: 2; min-width: 100%; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; outline: none; color: #000; background: #fff; }
       #background-select { right: 0; bottom: 100%; max-height: calc(100dvh - 5em); }
-      #graph-select { left: 0; top: 100%; }
+      #graph-select { left: 0; top: 100%; padding: 4px; }
       #background-select option, #graph-select option, #people-sort-select option, .axis-end option, .person-relationship option { padding: 1px 4px; }
       .dropdown-highlight { position: absolute; z-index: 3; overflow: hidden; color: #fff; background: var(--highlight-blue); pointer-events: none; }
       .dropdown-highlight span { position: absolute; box-sizing: border-box; padding: 1px 4px; overflow: hidden; white-space: nowrap; }
       .dropdown-hover { z-index: 4; }
-      #graph-select option, .graph-select .dropdown-highlight span { padding-left: 3px; }
+      #graph-select option, .graph-select .dropdown-highlight span { padding: 4px 6px; }
       .background-error { max-width: 20em; color: #a00; }
       .masthead, .account-bar:not([hidden]) { display: flex; flex-wrap: wrap; align-items: center; gap: .5em; }
       .masthead { justify-content: space-between; width: min(100%, var(--workspace-width, 100%)); margin-inline: auto; }
@@ -226,8 +226,8 @@
       .people-count-content::before { content: "1 person"; visibility: hidden; }
       .people-count-content::after { content: attr(data-size); visibility: hidden; }
       #people-sort-select { top: 100%; right: 0; width: max-content; }
-      #people-filter-menu:not([hidden]) { position: absolute; z-index: 2; top: 100%; right: 0; min-width: 110px; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; background: #fff; }
-      #people-filter-menu button { display: grid; grid-template-columns: 1fr auto; gap: 1em; width: 100%; border: 0; padding: 1px 4px; background: #fff; color: #000; font: 13.3333px Arial, sans-serif; text-align: left; cursor: pointer; }
+      #people-filter-menu:not([hidden]) { position: absolute; z-index: 2; top: 100%; right: 0; min-width: 110px; box-sizing: border-box; padding: 4px; border: 1px solid #767676; border-radius: 2px; background: #fff; }
+      #people-filter-menu button { display: grid; grid-template-columns: 1fr auto; gap: 1em; width: 100%; border: 0; padding: 4px 6px; background: #fff; color: #000; font: 13.3333px Arial, sans-serif; text-align: left; cursor: pointer; }
       #people-filter-menu button[aria-checked="true"], #people-filter-menu button:hover, #people-filter-menu button:focus-visible { outline: none; background: var(--highlight-blue); color: #fff; }
       #people-filter-menu button span:last-child { text-align: right; }
       #people-sort-toggle { position: relative; }
@@ -291,11 +291,10 @@
       .graph-options, .proximity { position: relative; display: flex; align-items: center; }
       .graph-options-toggle { position: relative; padding-right: 24px; padding-left: 2px; text-align: left; }
       .graph-options-toggle::after { content: ""; position: absolute; right: 6px; top: 50%; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 5px solid currentColor; transform: translateY(-50%); pointer-events: none; }
-      .graph-options-menu:not([hidden]) { position: absolute; z-index: 4; bottom: 100%; left: 0; min-width: 100%; width: max-content; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; padding: 6px; background: #fff; color: #000; }
-      .graph-options-menu label { display: flex; align-items: center; gap: 4px; white-space: nowrap; font: 13.3333px Arial, sans-serif; cursor: pointer; }
-      .graph-options-menu label + label { margin-top: 6px; }
+      .graph-options-menu:not([hidden]) { position: absolute; z-index: 4; bottom: 100%; left: 0; min-width: 100%; width: max-content; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; padding: 4px; background: #fff; color: #000; }
+      .graph-options-menu label { display: flex; align-items: center; gap: 4px; padding: 4px 6px; white-space: nowrap; font: 13.3333px Arial, sans-serif; cursor: pointer; }
       .graph-options-menu input { margin: 0; }
-      .graph-options-separator { display: block; border-top: 1px solid #767676; margin: 6px 0; }
+      .graph-options-separator { display: block; border-top: 1px solid #767676; margin: 4px 0; }
       .proximity-toggle span { display: block; max-width: 150px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
       .person-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--control-gap); margin: var(--control-gap) 0 0 calc(10px + var(--control-gap)); }
       .person-dates .graph-badge { text-align: center; white-space: normal; overflow-wrap: anywhere; }
@@ -359,7 +358,6 @@
         #new-person-name, .person-name { min-width: 4rem; }
         .person-relationship { width: calc(4.75rem - 25px); }
         .graph-toggle, .relationship-toggle { padding-left: 1px; }
-        #graph-select option, .graph-select .dropdown-highlight span { padding-left: 2px; }
         .relationship-toggle span { font-size: 11px; }
       }
     </style>
