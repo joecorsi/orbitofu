@@ -94,17 +94,17 @@
       .demo-graph.axis-labels-below .demo-x-low, .demo-graph.axis-labels-below .demo-x-high { top: calc(var(--demo-axis-y) + 4px); }
       .demo-graph.axis-hide-x-low .demo-x-low, .demo-graph.axis-hide-x-high .demo-x-high,
       .demo-graph.axis-hide-y-low .demo-y-low, .demo-graph.axis-hide-y-high .demo-y-high { visibility: hidden; }
-      .demo-person { position: absolute; z-index: 2; display: flex; align-items: center; gap: 3px; padding: 0; border: 0; background: transparent; color: #000; font: bold 12px serif; white-space: nowrap; transform: translate(-6px, -50%); cursor: move; touch-action: none; }
+      .demo-person { position: absolute; z-index: 2; display: flex; align-items: center; gap: 3px; padding: 0; border: 0; background: transparent; color: #000; font: bold 12px serif; white-space: nowrap; transform: translate(-7px, -50%); cursor: move; touch-action: none; }
       .demo-person[hidden] { display: none; }
-      .demo-person.label-left { flex-direction: row-reverse; transform: translate(calc(-100% + 6px), -50%); }
+      .demo-person.label-left { flex-direction: row-reverse; transform: translate(calc(-100% + 7px), -50%); }
       .demo-person:focus-visible { outline: none; }
       .demo-graph.has-selection .demo-person:not(.selected):not(.sticky) { opacity: .4; }
       .demo-person.selected { z-index: 4; }
-      .demo-person-dot { position: relative; box-sizing: border-box; flex: none; width: 12px; height: 12px; border: 2px solid #fff; border-radius: 50%; background: var(--person-color); }
+      .demo-person-dot { position: relative; box-sizing: border-box; flex: none; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: var(--person-color); }
       .demo-person.sticky .demo-person-dot { background: rgba(0, 0, 0, .23); }
       .demo-person.selected .demo-person-dot { transform: scale(1.5); }
-      .demo-person.selected .demo-person-name { position: absolute; top: -4px; left: 6px; padding: 2px 6px; border: 1px solid currentColor; border-radius: 3px; background: #fff; font: bold 16px serif; line-height: 18px; transform: translate(-50%, -100%); }
-      .demo-person.selected.label-left .demo-person-name { right: 6px; left: auto; transform: translate(50%, -100%); }
+      .demo-person.selected .demo-person-name { position: absolute; top: -4px; left: 7px; padding: 2px 6px; border: 1px solid currentColor; border-radius: 3px; background: #fff; font: bold 16px serif; line-height: 18px; transform: translate(-50%, -100%); }
+      .demo-person.selected.label-left .demo-person-name { right: 7px; left: auto; transform: translate(50%, -100%); }
       .demo-graph .chart-groups { z-index: 3; }
       .demo-proximity { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
       .layout { --layout-gap: calc(1em + 5px); display: grid; flex: 1; min-height: 0; grid-template-columns: minmax(0, min(calc(100% - min(40%, 21rem) - var(--layout-gap)), var(--chart-available-width, 100%))) min(40%, 21rem); grid-template-rows: minmax(0, 1fr); justify-content: center; gap: var(--layout-gap); }
@@ -181,6 +181,9 @@
       .chart-info-button { display: grid; place-items: center; padding: 2px; border: 0; background: transparent; color: #000; opacity: .35; cursor: help; }
       .chart-info:hover .chart-info-button, .chart-info:focus-within .chart-info-button { opacity: 1; }
       .chart-info-button svg { display: block; width: 18px; height: 18px; }
+      .chart-settings { position: absolute; top: calc(var(--control-gap) / 2); right: calc(var(--control-gap) / 2); z-index: 4; }
+      .chart-settings-button { cursor: pointer; }
+      .chart-settings:hover .chart-settings-button, .chart-settings:focus-within .chart-settings-button { opacity: 1; }
       .demo-label { position: absolute; top: calc(var(--control-gap) / 2); right: calc(var(--control-gap) / 2); z-index: 4; padding: 2px; color: #000; opacity: .35; font: 13.3333px/18px Arial, sans-serif; pointer-events: none; }
       .chart-info-tooltip { position: absolute; top: 100%; left: 0; box-sizing: border-box; width: max-content; max-width: min(250px, calc(100cqw - 2 * var(--control-gap))); padding: var(--control-gap); border: 1px solid #767676; border-radius: 2px; background: #fff; color: #000; font: 13.3333px Arial, sans-serif; visibility: hidden; }
       .chart-info:hover .chart-info-tooltip, .chart-info:focus-within .chart-info-tooltip { visibility: visible; }
@@ -332,6 +335,8 @@
       .graph-dialog .notice.visible { margin: 0; }
       .dialog-actions { display: flex; justify-content: flex-end; gap: .5em; margin: 2em 0 0; }
       .graph-dialog .dialog-actions { margin-top: 1.5em; }
+      .relationship-color-list { display: grid; gap: .75em; }
+      .relationship-color-row { display: flex; align-items: center; gap: .75em; }
       .color-wheel { position: relative; width: 220px; max-width: 100%; aspect-ratio: 1; margin: 0 auto; border-radius: 50%; background: radial-gradient(circle closest-side, white, transparent), conic-gradient(red, yellow, lime, cyan, blue, magenta, red); cursor: crosshair; touch-action: none; }
       .color-wheel:focus-visible { outline: 2px solid; outline-offset: 3px; }
       .color-marker { position: absolute; width: 10px; height: 10px; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 0 1px black; transform: translate(-50%, -50%); pointer-events: none; }
@@ -573,6 +578,9 @@
                       <button class="chart-info-button" type="button" aria-label="Graph controls information" aria-describedby="chart-info-tooltip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="currentColor"/></svg></button>
                       <span class="chart-info-tooltip" id="chart-info-tooltip" role="tooltip">Scroll to zoom, drag empty space or use Shift and arrow keys to pan. Select a dot, then use the mouse or arrow keys to adjust values.</span>
                     </span>
+                    <span class="chart-settings">
+                      <button class="chart-info-button chart-settings-button" id="chart-settings-button" type="button" aria-label="Graph settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.7 2h4.6l.5 2.4c.5.2 1 .4 1.5.6l2.1-1.3 3.2 3.2-1.3 2.1c.2.5.4 1 .6 1.5l2.4.5v4.6l-2.4.5c-.2.5-.4 1-.6 1.5l1.3 2.1-3.2 3.2-2.1-1.3c-.5.2-1 .4-1.5.6l-.5 2.4H9.7l-.5-2.4c-.5-.2-1-.4-1.5-.6l-2.1 1.3-3.2-3.2 1.3-2.1c-.2-.5-.4-1-.6-1.5L.7 15.6V11l2.4-.5c.2-.5.4-1 .6-1.5L2.4 6.9l3.2-3.2L7.7 5c.5-.2 1-.4 1.5-.6L9.7 2Z" transform="translate(1 1) scale(.91)" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                    </span>
                     <div class="chart-group-popover" id="chart-group-popover" role="group" aria-label="People in this group" hidden></div>
                   </div>
                   <div class="chart-footer">
@@ -725,6 +733,18 @@
             </form>
           </dialog>
 
+          <dialog class="graph-dialog" id="graph-settings-dialog" aria-labelledby="graph-settings-title">
+            <h2 id="graph-settings-title">Graph settings</h2>
+            <p>Relationship colors apply to all your graphs when Color by relationship is enabled.</p>
+            <div class="relationship-color-list">
+              <div class="relationship-color-row"><button class="person-color" type="button" data-relationship-color="family" aria-label="Choose family color"></button><span>Family</span></div>
+              <div class="relationship-color-row"><button class="person-color" type="button" data-relationship-color="friend" aria-label="Choose friend color"></button><span>Friend</span></div>
+              <div class="relationship-color-row"><button class="person-color" type="button" data-relationship-color="enemy" aria-label="Choose foe color"></button><span>Foe</span></div>
+              <div class="relationship-color-row"><button class="person-color" type="button" data-relationship-color="lover" aria-label="Choose lover color"></button><span>Lover</span></div>
+            </div>
+            <div class="dialog-actions"><button id="close-graph-settings" type="button">Done</button></div>
+          </dialog>
+
           <dialog class="graph-dialog" id="color-dialog" aria-labelledby="color-title">
             <h2 id="color-title">Person color</h2>
             <span id="color-preview" class="color-preview" aria-hidden="true"></span>
@@ -837,7 +857,17 @@
       const UNCLASSIFIED_COLOR = "#d3d3d3";
       const VISIBILITY_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/><path class="visibility-slash" d="M2 14 14 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
       const REMOVE_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-      const relationshipColor = person => person.id === ME_ID ? person.color : RELATIONSHIP_COLORS[person.relationship] ?? UNCLASSIFIED_COLOR;
+      const relationshipColor = (person, colors = RELATIONSHIP_COLORS) =>
+        person.id === ME_ID ? person.color : colors[person.relationship] ?? UNCLASSIFIED_COLOR;
+      function normalizeRelationshipColors(colors) {
+        if (colors === undefined) return { ...RELATIONSHIP_COLORS };
+        if (!colors || typeof colors !== "object" || Array.isArray(colors) ||
+            Object.entries(colors).some(([relationship, color]) =>
+              !Object.hasOwn(RELATIONSHIP_COLORS, relationship) || typeof color !== "string" || !/^#[0-9a-f]{6}$/i.test(color))) {
+          throw new Error("Your relationship colors are not in the expected format.");
+        }
+        return { ...RELATIONSHIP_COLORS, ...colors };
+      }
       const DEFAULT_CONFIG = {
         url: "https://auhvnhytuxhhzdsjiugt.supabase.co",
         key: "sb_publishable_vsbBzlNtb1Aa0z6sAGG8WA_43xh9JQ_"
@@ -939,6 +969,12 @@
         colorNotice: document.getElementById("color-notice"),
         cancelColor: document.getElementById("cancel-color"),
         saveColor: document.getElementById("save-color"),
+        colorTitle: document.getElementById("color-title"),
+        chartSettingsButton: document.getElementById("chart-settings-button"),
+        chartSettings: document.querySelector("#workspace .chart-settings"),
+        graphSettingsDialog: document.getElementById("graph-settings-dialog"),
+        closeGraphSettings: document.getElementById("close-graph-settings"),
+        relationshipColorButtons: document.querySelectorAll("[data-relationship-color]"),
         deleteGraph: document.getElementById("delete-graph"),
         deleteGraphDialog: document.getElementById("delete-graph-dialog"),
         deleteGraphForm: document.getElementById("delete-graph-form"),
@@ -1055,6 +1091,7 @@
       let traitsDraft = null;
       let savingTraits = false;
       let colorPerson = null;
+      let colorRelationship = null;
       let colorButton = null;
       let colorHue = 0;
       let colorSaturation = 0;
@@ -1859,6 +1896,8 @@
         stopNameFocusRing();
         if (el.deletePersonDialog.open) el.deletePersonDialog.close();
         if (currentUser?.id !== nextUser?.id) {
+          if (el.colorDialog.open) el.colorDialog.close();
+          if (el.graphSettingsDialog.open) el.graphSettingsDialog.close();
           if (el.tutorialDialog.open) {
             clearTutorialStep();
             el.tutorialDialog.close();
@@ -1884,6 +1923,7 @@
           if (el.newGraphDialog.open) el.newGraphDialog.close();
           if (el.renameGraphDialog.open) el.renameGraphDialog.close();
           if (el.colorDialog.open) el.colorDialog.close();
+          if (el.graphSettingsDialog.open) el.graphSettingsDialog.close();
           el.authScreen.hidden = false;
           el.signInForm.hidden = false;
           el.accountBar.hidden = true;
@@ -2038,7 +2078,8 @@
             Object.values(profile.values).some(value => typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 100)) {
           throw new Error("Your Me profile is not in the expected format.");
         }
-        mePerson = { ...profile, funnyTraitMigrated: true, color: profile.color ?? COLORS[0], values: { ...profile.values } };
+        mePerson = { ...profile, funnyTraitMigrated: true, color: profile.color ?? COLORS[0],
+          values: { ...profile.values }, relationshipColors: normalizeRelationshipColors(profile.relationshipColors) };
         if (user.created_at && Number.isFinite(Date.parse(user.created_at))) mePerson.addedAt = user.created_at;
         else delete mePerson.addedAt;
       }
@@ -2479,10 +2520,12 @@
         updateColorPicker();
       }
 
-      function openColorDialog(person, button) {
+      function openColorDialog(person, button, relationship = null) {
         colorPerson = person;
         colorButton = button;
-        setColorFromHex(person ? person.color : newPersonColor);
+        colorRelationship = relationship;
+        el.colorTitle.textContent = relationship ? `${button.nextElementSibling.textContent} color` : "Person color";
+        setColorFromHex(relationship ? mePerson.relationshipColors[relationship] : person ? person.color : newPersonColor);
         el.colorNotice.classList.remove("visible");
         el.colorDialog.showModal();
       }
@@ -3358,7 +3401,7 @@
           const pulse = proximityControl.pulseFor(me && target ? target.person.id : null);
           const labels = showNames.checked ? plotted.map(({ person, point }) => {
             const metrics = measure.measureText(person.name);
-            const left = point.x > width - 90 ? point.x - 9 - metrics.width : point.x + 9;
+            const left = point.x > width - 90 ? point.x - 10 - metrics.width : point.x + 10;
             const baseline = point.y + (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
             return { hit: { left: left - 3, right: left + metrics.width + 3,
               top: baseline - metrics.actualBoundingBoxAscent - 3, bottom: baseline + metrics.actualBoundingBoxDescent + 3 } };
@@ -4106,7 +4149,7 @@
         const chartRect = el.chart.getBoundingClientRect();
         const obstacles = [...el.xAxes, ...el.yAxes].map(select => select.parentElement)
           .filter(axis => getComputedStyle(axis).visibility !== "hidden")
-          .concat(el.chartInfo)
+          .concat(el.chartInfo, el.chartSettings)
           .map(element => {
             const rect = element.getBoundingClientRect();
             return { left: rect.left - chartRect.left, right: rect.right - chartRect.left,
@@ -4276,6 +4319,7 @@
         const info = el.chartInfo.getBoundingClientRect();
         const infoRight = info.right - bounds.left;
         const infoBottom = info.bottom - bounds.top;
+        const settings = el.chartSettings.getBoundingClientRect();
         el.peopleCountLabel.textContent = `${count} ${count === 1 ? "person" : "people"}`;
         const labels = state.hideNames ? [] : plotted.map(({ person, index, point }) => {
           const { x, y } = point;
@@ -4296,6 +4340,10 @@
             const boxLeft = Math.max(1, Math.min(x - boxWidth / 2, width - boxWidth - 1));
             let boxTop = y >= boxHeight + 11 ? y - boxHeight - 10 : Math.min(height - boxHeight - 1, y + 10);
             if (boxLeft < infoRight && boxTop < infoBottom && boxTop + boxHeight > info.top - bounds.top) {
+              boxTop = Math.min(height - boxHeight - 1, y + 10);
+            }
+            if (boxLeft + boxWidth > settings.left - bounds.left && boxTop < settings.bottom - bounds.top &&
+                boxTop + boxHeight > settings.top - bounds.top) {
               boxTop = Math.min(height - boxHeight - 1, y + 10);
             }
             nameBox = {
@@ -4370,7 +4418,7 @@
           const { x, y } = point;
           context.globalAlpha = !sticky && hoveredIndex !== -1 && index !== hoveredIndex && index !== selectedIndex && index !== focusedIndex ? 0.4 : 1;
           context.fillStyle = sticky ? stickyColor : state.colorByRelationship
-            ? relationshipColor(person) : person.color;
+            ? relationshipColor(person, mePerson.relationshipColors) : person.color;
           context.strokeStyle = "#fff";
           const scale = index === selectedIndex ? 1.5 : person === proximityPerson ? pulse : 1;
           context.lineWidth = personDotBorderWidth * scale;
@@ -4386,7 +4434,7 @@
         const drawLabel = (index, hovered = false, target = context) => {
           const { text, x: labelX, y: labelY, hit, nameBox } = labels[index];
           const color = plotted[index].sticky ? stickyColor :
-            state.colorByRelationship ? relationshipColor(plotted[index].person) : "#000";
+            state.colorByRelationship ? relationshipColor(plotted[index].person, mePerson.relationshipColors) : "#000";
           target.globalAlpha = !plotted[index].sticky && hoveredIndex !== -1 && !hovered && index !== focusedIndex ? 0.4 : 1;
           if (hovered && nameBox) {
             target.save();
@@ -4746,6 +4794,16 @@
       });
 
       el.newPersonColor.addEventListener("click", () => openColorDialog(null, el.newPersonColor));
+      el.chartSettingsButton.addEventListener("click", () => {
+        for (const button of el.relationshipColorButtons) {
+          button.style.backgroundColor = mePerson.relationshipColors[button.dataset.relationshipColor];
+        }
+        el.graphSettingsDialog.showModal();
+      });
+      el.closeGraphSettings.addEventListener("click", () => el.graphSettingsDialog.close());
+      for (const button of el.relationshipColorButtons) {
+        button.addEventListener("click", () => openColorDialog(null, button, button.dataset.relationshipColor));
+      }
       el.colorWheel.addEventListener("pointerdown", event => {
         if (!event.isPrimary || event.button !== 0 || colorDragging) return;
         colorDragging = true;
@@ -4779,6 +4837,44 @@
         event.preventDefault();
         if (savingColor) return;
         const color = colorDraft;
+        if (colorRelationship) {
+          const profile = mePerson;
+          const relationship = colorRelationship;
+          const previousColor = profile.relationshipColors[relationship];
+          if (color.toLowerCase() === previousColor.toLowerCase()) {
+            el.colorDialog.close();
+            return;
+          }
+          savingColor = true;
+          el.saveColor.disabled = true;
+          el.cancelColor.disabled = true;
+          el.colorFields.inert = true;
+          try {
+            profile.relationshipColors[relationship] = color.toLowerCase();
+            schedulePersonSave(profile, false);
+            await flushPendingSave();
+            if (mePerson !== profile) return;
+            recordHistory("me");
+            colorButton.style.backgroundColor = profile.relationshipColors[relationship];
+            drawChart();
+            el.colorDialog.close();
+          } catch (error) {
+            if (mePerson !== profile) {
+              reportError(error);
+              return;
+            }
+            profile.relationshipColors[relationship] = previousColor;
+            schedulePersonSave(profile, false);
+            setSaveStatus(`Save failed: ${error.message}`, { isError: true });
+            showNotice(el.colorNotice, `Couldn't save this color: ${error.message}`);
+          } finally {
+            savingColor = false;
+            el.saveColor.disabled = false;
+            el.cancelColor.disabled = false;
+            el.colorFields.inert = false;
+          }
+          return;
+        }
         if (!colorPerson) {
           newPersonColor = color.toLowerCase();
           el.newPersonColor.style.backgroundColor = newPersonColor;

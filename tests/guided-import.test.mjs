@@ -52,7 +52,7 @@ test("shared Me profile gets only the two new ratings, preserving other traits",
     } };
   } };
   const initialMe = { id: "__me__", name: "Me", color: "#145c92",
-    values: { other: 92, "lame-cool": 10 } };
+    relationshipColors: { friend: "#abcdef" }, values: { other: 92, "lame-cool": 10 } };
   const updated = await new Function("client", "currentUser", "initialMe", "guests",
     helpers + "\nlet mePerson = initialMe;\nreturn saveStarterMe(guests).then(() => mePerson);")(
     client, { id: "user-1" }, initialMe, guests
@@ -62,6 +62,7 @@ test("shared Me profile gets only the two new ratings, preserving other traits",
   });
   assert.equal(writes.length, 1);
   assert.equal(writes[0].payload.user_id, "user-1");
+  assert.deepEqual(updated.relationshipColors, { friend: "#abcdef" });
   assert.equal(writes[0].options.onConflict, "user_id");
 });
 
@@ -75,6 +76,57 @@ test("failed Me save rejects rather than pretending import finished", async () =
     client, { id: "user-1" }, initialMe, guests
   );
   await assert.rejects(action, /Access denied/);
+});
+
+test("account relationship colors use defaults and reject malformed saved values", () => {
+  const start = html.indexOf("      function normalizeRelationshipColors(colors)");
+  const end = html.indexOf("      const DEFAULT_CONFIG", start);
+  assert.ok(start >= 0 && end > start);
+  const defaults = { friend: "#009b4f", enemy: "#382110", lover: "#f25416", family: "#7441a6" };
+  const normalize = new Function("RELATIONSHIP_COLORS",
+    html.slice(start, end) + "\nreturn normalizeRelationshipColors;")(defaults);
+  assert.deepEqual(normalize(undefined), defaults);
+  assert.deepEqual(normalize({ friend: "#abcdef" }), { ...defaults, friend: "#abcdef" });
+  assert.throws(() => normalize({ friend: "red" }), /relationship colors/);
+  assert.throws(() => normalize({ stranger: "#123456" }), /relationship colors/);
+  assert.throws(() => normalize(null), /relationship colors/);
+});
+
+test("relationship color picker saves the account profile and rolls back a failed save", async () => {
+  const start = html.indexOf('      el.colorForm.addEventListener("submit"');
+  const end = html.indexOf("      for (const [controls, axis]", start);
+  assert.ok(start >= 0 && end > start);
+  const writes = [];
+  const notices = [];
+  const dialog = { close() { this.closed = true; } };
+  const el = { colorForm: { addEventListener(_type, fn) { this.submit = fn; } }, colorDialog: dialog,
+    saveColor: {}, cancelColor: {}, colorFields: {}, colorNotice: {} };
+  const profile = { relationshipColors: { friend: "#009b4f", family: "#7441a6" } };
+  let fail = false;
+  const helpers = {
+    schedulePersonSave(person) { writes.push(JSON.parse(JSON.stringify(person))); },
+    async flushPendingSave() { if (fail) throw new Error("offline"); },
+    recordHistory() {}, drawChart() {}, setSaveStatus() {}, reportError() {},
+    showNotice(_target, message) { notices.push(message); }
+  };
+  const setup = new Function("el", "profile", "helpers", `
+    const { schedulePersonSave, flushPendingSave, recordHistory, drawChart, setSaveStatus, reportError, showNotice } = helpers;
+    let mePerson = profile, colorPerson = null, colorRelationship = null, colorDraft = "", savingColor = false;
+    let colorButton = { style: {} };
+    ${html.slice(start, end)}
+    return (relationship, color) => { colorRelationship = relationship; colorDraft = color; return el.colorForm.submit({ preventDefault() {} }); };
+  `)(el, profile, helpers);
+  await setup("friend", "#abcdef");
+  assert.equal(profile.relationshipColors.friend, "#abcdef");
+  assert.equal(writes.at(-1).relationshipColors.friend, "#abcdef");
+  assert.equal(dialog.closed, true);
+  dialog.closed = false;
+  fail = true;
+  await setup("family", "#123456");
+  assert.equal(profile.relationshipColors.family, "#7441a6");
+  assert.equal(writes.at(-1).relationshipColors.family, "#7441a6");
+  assert.equal(dialog.closed, false);
+  assert.match(notices.at(-1), /offline/);
 });
 
 const navigationStart = html.indexOf("      async function openHomepage(");
