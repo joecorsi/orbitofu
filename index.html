@@ -8,27 +8,7 @@
     <style>
       :root { --highlight-blue: #0075ff; --control-gap: .4rem; }
       @supports (color: AccentColor) { :root { --highlight-blue: AccentColor; } }
-      html[data-background="rainbow"] { background: radial-gradient(ellipse at 25% 20%, #ffffffb3, transparent 38%), conic-gradient(from 225deg at 55% 50%, #ff8fcd, #ffc483, #f8ef8b, #91e9bd, #8fd8ff, #c0a3f6, #ff8fcd); background-attachment: fixed; }
       body { isolation: isolate; margin: 18px 25px; }
-      .rainbow-decor { display: none; position: fixed; inset: -16.6667vh -12.5vw; z-index: -1; overflow: hidden; pointer-events: none; }
-      html[data-background="rainbow"] .rainbow-decor { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr); place-items: center; }
-      .rainbow-decor > span { --drift-x: 10px; --drift-y: -10px; font-size: 32px; opacity: .8; animation: rainbow-drift 16s ease-in-out infinite alternate; }
-      .rainbow-decor > span:nth-child(3n + 2) { --drift-x: -10px; --drift-y: 8px; animation-delay: -4s; }
-      .rainbow-decor > span:nth-child(3n) { --drift-x: 8px; --drift-y: 10px; animation-delay: -8s; }
-      @keyframes rainbow-drift { to { transform: translate(var(--drift-x), var(--drift-y)); } }
-      @media (prefers-reduced-motion: reduce) { .rainbow-decor span { animation: none; } }
-      .space-planets { display: none; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1100' height='800' viewBox='0 0 1100 800'%3E%3Cdefs%3E%3CradialGradient id='rust' cx='30%25' cy='25%25' r='75%25'%3E%3Cstop stop-color='%23db9b75'/%3E%3Cstop offset='.55' stop-color='%238c4f44'/%3E%3Cstop offset='1' stop-color='%23291e29'/%3E%3C/radialGradient%3E%3CradialGradient id='gold' cx='30%25' cy='25%25' r='75%25'%3E%3Cstop stop-color='%23e4d7b0'/%3E%3Cstop offset='.58' stop-color='%2391856f'/%3E%3Cstop offset='1' stop-color='%23262431'/%3E%3C/radialGradient%3E%3CradialGradient id='blue' cx='30%25' cy='25%25' r='75%25'%3E%3Cstop stop-color='%23a1c9d4'/%3E%3Cstop offset='.5' stop-color='%234a738d'/%3E%3Cstop offset='1' stop-color='%23111d36'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='40' cy='350' r='43' fill='url(%23rust)'/%3E%3Cg fill='%233b2529' opacity='.25'%3E%3Ccircle cx='24' cy='337' r='5'/%3E%3Ccircle cx='52' cy='365' r='8'/%3E%3Ccircle cx='42' cy='329' r='3'/%3E%3C/g%3E%3Cellipse cx='875' cy='175' rx='79' ry='18' fill='none' stroke='%23b0a28b' stroke-width='9' opacity='.65' transform='rotate(-18 875 175)'/%3E%3Ccircle cx='875' cy='175' r='42' fill='url(%23gold)'/%3E%3Cpath d='M839 161 Q875 151 910 160 M835 173 Q875 163 916 173 M837 187 Q875 177 913 187' fill='none' stroke='%23d2bda0' stroke-width='3' opacity='.22'/%3E%3Ccircle cx='510' cy='720' r='48' fill='url(%23blue)'/%3E%3Cpath d='M472 697 Q491 686 507 694 T543 692 M466 715 Q486 706 501 715 T552 709 M472 736 Q493 727 513 736 T548 731' fill='none' stroke='%23c9e2e4' stroke-width='4' opacity='.25'/%3E%3C/svg%3E") repeat; }
-      html[data-background="space"] .space-planets { display: block; }
-      html[data-background="sunset"] { background: radial-gradient(circle at 76% 32%, #fff9d1 0 7%, #ffdf9e 7.2% 12%, transparent 12.2%), linear-gradient(160deg, #c5b2f3 0%, #f2a4d5 37%, #ffb391 70%, #ffe1a2 100%); background-attachment: fixed; }
-      html[data-background="aqua"] { background: radial-gradient(ellipse at 20% 20%, #ffffffaa, transparent 42%), linear-gradient(130deg, #76e3d3, #91d4ff 42%, #c4abf5 68%, #85efd7); background-attachment: fixed; }
-      html[data-background="squiggles"] { background: #fff3bd url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='112' viewBox='0 0 128 112'%3E%3Cpath d='M5 24 q6 -12 12 0 t12 0 t12 0 t12 0' fill='none' stroke='%23ec7db9' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M72 68 q6 -12 12 0 t12 0 t12 0 t12 0' fill='none' stroke='%236ebbc9' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M73 16 l8 -7 8 7 8 -7' fill='none' stroke='%239d8fdb' stroke-width='2'/%3E%3Ccircle cx='31' cy='77' r='7' fill='none' stroke='%23efa764' stroke-width='2'/%3E%3Ccircle cx='110' cy='30' r='3' fill='%23f095bb'/%3E%3Ccircle cx='54' cy='100' r='3' fill='%2389c9b8'/%3E%3C/svg%3E") repeat; }
-      html[data-background="stars"] { background: #f4dcff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='120' viewBox='0 0 130 120'%3E%3Cpath d='M26 7 L30 19 L42 23 L30 27 L26 39 L22 27 L10 23 L22 19 Z' fill='%23ffcf65' stroke='%23e8a649' stroke-width='1.5'/%3E%3Cpath d='M96 48 L99 57 L108 60 L99 63 L96 72 L93 63 L84 60 L93 57 Z' fill='%23ff9ed2'/%3E%3Cpath d='M48 77 L50 84 L57 86 L50 88 L48 95 L46 88 L39 86 L46 84 Z' fill='%238dcde5'/%3E%3Ccircle cx='74' cy='20' r='2' fill='%23b494e9'/%3E%3Ccircle cx='115' cy='101' r='2' fill='%23f4ad76'/%3E%3C/svg%3E") repeat; }
-      html[data-background="clouds"] { background: #b8e3ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='760' height='420' viewBox='0 0 760 420'%3E%3Cdefs%3E%3Cpath id='c' d='M40 104 C14 104 7 87 13 71 C17 58 30 51 45 53 C50 26 75 15 97 25 C112 1 152 6 163 34 C185 22 215 34 216 58 C243 57 254 70 250 87 C248 99 239 104 222 104 Z'/%3E%3C/defs%3E%3Cg fill='%239acff1' opacity='.45' transform='translate(0 8)'%3E%3Cuse href='%23c' x='20' y='12'/%3E%3Cuse href='%23c' x='380' y='205'/%3E%3C/g%3E%3Cg fill='%23fff'%3E%3Cuse href='%23c' x='20' y='12'/%3E%3Cuse href='%23c' x='380' y='205'/%3E%3C/g%3E%3Cg fill='%23fff' opacity='.8' transform='translate(490 28) scale(.65)'%3E%3Cuse href='%23c'/%3E%3C/g%3E%3Cpath d='M330 220 v18 M321 229 h18 M678 164 v12 M672 170 h12' stroke='%23fff9ca' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") repeat; }
-      html[data-background="magic-eye"] { background: #f5eafa var(--magic-eye-image) repeat 0 0 / 720px 360px; }
-      html[data-background="space"] { background-color: #04060d; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='360' viewBox='0 0 480 360'%3E%3Cg fill='%23fff' opacity='.8'%3E%3Ccircle cx='19' cy='37' r='.8'/%3E%3Ccircle cx='72' cy='13' r='.5'/%3E%3Ccircle cx='113' cy='78' r='1'/%3E%3Ccircle cx='163' cy='29' r='.6'/%3E%3Ccircle cx='212' cy='97' r='.7'/%3E%3Ccircle cx='267' cy='18' r='.8'/%3E%3Ccircle cx='312' cy='66' r='.5'/%3E%3Ccircle cx='361' cy='33' r='1'/%3E%3Ccircle cx='425' cy='71' r='.6'/%3E%3Ccircle cx='466' cy='16' r='.8'/%3E%3Ccircle cx='43' cy='130' r='.5'/%3E%3Ccircle cx='85' cy='169' r='.8'/%3E%3Ccircle cx='144' cy='126' r='.5'/%3E%3Ccircle cx='192' cy='178' r='1'/%3E%3Ccircle cx='247' cy='146' r='.6'/%3E%3Ccircle cx='295' cy='119' r='.8'/%3E%3Ccircle cx='347' cy='175' r='.5'/%3E%3Ccircle cx='400' cy='132' r='.8'/%3E%3Ccircle cx='453' cy='188' r='.6'/%3E%3Ccircle cx='14' cy='231' r='.6'/%3E%3Ccircle cx='65' cy='270' r='.9'/%3E%3Ccircle cx='122' cy='219' r='.5'/%3E%3Ccircle cx='171' cy='297' r='.8'/%3E%3Ccircle cx='225' cy='240' r='.6'/%3E%3Ccircle cx='278' cy='282' r='1'/%3E%3Ccircle cx='329' cy='225' r='.6'/%3E%3Ccircle cx='379' cy='283' r='.8'/%3E%3Ccircle cx='431' cy='246' r='.5'/%3E%3Ccircle cx='471' cy='320' r='.8'/%3E%3Ccircle cx='38' cy='339' r='.5'/%3E%3Ccircle cx='105' cy='326' r='.6'/%3E%3Ccircle cx='237' cy='344' r='.7'/%3E%3Ccircle cx='343' cy='332' r='.5'/%3E%3Ccircle cx='414' cy='349' r='.8'/%3E%3C/g%3E%3Cg fill='%23d2e7ff'%3E%3Ccircle cx='56' cy='91' r='1.3'/%3E%3Ccircle cx='259' cy='201' r='1.1'/%3E%3Ccircle cx='388' cy='102' r='1.3'/%3E%3Ccircle cx='150' cy='252' r='1.1'/%3E%3C/g%3E%3Cg fill='%23ffe2b7'%3E%3Ccircle cx='180' cy='70' r='1.1'/%3E%3Ccircle cx='318' cy='298' r='1.2'/%3E%3Ccircle cx='447' cy='119' r='1'/%3E%3C/g%3E%3Cg stroke='%23daeaff' stroke-width='.6' opacity='.65'%3E%3Cpath d='M28 181h12m-6-6v12 M291 43h14m-7-7v14 M395 223h12m-6-6v12'/%3E%3C/g%3E%3Cg fill='%23fff'%3E%3Ccircle cx='34' cy='181' r='1.3'/%3E%3Ccircle cx='298' cy='43' r='1.5'/%3E%3Ccircle cx='401' cy='223' r='1.3'/%3E%3C/g%3E%3C/svg%3E"), radial-gradient(ellipse at 75% 25%, #53415b55, transparent 38%), radial-gradient(ellipse at 27% 75%, #24394e88, transparent 45%), linear-gradient(135deg, #03050b, #101322 55%, #040610); background-size: 480px 360px, 100% 100%, 100% 100%, 100% 100%; background-attachment: fixed; }
-      html[data-background="space"] .page { color: #fff; }
-      html[data-background="space"] dialog { color: #000; }
-      html[data-background="space"] #auth-notice:not(.notice-ok), html[data-background="space"] #app-notice:not(.notice-ok):not(.name-error), html[data-background="space"] .background-error { color: #ffbaba; }
       [hidden], .notice { display: none; }
       .notice.visible { display: block; margin: 1em 0; }
       .notice:not(.notice-ok), .save-status.error { color: #a00; }
@@ -40,18 +20,13 @@
       .page:has(#workspace:not([hidden])) .content { display: flex; flex: 1; min-height: 0; }
       #workspace:not([hidden]) { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; }
       #workspace[hidden] { display: flex; position: fixed; top: 0; left: 0; flex-direction: column; width: var(--measure-width, min(1200px, calc(100vw - 50px))); height: calc(100dvh - 36px - var(--measure-header-height, 53px)); visibility: hidden; pointer-events: none; }
-      .background-selector { position: fixed; right: calc(1em + 25px); bottom: calc(1em + 10px); z-index: 1; }
-      .background-toggle { display: block; margin-left: auto; }
-      .background-toggle::after { content: " ▴"; }
-      #background-select, #graph-select, #people-sort-select, .axis-end select, .person-relationship select { position: absolute; z-index: 2; min-width: 100%; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; outline: none; color: #000; background: #fff; }
-      #background-select { right: 0; bottom: calc(100% + var(--control-gap)); max-height: calc(100dvh - 5em); }
+      #graph-select, #people-sort-select, .axis-end select, .person-relationship select { position: absolute; z-index: 2; min-width: 100%; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; outline: none; color: #000; background: #fff; }
       #graph-select { left: 0; top: calc(100% + var(--control-gap)); padding: 4px; }
-      #background-select option, #graph-select option, #people-sort-select option, .axis-end option, .person-relationship option { padding: 1px 4px; }
+      #graph-select option, #people-sort-select option, .axis-end option, .person-relationship option { padding: 1px 4px; }
       .dropdown-highlight { position: absolute; z-index: 3; overflow: hidden; color: #fff; background: var(--highlight-blue); pointer-events: none; }
       .dropdown-highlight span { position: absolute; box-sizing: border-box; padding: 1px 4px; overflow: hidden; white-space: nowrap; }
       .dropdown-hover { z-index: 4; }
       #graph-select option, .graph-select .dropdown-highlight span { padding: 4px 6px; }
-      .background-error { max-width: 20em; color: #a00; }
       .masthead, .account-bar:not([hidden]) { display: flex; flex-wrap: wrap; align-items: center; gap: .5em; }
       .masthead { justify-content: space-between; width: min(100%, var(--workspace-width, 100%)); margin-inline: auto; }
       .page:has(#workspace:not([hidden])) .masthead { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
@@ -380,15 +355,6 @@
     <link rel="stylesheet" href="./guided-intro.css">
   </head>
   <body>
-    <div class="rainbow-decor" aria-hidden="true">
-      <span>🌈</span><span>🌈</span><span>🌈</span>
-      <span>🌈</span><span>🌈</span><span>🌈</span>
-      <span>🌈</span><span>🌈</span><span>🌈</span>
-      <span>🌈</span><span>🌈</span><span>🌈</span>
-      <span>🌈</span><span>🌈</span><span>🌈</span><span>🌈</span>
-      <span>🌈</span><span>🌈</span><span>🌈</span><span>🌈</span>
-    </div>
-    <div class="space-planets" aria-hidden="true"></div>
     <main class="page">
       <header class="masthead">
         <p class="brand"><a id="home-link" href="./"><span aria-hidden="true">🍐</span> The Pear</a></p>
@@ -839,22 +805,6 @@
       </div>
     </div>
 
-    <aside class="background-selector" hidden>
-      <button id="background-toggle" class="background-toggle" type="button" aria-label="Background: Plain" aria-haspopup="listbox" aria-expanded="false" aria-controls="background-select">Plain</button>
-      <select id="background-select" aria-label="Background" size="9" hidden>
-        <option value="plain">Plain</option>
-        <option value="rainbow">Rainbow gradient</option>
-        <option value="sunset">Sunset gradient</option>
-        <option value="aqua">Aqua gradient</option>
-        <option value="squiggles">Squiggles</option>
-        <option value="stars">Stars</option>
-        <option value="clouds">Clouds</option>
-        <option value="magic-eye">Magic Eye</option>
-        <option value="space">Outer space</option>
-      </select>
-      <div id="background-error" class="background-error" role="status" aria-live="polite"></div>
-    </aside>
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./proximity.js?v=proximity-menu-overlap"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
@@ -863,7 +813,6 @@
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
         hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground } = window.thePearProximity;
       const CONFIG_KEY = "people-map-supabase-config";
-      const BACKGROUND_KEY = "the-pear-background";
       const GOOGLE_SIGN_IN_KEY = "the-pear-previous-google-sign-in";
       const AGE_AXIS = "__person_age__";
       const ME_ID = "__me__";
@@ -914,9 +863,6 @@
         starterSignIn: document.getElementById("starter-skip"),
         loadingOverlay: document.getElementById("loading-overlay"),
         loadingProgress: document.querySelector(".loading-progress"),
-        backgroundToggle: document.getElementById("background-toggle"),
-        backgroundSelect: document.getElementById("background-select"),
-        backgroundError: document.getElementById("background-error"),
         authNotice: document.getElementById("auth-notice"),
         authEmail: document.getElementById("auth-email"),
         signInForm: document.getElementById("sign-in-form"),
@@ -1145,56 +1091,6 @@
         };
       }
 
-      let magicEyeImage = "";
-
-      function applyBackground(background) {
-        if (background === "magic-eye" && !magicEyeImage) {
-          const canvas = document.createElement("canvas");
-          canvas.width = 720;
-          canvas.height = 360;
-          const context = canvas.getContext("2d");
-          if (!context) throw new Error("The pattern couldn't be drawn.");
-          const colors = ["#f5cdeb", "#c5eae1", "#c9dcff", "#ffe4b9", "#ddc9f3", "#f7eec5"];
-          let seed = 81731;
-          for (let y = 0; y < 120; y++) {
-            const row = [];
-            for (let x = 0; x < 240; x++) {
-              const heartX = (x * 3 - 360) / 85;
-              const heartY = (180 - y * 3) / 85;
-              const shape = heartX ** 2 + heartY ** 2 - 1;
-              const inHeart = shape ** 3 - heartX ** 2 * heartY ** 3 < 0;
-              const separation = 24 - (inHeart ? 5 : 0);
-              if (x < 24) {
-                seed = (1664525 * seed + 1013904223) >>> 0;
-                row[x] = (seed >>> 24) % colors.length;
-              } else {
-                row[x] = row[x - separation];
-              }
-              context.fillStyle = colors[row[x]];
-              context.fillRect(x * 3, y * 3, 3, 3);
-            }
-          }
-          magicEyeImage = canvas.toDataURL();
-          document.documentElement.style.setProperty("--magic-eye-image", `url("${magicEyeImage}")`);
-        }
-        document.documentElement.dataset.background = background;
-      }
-
-      function loadBackground() {
-        try {
-          const saved = localStorage.getItem(BACKGROUND_KEY);
-          if (saved === null) return;
-          if (![...el.backgroundSelect.options].some(option => option.value === saved)) {
-            el.backgroundError.textContent = "The saved background is unavailable. Choose another.";
-            return;
-          }
-          applyBackground(saved);
-          el.backgroundSelect.value = saved;
-        } catch (error) {
-          el.backgroundError.textContent = `Couldn't load the saved background: ${error.message}`;
-        }
-      }
-
       function setupDropdown(toggle, select, deferChange = false, options = {}) {
         let startingValue = "";
         let committing = false;
@@ -1379,7 +1275,6 @@
         };
       }
 
-      const backgroundDropdown = setupDropdown(el.backgroundToggle, el.backgroundSelect);
       const graphDropdown = setupDropdown(el.graphToggle, el.graphSelect, true);
       const peopleSortDropdown = setupDropdown(el.peopleSortToggle, el.peopleSortSelect, true, { alignRight: true });
       peopleSortDropdown.sync();
@@ -1403,27 +1298,6 @@
           }));
         });
       }
-      el.backgroundSelect.addEventListener("change", () => {
-        const background = el.backgroundSelect.value;
-        try {
-          applyBackground(background);
-        } catch (error) {
-          el.backgroundSelect.value = document.documentElement.dataset.background || "plain";
-          backgroundDropdown.sync();
-          el.backgroundError.textContent = `Couldn't apply the background: ${error.message}`;
-          return;
-        }
-        backgroundDropdown.sync();
-        try {
-          localStorage.setItem(BACKGROUND_KEY, background);
-          el.backgroundError.textContent = "";
-        } catch (error) {
-          el.backgroundError.textContent = `Couldn't save the background on this device: ${error.message}`;
-        }
-      });
-      loadBackground();
-      backgroundDropdown.sync();
-
       function makeId(prefix) {
         return `${prefix}-${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
       }

@@ -63,8 +63,6 @@ Click the people count to filter the list and graph by relationship, or choose A
 
 Use **Search people** above the add-person row to filter the list by name as you type; search is case-insensitive and does not change the graph. Use the clear button to show the full list again, subject to the relationship filter. Double-clicking a graph person hidden by search clears the search and opens their row. Search lasts until the page is refreshed and is not saved.
 
-The background selector is currently hidden; the previously selected background remains saved on this device. The Magic Eye pattern hides a heart; relax your gaze to see it.
-
 Each graph is one row in `public.graphs`; its creation time is recorded in `created_at`, and its JSON data contains the people, trait ratings, and selected axes. The shared Me profile is stored in `public.me_profiles`. Row-level security restricts every read and write to the authenticated owner.
 
 ## Supabase setup
