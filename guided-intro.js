@@ -89,7 +89,10 @@
       const raw = localStorage.getItem(KEY);
       if (!raw) return null;
       const valid = validateDraft(JSON.parse(raw));
-      if (!valid) localStorage.removeItem(KEY);
+      if (!valid?.ready) {
+        localStorage.removeItem(KEY);
+        return null;
+      }
       return valid;
     } catch {
       try { localStorage.removeItem(KEY); } catch { /* storage unavailable */ }
@@ -98,6 +101,7 @@
   }
 
   let draft = loadDraft() || emptyDraft();
+  let hasStoredDraft = draft.ready;
   let selectedIndex = -1;
   let drag = null;
   let view = { zoom: 1, x: 0.5, y: 0.5 };
@@ -111,7 +115,13 @@
   function persist() {
     draft.updatedAt = Date.now();
     try {
-      localStorage.setItem(KEY, JSON.stringify(draft));
+      if (draft.ready) {
+        localStorage.setItem(KEY, JSON.stringify(draft));
+        hasStoredDraft = true;
+      } else if (hasStoredDraft) {
+        localStorage.removeItem(KEY);
+        hasStoredDraft = false;
+      }
       error("");
       return true;
     } catch {
@@ -129,6 +139,7 @@
   function confirmImported() {
     try { localStorage.removeItem(KEY); } catch { /* import already succeeded */ }
     draft = emptyDraft();
+    hasStoredDraft = false;
     showAuth(false);
   }
 

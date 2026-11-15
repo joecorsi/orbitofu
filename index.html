@@ -111,6 +111,7 @@
       .account-email::after { content: ""; position: absolute; right: 6px; top: 50%; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid currentColor; transform: translateY(-50%); pointer-events: none; }
       .account-menu:not([hidden]) { position: absolute; z-index: 10; top: calc(100% + var(--control-gap)); right: 0; box-sizing: border-box; width: max-content; max-width: calc(100vw - 50px); padding: 4px; border: 1px solid #767676; border-radius: 2px; background: #fff; }
       .account-menu button { display: block; width: 100%; padding: 4px 6px; border: 0; background: transparent; color: #000; font: 13.3333px Arial, sans-serif; text-align: left; cursor: pointer; }
+      .account-menu button[hidden] { display: none; }
       .account-menu button:disabled { color: #888; cursor: default; }
       .account-menu button:not(:disabled):is(:hover, :focus-visible) { background: var(--highlight-blue); color: #fff; }
       .account-menu [role="separator"] { display: block; border-top: 1px solid #767676; margin: 4px 0; }
@@ -370,12 +371,13 @@
       <header class="masthead">
         <p class="brand"><a id="home-link" href="./"><span aria-hidden="true">🍐</span> The Pear</a></p>
         <p class="privacy-note">Your graphs are private to your account</p>
-        <p class="starter-privacy" id="starter-privacy" hidden>Your draft is private to this browser until you choose to save it.</p>
+        <p class="starter-privacy" id="starter-privacy" hidden>This draft is private to this browser session and all data is deleted unless saved.</p>
         <button class="starter-sign-in" id="starter-skip" type="button">Sign in</button>
         <div class="account-bar" id="account-bar" hidden>
           <button class="account-email" id="account-email" type="button" aria-expanded="false" aria-controls="account-menu"></button>
           <div class="account-menu" id="account-menu" role="group" aria-label="Account options" hidden>
             <button type="button" disabled>Account</button>
+            <button id="account-graphs" type="button" hidden>My graphs</button>
             <button id="open-tutorial" type="button">Restart tutorial</button>
             <span role="separator"></span>
             <button id="sign-out" type="button">Sign out</button>
@@ -841,6 +843,7 @@
         accountBar: document.getElementById("account-bar"),
         accountEmail: document.getElementById("account-email"),
         accountMenu: document.getElementById("account-menu"),
+        accountGraphs: document.getElementById("account-graphs"),
         openTutorial: document.getElementById("open-tutorial"),
         tutorialDialog: document.getElementById("tutorial-dialog"),
         tutorialShade: document.getElementById("tutorial-shade"),
@@ -1593,6 +1596,8 @@
           closeAccountMenu();
           return;
         }
+        el.accountGraphs.hidden = !el.workspace.hidden;
+        el.openTutorial.hidden = el.workspace.hidden;
         el.accountMenu.hidden = false;
         el.accountEmail.setAttribute("aria-expanded", "true");
       });
@@ -1603,7 +1608,7 @@
         }
         else if (!el.accountMenu.hidden && ["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
           event.preventDefault();
-          const items = [...el.accountMenu.querySelectorAll("button:not(:disabled)")];
+          const items = [...el.accountMenu.querySelectorAll("button:not(:disabled):not([hidden])")];
           const index = items.indexOf(document.activeElement);
           const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 :
             event.key === "ArrowDown" ? Math.min(index + 1, items.length - 1) :
@@ -1715,6 +1720,10 @@
 
       async function applySession(session, returnFromHomepage = false) {
         const nextUser = session?.user ?? null;
+        if (nextUser && showingHomepage && !returnFromHomepage) {
+          el.accountEmail.textContent = nextUser.email || "Account";
+          el.accountBar.hidden = false;
+        }
         if (!currentUser && nextUser && showingHomepage && window.thePearStarter.inFlow() && !returnFromHomepage) {
           currentUser = nextUser;
           return;
@@ -1841,7 +1850,7 @@
         closeGraphOptions();
         closeProximityMenu();
         el.workspace.hidden = true;
-        el.accountBar.hidden = true;
+        el.accountBar.hidden = !currentUser;
         el.authScreen.hidden = false;
         if (!preserveRoute) window.thePearStarter.showHomepage();
       }
@@ -1886,6 +1895,15 @@
         void returnToAccount()
           .catch(error => showNotice(el.authNotice, `Couldn't check your sign-in: ${error.message}`))
           .finally(() => { el.starterSignIn.disabled = false; });
+      });
+      el.accountGraphs.addEventListener("click", () => {
+        closeAccountMenu();
+        void returnToAccount().catch(reportError);
+      });
+      document.getElementById("starter-save").addEventListener("click", () => {
+        if (currentUser && window.thePearStarter.pendingPeople()) {
+          void returnToAccount().catch(reportError);
+        }
       });
 
       async function loadMe(load) {
@@ -4410,7 +4428,7 @@
           const { error } = await client.auth.signOut();
           if (error) throw error;
         } catch (error) {
-          showNotice(el.appNotice, `Couldn't safely sign out: ${error.message}`);
+          showNotice(el.workspace.hidden ? el.authNotice : el.appNotice, `Couldn't safely sign out: ${error.message}`);
         }
       });
 

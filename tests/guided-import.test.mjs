@@ -113,6 +113,7 @@ test("the logo opens the homepage and sign-in restores an active account", async
   assert.deepEqual(ui.calls, ["flush", "homepage"]);
   assert.equal(ui.el.workspace.hidden, true);
   assert.equal(ui.el.authScreen.hidden, false);
+  assert.equal(ui.el.accountBar.hidden, false);
   await ui.returnToAccount();
   assert.equal(ui.el.workspace.hidden, false);
   assert.equal(ui.el.accountBar.hidden, false);

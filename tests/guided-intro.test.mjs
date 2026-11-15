@@ -240,10 +240,14 @@ test("ready draft survives refresh and clears only after confirmed account impor
   assert.equal(nextVisit.el("starter-try").hidden, false);
 });
 
-test("an unfinished draft resumes from the homepage without being imported", () => {
+test("unfinished answers resume during the visit but are discarded on reload", () => {
   const ui = startGuide();
   answer(ui, "Alex", 85, 10);
   assert.equal(ui.api.pendingPeople(), null);
+  assert.equal(ui.store.has(DRAFT_KEY), false);
+  ui.api.showHomepage();
+  ui.el("starter-try").dispatch("click");
+  assert.match(ui.el("starter-title").textContent, /family/i);
   const again = mount(Object.fromEntries(ui.store));
   assert.equal(again.el("auth-details").hidden, false);
   assert.equal(again.el("starter-try").hidden, false);
@@ -255,12 +259,34 @@ test("an unfinished draft resumes from the homepage without being imported", () 
   assert.equal(again.el("demo-column").hidden, false);
   assert.equal(again.el("starter-graph").hidden, false);
   assert.equal(again.el("starter-graph").children.length, 0);
-  assert.match(again.el("starter-title").textContent, /family/i);
-  assert.equal(JSON.parse(again.store.get(DRAFT_KEY)).answers[0].name, "Alex");
+  assert.match(again.el("starter-title").textContent, /friend/i);
+  assert.equal(again.store.has(DRAFT_KEY), false);
   again.el("starter-skip").dispatch("click");
   assert.equal(again.el("starter-privacy").hidden, true);
   assert.equal(again.el("starter-try").hidden, false);
   assert.equal(again.api.pendingPeople(), null);
+});
+
+test("legacy unfinished drafts are removed rather than resumed", () => {
+  const legacy = JSON.stringify({
+    version: 2, answers: [{ name: "Alex", relationship: "friend", x: 85, y: 10 }],
+    step: 1, phase: "questions", ready: false, updatedAt: Date.now()
+  });
+  const ui = mount({ [DRAFT_KEY]: legacy }, "#/try");
+  assert.equal(ui.store.has(DRAFT_KEY), false);
+  assert.match(ui.el("starter-title").textContent, /friend/i);
+});
+
+test("editing a saved handoff removes it from storage until saved again", () => {
+  const ui = startGuide();
+  complete(ui);
+  ui.el("starter-save").dispatch("click");
+  assert.ok(ui.api.pendingPeople());
+  ui.win.location.hash = "#/try";
+  ui.win.listeners.popstate();
+  ui.el("starter-edit").dispatch("click");
+  assert.equal(ui.store.has(DRAFT_KEY), false);
+  assert.equal(ui.api.pendingPeople(), null);
 });
 
 test("the walkthrough route supports direct visits and browser navigation", () => {
@@ -293,7 +319,6 @@ test("the personalized graph zooms, pans, resets, and keeps ratings unchanged", 
   const graph = ui.el("starter-graph");
   const dot = graph.children[1];
   const original = { left: dot.style.left, top: dot.style.top };
-  const answers = JSON.parse(ui.store.get(DRAFT_KEY)).answers;
   graph.dispatch("wheel", { deltaY: -500, deltaMode: 0, clientX: 201, clientY: 201 });
   assert.equal(ui.el("starter-footer").hidden, false);
   assert.notEqual(dot.style.left, original.left);
@@ -303,10 +328,12 @@ test("the personalized graph zooms, pans, resets, and keeps ratings unchanged", 
   graph.dispatch("pointerdown", { clientX: 200, clientY: 200 });
   graph.dispatch("pointermove", { clientX: 220, clientY: 200 });
   graph.dispatch("pointerup");
-  assert.deepEqual(JSON.parse(ui.store.get(DRAFT_KEY)).answers, answers);
   ui.el("starter-reset").dispatch("click");
   assert.equal(ui.el("starter-footer").hidden, true);
   assert.deepEqual({ left: dot.style.left, top: dot.style.top }, original);
+  ui.el("starter-save").dispatch("click");
+  assert.deepEqual(ui.api.pendingPeople().map(({ x, y }) => [x, y]),
+    [[85, 10], [42, 75], [74, 22], [62, 33]]);
 });
 
 test("dragging an offscreen person starts from their actual rating", () => {
@@ -320,7 +347,8 @@ test("dragging an offscreen person starts from their actual rating", () => {
   dot.dispatch("pointerdown", { clientX: x, clientY: y });
   dot.dispatch("pointermove", { clientX: x - 10, clientY: y });
   dot.dispatch("pointerup");
-  const person = JSON.parse(ui.store.get(DRAFT_KEY)).answers[0];
+  ui.el("starter-save").dispatch("click");
+  const person = ui.api.pendingPeople()[0];
   assert.ok(person.x >= 80 && person.x < 85);
   assert.equal(person.y, 10);
 });
@@ -344,7 +372,7 @@ test("lover or foe is required at the third step", () => {
   ui.el("starter-name").value = "Casey";
   ui.el("starter-answer-form").dispatch("submit");
   assert.match(ui.el("starter-error").textContent, /choose lover or foe/i);
-  assert.equal(JSON.parse(ui.store.get(DRAFT_KEY)).answers.length, 2);
+  assert.equal(ui.el("starter-step").textContent, "Step 3 of 4");
 });
 
 test("stale draft ratings expire rather than import silently", () => {
