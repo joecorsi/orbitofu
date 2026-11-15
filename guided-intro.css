@@ -6,7 +6,7 @@
 .starter-flow:has(#starter-finish-actions:not([hidden])) .starter-step,
 .starter-flow:has(#starter-finish-actions:not([hidden])) .tutorial-progress { display: none; }
 .starter-flow:has(#starter-finish-actions:not([hidden])) .starter-content { padding: 0; }
-.starter-flow:has(#starter-finish-actions:not([hidden])) #starter-description { line-height: normal; text-align: justify; }
+.starter-flow:has(#starter-finish-actions:not([hidden])) #starter-description { margin: 1em 0; line-height: normal; text-align: justify; }
 .starter-flow:has(#starter-finish-actions:not([hidden])) #starter-finish-actions { display: grid; gap: .5em; margin: 1em 0; }
 .starter-flow:has(#starter-finish-actions:not([hidden])) .starter-actions .starter-primary { font-weight: normal; }
 .starter-content { padding: 12px 10px 10px; }
@@ -45,6 +45,10 @@
 .auth-panel:has(#demo-column[hidden]) .auth-copy { grid-column: 1; grid-row: 1; max-width: none; }
 @media (max-width: 680px) {
   .auth-panel:not([hidden]):has(#demo-column[hidden]) { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 360px) {
+  .page:has(#auth-screen:not([hidden])):has(#starter-privacy:not([hidden])) .brand { white-space: nowrap; }
+  .starter-privacy { box-sizing: border-box; padding-inline: 6px; font-size: .75em; line-height: 1.15; }
 }
 @media (prefers-reduced-motion: reduce) {
   #starter-graph .starter-person { transition: none; }

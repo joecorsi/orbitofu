@@ -34,6 +34,7 @@
     privacy: $("starter-privacy"),
     authDetails: $("auth-details"),
     authNote: $("starter-auth-note"),
+    authIntro: $("auth-intro"),
     tryButton: $("starter-try"),
     authEmail: $("auth-email"),
     demo: $("demo-column"),
@@ -277,7 +278,7 @@
     ui.progress.setAttribute("aria-valuenow", String(complete));
     [...ui.progress.children].forEach((part, i) => part.classList.toggle("filled", i < complete));
     if (reveal) {
-      ui.description.textContent = "Three people, and you. Move any dot to change your answers before saving.";
+      ui.description.textContent = ui.authIntro.textContent;
       selectedIndex = -1;
       updateDots();
       window.requestAnimationFrame?.(updateDots);

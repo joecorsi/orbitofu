@@ -425,8 +425,7 @@
               </div>
             </section>
             <div class="auth-details" id="auth-details">
-              <div class="starter-auth-note" id="starter-auth-note" role="status" hidden><strong>Your graph is ready to save.</strong>Sign in to save a new graph with these three people and your self-ratings. If you have an existing account, its shared Me profile will use your two new ratings across your graphs.</div>
-              <p class="muted">See your world from a new angle. Your graphs are private and available anywhere.</p>
+              <p class="muted" id="auth-intro">See your world from a new angle. Your graphs are private and available anywhere.</p>
               <form class="auth-form" id="sign-in-form">
                 <label class="field-label" for="auth-email">Your email address</label>
                 <input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com" required>
@@ -435,6 +434,7 @@
                   <button class="button" id="google-sign-in" type="button">Sign in with Google</button>
                 </div>
               </form>
+              <div class="starter-auth-note" id="starter-auth-note" role="status" hidden><strong>Your graph is ready to save.</strong>Sign in to save a new graph with these three people and your self-ratings. If you have an existing account, its shared Me profile will use your two new ratings across your graphs.</div>
               <button class="starter-link" id="starter-try" type="button">Try it with people you know first</button>
               <details class="setup-details" id="connection-details" hidden>
                 <summary id="connection-summary">Set up Supabase connection</summary>

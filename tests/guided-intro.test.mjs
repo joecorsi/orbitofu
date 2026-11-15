@@ -72,6 +72,7 @@ function mount(initialStorage = {}) {
   };
   const el = id => doc.getElementById(id);
   el("starter-progress").children = Array.from({ length: 4 }, () => new Element("span"));
+  el("auth-intro").textContent = "See your world from a new angle. Your graphs are private and available anywhere.";
   const win = {};
   const ResizeObserverStub = class { observe() {} };
   new Function("document", "window", "localStorage", "ResizeObserver", source)(
@@ -116,6 +117,7 @@ test("the graph stays hidden until friend, family, lover or foe, and Me are rate
   assert.equal(ui.el("starter-graph").hidden, false);
   assert.equal(ui.el("demo-column").hidden, false);
   assert.equal(ui.el("starter-title").hidden, true);
+  assert.equal(ui.el("starter-description").textContent, ui.el("auth-intro").textContent);
   assert.equal(ui.el("starter-privacy").hidden, false);
   assert.equal(ui.el("starter-graph").children.length, 4);
   assert.equal(ui.el("starter-answer-form").hidden, true);
