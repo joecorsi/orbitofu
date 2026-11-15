@@ -8,6 +8,7 @@
   const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
   const ROLES = ["friend", "family", "choice", "me"];
   const COLORS = ["#e83c9b", "#35a84d", "#ed8615", "#145c92"];
+  const { findProximity, setProximityLabel, setupProximityMenu, drawProximityCanvas } = window.thePearProximity;
   const $ = id => document.getElementById(id);
   const ui = {
     flow: $("starter-flow"),
@@ -41,8 +42,15 @@
     graph: $("starter-graph"),
     center: $("starter-center"),
     footer: $("starter-footer"),
-    reset: $("starter-reset")
+    reset: $("starter-reset"),
+    proximityToggle: $("starter-proximity-toggle"),
+    proximityMenu: $("starter-proximity-menu"),
+    proximityClosest: $("starter-proximity-closest"),
+    proximityFurthest: $("starter-proximity-furthest"),
+    proximityCanvas: $("starter-proximity-line")
   };
+  const proximityContext = ui.proximityCanvas.getContext("2d");
+  setupProximityMenu(ui.proximityToggle, ui.proximityMenu, ui.proximityClosest, ui.proximityFurthest, updateDots);
 
   const emptyDraft = () => ({
     version: 2, answers: [], step: 0, phase: "questions", ready: false, updatedAt: Date.now()
@@ -158,7 +166,7 @@
     ui.demo.hidden = false;
     ui.demo.classList.toggle("starter-active", hasDraft);
     ui.graph.hidden = !hasDraft;
-    ui.footer.hidden = !hasDraft || view.zoom === 1;
+    ui.footer.hidden = !hasDraft;
     if (hasDraft) {
       updateDots();
       window.requestAnimationFrame?.(updateDots);
@@ -279,7 +287,9 @@
   function updateDots() {
     const reveal = draft.phase === "reveal";
     for (const button of nodes.values()) button.hidden = !reveal;
-    ui.footer.hidden = ui.graph.hidden || view.zoom === 1;
+    ui.footer.hidden = ui.graph.hidden || !reveal;
+    ui.reset.hidden = !reveal || view.zoom === 1;
+    ui.proximityCanvas.hidden = !reveal;
     const { size, inset, span, viewedSpan, left, top } = graphBounds();
     if (!size || !span) return;
     const midX = left + viewedSpan / 2;
@@ -289,14 +299,17 @@
     ui.center.hidden = midX < 20 || midX > size - 20 || midY < 20 || midY > size - 20;
     ui.center.style.left = `${midX}px`;
     ui.center.style.top = `${midY}px`;
+    const displayedPoint = person => {
+      const actualX = left + person.x / 100 * viewedSpan;
+      const actualY = top + (1 - person.y / 100) * viewedSpan;
+      return { x: Math.max(inset, Math.min(size - inset, actualX)),
+        y: Math.max(inset, Math.min(size - inset, actualY)), actualX, actualY };
+    };
     for (let index = 0; reveal && index < draft.answers.length; index++) {
       if (!nodes.has(index)) createDot(index);
       const person = draft.answers[index];
       const button = nodes.get(index);
-      const actualX = left + person.x / 100 * viewedSpan;
-      const actualY = top + (1 - person.y / 100) * viewedSpan;
-      const x = Math.max(inset, Math.min(size - inset, actualX));
-      const y = Math.max(inset, Math.min(size - inset, actualY));
+      const { x, y, actualX, actualY } = displayedPoint(person);
       button.style.left = x + "px";
       button.style.top = y + "px";
       button.classList.toggle("label-left", x > size - 90);
@@ -309,6 +322,12 @@
         " out of 100. Drag or use arrow keys to reposition.");
     }
     ui.graph.classList.toggle("has-selection", selectedIndex >= 0);
+    const mode = ui.proximityClosest.checked ? "closest" : ui.proximityFurthest.checked ? "furthest" : null;
+    const me = reveal ? draft.answers.find(person => person.relationship === "me") : null;
+    const target = findProximity(draft.answers, me, mode, person => person === me ? null : person);
+    setProximityLabel(ui.proximityToggle, mode, target?.name);
+    drawProximityCanvas(ui.proximityCanvas, proximityContext, size, size,
+      me && displayedPoint(me), target && displayedPoint(target));
   }
 
   ui.graph.addEventListener("wheel", event => {

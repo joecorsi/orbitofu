@@ -2,13 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-const start = html.indexOf("      function findProximity(");
-const end = html.indexOf("      function setupProximityMenu(", start);
-assert.ok(start >= 0 && end > start, "shared proximity helpers are present");
-const { findProximity, setProximityLabel } = new Function(
-  html.slice(start, end) + "\nreturn { findProximity, setProximityLabel };"
-)();
+const source = readFileSync(new URL("../proximity.js", import.meta.url), "utf8");
+const window = {};
+new Function("window", "document", source)(window, {});
+const { findProximity, setProximityLabel } = window.thePearProximity;
 
 test("closest and furthest use both graph axes and skip hidden people", () => {
   const people = [

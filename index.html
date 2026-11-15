@@ -39,6 +39,7 @@
       .page:has(#workspace:not([hidden])) { display: flex; flex-direction: column; height: calc(100dvh - 36px); padding-bottom: 0; }
       .page:has(#workspace:not([hidden])) .content { display: flex; flex: 1; min-height: 0; }
       #workspace:not([hidden]) { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; }
+      #workspace[hidden] { display: flex; position: fixed; top: 0; left: 0; flex-direction: column; width: var(--measure-width, min(1200px, calc(100vw - 50px))); height: calc(100dvh - 36px - var(--measure-header-height, 53px)); visibility: hidden; pointer-events: none; }
       .background-selector { position: fixed; right: calc(1em + 25px); bottom: calc(1em + 10px); z-index: 1; }
       .background-toggle { display: block; margin-left: auto; }
       .background-toggle::after { content: " ▴"; }
@@ -52,7 +53,7 @@
       #graph-select option, .graph-select .dropdown-highlight span { padding-left: 3px; }
       .background-error { max-width: 20em; color: #a00; }
       .masthead, .account-bar:not([hidden]) { display: flex; flex-wrap: wrap; align-items: center; gap: .5em; }
-      .masthead { justify-content: space-between; }
+      .masthead { justify-content: space-between; width: min(100%, var(--workspace-width, 100%)); margin-inline: auto; }
       .page:has(#workspace:not([hidden])) .masthead { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
       .masthead .brand { align-self: start; }
       .brand a { color: inherit; text-decoration: none; }
@@ -60,7 +61,9 @@
       .masthead .account-bar { justify-self: end; }
       .privacy-note { display: none; margin: 0; text-align: center; font-size: .85em; }
       .page:has(#workspace:not([hidden])) .privacy-note { display: block; }
-      .auth-panel:not([hidden]) { display: grid; width: min(100%, calc(800px + 2rem)); grid-template-columns: min(300px, 100%) minmax(0, 500px); grid-template-rows: auto auto; align-items: start; column-gap: 2rem; }
+      .auth-panel:not([hidden]) { display: grid; width: min(calc((100% + min(100%, var(--workspace-width, 100%))) / 2), calc(800px + 2rem)); margin-left: calc((100% - min(100%, var(--workspace-width, 100%))) / 2); grid-template-columns: min(300px, 100%) minmax(0, 500px); grid-template-rows: auto auto; align-items: start; column-gap: 2rem; }
+      .auth-panel.auth-stacked:not([hidden]) { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; }
+      .auth-panel.auth-stacked .demo { grid-column: 1; grid-row: 3; margin-top: 1rem; }
       .auth-copy { display: grid; grid-column: 1; grid-row: 1 / span 2; grid-template-rows: subgrid; width: 100%; max-width: 300px; align-self: stretch; }
       #auth-title { margin-bottom: 0; font-size: min(1.9em, calc((100vw - 50px) / 10)); white-space: nowrap; }
       .auth-details { min-width: 0; }
@@ -104,7 +107,7 @@
       .demo-person.selected.label-left .demo-person-name { right: 6px; left: auto; transform: translate(50%, -100%); }
       .demo-graph .chart-groups { z-index: 3; }
       .demo-proximity { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
-      .layout { --layout-gap: calc(1em + 5px); display: grid; flex: 1; min-height: 0; grid-template-columns: minmax(0, min(calc(100% - min(40%, 21rem) - var(--layout-gap)), var(--chart-available-width, 100%))) min(40%, 21rem); grid-template-rows: minmax(0, 1fr); justify-content: space-between; gap: var(--layout-gap); }
+      .layout { --layout-gap: calc(1em + 5px); display: grid; flex: 1; min-height: 0; grid-template-columns: minmax(0, min(calc(100% - min(40%, 21rem) - var(--layout-gap)), var(--chart-available-width, 100%))) min(40%, 21rem); grid-template-rows: minmax(0, 1fr); justify-content: center; gap: var(--layout-gap); }
       .graph-select { position: relative; flex: 1 1 90px; min-width: 90px; }
       .graph-dates { display: flex; flex-wrap: wrap; gap: var(--control-gap); }
       .graph-badge { border-radius: 2px; padding: 3px 7px; background: #efefef; color: #000; font: 13.3333px Arial, sans-serif; white-space: nowrap; }
@@ -439,7 +442,7 @@
                   <button class="button" id="google-sign-in" type="button">Sign in with Google</button>
                 </div>
               </form>
-              <div class="starter-auth-note" id="starter-auth-note" role="status" hidden><strong>Your graph is ready to save.</strong>Sign in to save a new graph with these three people and your self-ratings.</div>
+              <div class="starter-auth-note" id="starter-auth-note" role="status" hidden><strong>Your graph is ready to save.</strong>Sign in to save this graph, add new people, and explore your relationships further.</div>
               <a class="starter-link" id="starter-try" href="#/try">Try it with people you know first</a>
               <details class="setup-details" id="connection-details" hidden>
                 <summary id="connection-summary">Set up Supabase connection</summary>
@@ -463,12 +466,24 @@
               <span class="demo-axis-label demo-x-high">Cool</span>
               <span class="demo-axis-label demo-y-low">Benevolent</span>
               <span class="demo-axis-label demo-y-high">Malevolent</span>
+              <canvas class="demo-proximity" id="starter-proximity-line" aria-hidden="true" hidden></canvas>
               <span class="chart-info">
                 <button class="chart-info-button" type="button" aria-label="Graph controls information" aria-describedby="starter-info-tooltip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="currentColor"/></svg></button>
                 <span class="chart-info-tooltip" id="starter-info-tooltip" role="tooltip">Scroll to zoom, drag empty space or use Shift and arrow keys to pan. Select a dot, then use the mouse or arrow keys to adjust values.</span>
               </span>
             </div>
-            <div class="chart-footer" id="starter-footer" hidden><button type="button" id="starter-reset">Reset view</button></div>
+            <div class="chart-footer" id="starter-footer" hidden>
+              <span class="graph-footer-controls">
+                <span class="proximity">
+                  <button class="graph-options-toggle proximity-toggle" id="starter-proximity-toggle" type="button" aria-expanded="false" aria-controls="starter-proximity-menu"><span aria-live="polite">Proximity</span></button>
+                  <span class="graph-options-menu proximity-menu" id="starter-proximity-menu" role="group" aria-label="Your graph proximity" hidden>
+                    <label><input id="starter-proximity-closest" type="checkbox" checked> Current closest</label>
+                    <label><input id="starter-proximity-furthest" type="checkbox"> Current furthest</label>
+                  </span>
+                </span>
+                <button type="button" id="starter-reset" hidden>Reset view</button>
+              </span>
+            </div>
             <div class="demo-graph" id="demo-graph" role="group" tabindex="-1" aria-label="Interactive sample graph" aria-describedby="demo-help">
               <span class="demo-axis-line demo-axis-horizontal"></span>
               <span class="demo-axis-line demo-axis-vertical"></span>
@@ -795,8 +810,10 @@
     </aside>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./proximity.js"></script>
     <script src="./guided-intro.js"></script>
     <script>
+      const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas } = window.thePearProximity;
       const CONFIG_KEY = "people-map-supabase-config";
       const BACKGROUND_KEY = "the-pear-background";
       const GOOGLE_SIGN_IN_KEY = "the-pear-previous-google-sign-in";
@@ -2999,66 +3016,6 @@
         return { begin, point, stop };
       }
 
-      function findProximity(people, origin, mode, getPoint) {
-        if (!origin || !mode) return null;
-        let result = null;
-        let bestDistance = mode === "closest" ? Infinity : -Infinity;
-        for (const person of people) {
-          const point = getPoint(person);
-          if (!point) continue;
-          const distance = (point.x - origin.x) ** 2 + (point.y - origin.y) ** 2;
-          if (mode === "closest" ? distance < bestDistance : distance > bestDistance) {
-            result = person;
-            bestDistance = distance;
-          }
-        }
-        return result;
-      }
-
-      function setProximityLabel(toggle, mode, name, emptyLabel = "No visible people") {
-        const label = mode ? (name ? `${mode === "closest" ? "Closest" : "Furthest"}: ${name}` : emptyLabel) : "Proximity";
-        const description = mode ? `Current ${mode}: ${name ?? label}` : label;
-        if (toggle.firstElementChild.textContent !== label) toggle.firstElementChild.textContent = label;
-        if (toggle.getAttribute("aria-label") !== description) toggle.setAttribute("aria-label", description);
-        if (toggle.title !== description) toggle.title = description;
-      }
-
-      function setupProximityMenu(toggle, menu, closest, furthest, draw) {
-        const close = (restoreFocus = false) => {
-          if (menu.hidden) return;
-          menu.hidden = true;
-          toggle.setAttribute("aria-expanded", "false");
-          if (restoreFocus) toggle.focus();
-        };
-        toggle.addEventListener("click", () => {
-          if (!menu.hidden) return close();
-          menu.hidden = false;
-          toggle.setAttribute("aria-expanded", "true");
-          menu.style.left = "0px";
-          const overflow = menu.getBoundingClientRect().right - document.documentElement.clientWidth;
-          if (overflow > 0) menu.style.left = `${-overflow}px`;
-        });
-        toggle.parentElement.addEventListener("keydown", event => {
-          if (event.key === "Escape") {
-            event.preventDefault();
-            close(true);
-          }
-        });
-        toggle.parentElement.addEventListener("focusout", event => {
-          if (!toggle.parentElement.contains(event.relatedTarget)) close();
-        });
-        document.addEventListener("pointerdown", event => {
-          if (!toggle.parentElement.contains(event.target)) close();
-        });
-        for (const [checkbox, other] of [[closest, furthest], [furthest, closest]]) {
-          checkbox.addEventListener("change", () => {
-            if (checkbox.checked) other.checked = false;
-            draw();
-          });
-        }
-        return close;
-      }
-
       function setupDemoGraph() {
         const frame = document.getElementById("demo-graph");
         const reset = document.getElementById("demo-reset");
@@ -3315,14 +3272,7 @@
           const target = findProximity(plotted, me?.actual, mode,
             entry => entry.person.id === ME_ID ? null : entry.actual);
           setProximityLabel(proximityToggle, mode, target?.person.name);
-          const scale = window.devicePixelRatio || 1;
-          const canvasWidth = Math.round(width * scale);
-          const canvasHeight = Math.round(height * scale);
-          if (proximityCanvas.width !== canvasWidth) proximityCanvas.width = canvasWidth;
-          if (proximityCanvas.height !== canvasHeight) proximityCanvas.height = canvasHeight;
-          proximityContext.setTransform(scale, 0, 0, scale, 0, 0);
-          proximityContext.clearRect(0, 0, width, height);
-          if (me && target) drawProximityLine(proximityContext, me.point, target.point);
+          drawProximityCanvas(proximityCanvas, proximityContext, width, height, me?.point, target?.point);
           const labels = showNames.checked ? plotted.map(({ person, point }) => {
             const metrics = measure.measureText(person.name);
             const left = point.x > width - 90 ? point.x - 9 - metrics.width : point.x + 9;
@@ -3595,26 +3545,6 @@
         }
         setProximityLabel(el.proximityToggle, mode, result?.name, emptyLabel);
         return result?.person ?? null;
-      }
-
-      function drawProximityLine(context, from, to) {
-        const dx = to.x - from.x;
-        const dy = to.y - from.y;
-        const length = Math.hypot(dx, dy);
-        context.save();
-        context.strokeStyle = "rgba(0, 0, 0, 0.23)";
-        context.lineWidth = 1;
-        context.beginPath();
-        context.moveTo(from.x, from.y);
-        for (let distance = 0.5; distance < length; distance += 0.5) {
-          const wave = 3 * Math.sin(2 * Math.PI * distance / 10) *
-            Math.min(1, distance / 10, (length - distance) / 10);
-          context.lineTo(from.x + (dx * distance - dy * wave) / length,
-            from.y + (dy * distance + dx * wave) / length);
-        }
-        context.lineTo(to.x, to.y);
-        context.stroke();
-        context.restore();
       }
 
       function chartPoint(person, bounds, range) {
@@ -5084,14 +5014,25 @@
       }
 
       function alignGraphColumn() {
+        const page = document.querySelector(".page");
+        const masthead = document.querySelector(".masthead");
         const chartSpace = document.querySelector(".chart-space");
         const footer = document.querySelector("#workspace .chart-footer");
         const layout = document.querySelector(".layout");
+        page.style.setProperty("--measure-width", `${page.clientWidth}px`);
+        page.style.setProperty("--measure-header-height", `${masthead.getBoundingClientRect().height}px`);
         const height = chartSpace.getBoundingClientRect().height;
         if (height > 0) {
           const footerSpace = footer.getBoundingClientRect().height + parseFloat(getComputedStyle(footer).marginTop);
           chartSpace.style.setProperty("--chart-footer-space", `${footerSpace}px`);
           layout.style.setProperty("--chart-available-width", `${Math.max(0, height - footerSpace)}px`);
+          const left = document.querySelector(".graph-panel").getBoundingClientRect().left;
+          const right = document.querySelector(".people-panel").getBoundingClientRect().right;
+          const workspaceWidth = Math.max(0, right - left);
+          page.style.setProperty("--workspace-width", `${workspaceWidth}px`);
+          const availableWidth = (page.clientWidth + Math.min(page.clientWidth, workspaceWidth)) / 2;
+          const homeWidth = 800 + 2 * parseFloat(getComputedStyle(document.documentElement).fontSize);
+          document.querySelector(".auth-panel").classList.toggle("auth-stacked", availableWidth < homeWidth);
         }
       }
 
@@ -5107,7 +5048,7 @@
         drawChart();
         alignPeopleList();
       });
-      for (const element of [el.chart.parentElement, document.querySelector(".chart-space"), document.querySelector("#workspace .chart-footer"), document.querySelector(".chart-heading"),
+      for (const element of [document.querySelector(".masthead"), el.chart.parentElement, document.querySelector(".chart-space"), document.querySelector("#workspace .chart-footer"), document.querySelector(".chart-heading"),
                              document.querySelector(".people-heading"), el.addPersonForm]) {
         layoutObserver.observe(element);
       }

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const source = readFileSync(new URL("../guided-intro.js", import.meta.url), "utf8");
+const proximitySource = readFileSync(new URL("../proximity.js", import.meta.url), "utf8");
 const DRAFT_KEY = "the-pear-first-graph-v2";
 
 function mount(initialStorage = {}, initialHash = "") {
@@ -57,6 +58,12 @@ function mount(initialStorage = {}, initialHash = "") {
     }
     closest() { return null; }
     setAttribute(name, value) { this.attributes[name] = value; }
+    getAttribute(name) { return this.attributes[name] ?? null; }
+    contains(target) { return target === this || this.children.includes(target); }
+    getContext() {
+      return { setTransform() {}, clearRect() {}, save() {}, beginPath() {}, moveTo() {},
+        lineTo() {}, stroke() {}, restore() {} };
+    }
     focus() {}
     setPointerCapture() {}
     getBoundingClientRect() { return { left: 0, top: 0 }; }
@@ -64,6 +71,8 @@ function mount(initialStorage = {}, initialHash = "") {
   }
   const elements = new Map();
   const doc = {
+    documentElement: { clientWidth: 1000 },
+    addEventListener() {},
     getElementById(id) {
       if (!elements.has(id)) elements.set(id, new Element("div", id));
       return elements.get(id);
@@ -72,6 +81,10 @@ function mount(initialStorage = {}, initialHash = "") {
   };
   const el = id => doc.getElementById(id);
   el("starter-progress").children = Array.from({ length: 4 }, () => new Element("span"));
+  el("starter-proximity-toggle").firstElementChild = new Element("span");
+  el("starter-proximity-toggle").parentElement = new Element("span");
+  el("starter-proximity-menu").hidden = true;
+  el("starter-proximity-closest").checked = true;
   el("auth-intro").textContent = "See your world from a new angle. Your graphs are private and available anywhere.";
   const win = {
     location: { pathname: "/", search: "", hash: initialHash },
@@ -85,6 +98,7 @@ function mount(initialStorage = {}, initialHash = "") {
     win.location.hash = parsed.hash;
   } };
   const ResizeObserverStub = class { observe() {} };
+  new Function("window", "document", proximitySource)(win, doc);
   new Function("document", "window", "localStorage", "ResizeObserver", source)(
     doc, win, storage, ResizeObserverStub
   );
@@ -329,11 +343,28 @@ test("the personalized graph zooms, pans, resets, and keeps ratings unchanged", 
   graph.dispatch("pointermove", { clientX: 220, clientY: 200 });
   graph.dispatch("pointerup");
   ui.el("starter-reset").dispatch("click");
-  assert.equal(ui.el("starter-footer").hidden, true);
+  assert.equal(ui.el("starter-reset").hidden, true);
+  assert.equal(ui.el("starter-footer").hidden, false);
   assert.deepEqual({ left: dot.style.left, top: dot.style.top }, original);
   ui.el("starter-save").dispatch("click");
   assert.deepEqual(ui.api.pendingPeople().map(({ x, y }) => [x, y]),
     [[85, 10], [42, 75], [74, 22], [62, 33]]);
+});
+
+test("the revealed graph shows closest and furthest proximity without exposing it during questions", () => {
+  const ui = startGuide();
+  assert.equal(ui.el("starter-footer").hidden, true);
+  complete(ui);
+  assert.equal(ui.el("starter-footer").hidden, false);
+  assert.equal(ui.el("starter-reset").hidden, true);
+  assert.equal(ui.el("starter-proximity-toggle").firstElementChild.textContent, "Closest: Casey");
+  ui.el("starter-proximity-furthest").checked = true;
+  ui.el("starter-proximity-furthest").dispatch("change");
+  assert.equal(ui.el("starter-proximity-closest").checked, false);
+  assert.equal(ui.el("starter-proximity-toggle").firstElementChild.textContent, "Furthest: Blair");
+  ui.el("starter-edit").dispatch("click");
+  assert.equal(ui.el("starter-footer").hidden, true);
+  assert.equal(ui.el("starter-proximity-line").hidden, true);
 });
 
 test("dragging an offscreen person starts from their actual rating", () => {
