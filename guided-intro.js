@@ -355,8 +355,8 @@
     const targetIndex = target && me ? draft.answers.indexOf(target) : null;
     const pulse = proximityControl.pulseFor(targetIndex);
     for (const [index, button] of nodes) {
-      button.querySelector(".demo-person-dot").style.transform =
-        index !== selectedIndex && index === targetIndex && pulse !== 1 ? `scale(${pulse})` : "";
+      button.querySelector(".demo-person-dot").style.setProperty("--proximity-scale",
+        index !== selectedIndex && index === targetIndex ? pulse : 1);
     }
   }
 

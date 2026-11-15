@@ -29,7 +29,7 @@ function mount(initialStorage = {}, initialHash = "", navigationType = "navigate
       this.className = "";
       this.listeners = {};
       this.attributes = {};
-      this.style = { setProperty() {} };
+      this.style = { setProperty(name, value) { this[name] = String(value); } };
       const classes = new Set();
       this.classList = {
         add: name => classes.add(name),
@@ -465,16 +465,16 @@ test("selecting a pulsing proximity target keeps its selected size until deselec
   const person = graph.children[2];
   const dot = person.querySelector(".demo-person-dot");
   ui.advance(700 / 1.15 + 100);
-  assert.match(dot.style.transform, /^scale\(/);
+  assert.ok(Number(dot.style["--proximity-scale"]) > 1);
   person.dispatch("pointerdown");
   assert.equal(person.classList.contains("selected"), true);
-  assert.equal(dot.style.transform, "");
+  assert.equal(dot.style["--proximity-scale"], "1");
   ui.advance(700 / 1.15 + 200);
-  assert.equal(dot.style.transform, "");
+  assert.equal(dot.style["--proximity-scale"], "1");
   person.dispatch("pointerup");
   graph.dispatch("pointerdown");
   assert.equal(person.classList.contains("selected"), false);
-  assert.equal(dot.style.transform, "scale(1.5)");
+  assert.equal(dot.style["--proximity-scale"], "1.5");
 });
 
 test("dragging an offscreen person starts from their actual rating", () => {

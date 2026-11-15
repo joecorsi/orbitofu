@@ -100,11 +100,19 @@
       .demo-person:focus-visible { outline: none; }
       .demo-graph.has-selection .demo-person:not(.selected):not(.sticky) { opacity: .4; }
       .demo-person.selected { z-index: 4; }
-      .demo-person-dot { position: relative; box-sizing: border-box; flex: none; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: var(--person-color); }
+      .demo-person-dot { position: relative; box-sizing: border-box; flex: none; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: var(--person-color); transform: scale(var(--proximity-scale, 1)); }
       .demo-person.sticky .demo-person-dot { background: rgba(0, 0, 0, .23); }
       .demo-person.selected .demo-person-dot { transform: scale(1.5); }
       .demo-person.selected .demo-person-name { position: absolute; top: -4px; left: 7px; padding: 2px 6px; border: 1px solid currentColor; border-radius: 3px; background: #fff; font: bold 16px serif; line-height: 18px; transform: translate(-50%, -100%); }
       .demo-person.selected.label-left .demo-person-name { right: 7px; left: auto; transform: translate(50%, -100%); }
+      @media (hover: hover) {
+        .demo-graph:has(.demo-person:hover) .demo-person:not(.selected):not(:hover):not(.sticky) { opacity: .4; }
+        .demo-graph .demo-person:hover { z-index: 5; opacity: 1; }
+        .demo-graph.has-selection .demo-person:not(.selected):hover { opacity: 1; }
+        .demo-person:hover .demo-person-dot { transform: scale(1.5); }
+        .demo-person:not(.selected):hover .demo-person-name { position: relative; top: 1px; left: -10px; padding: 2px 6px; border: 1px solid currentColor; border-radius: 3px; background: #fff; font: bold 16px serif; line-height: 18px; transform: translate(-50%, -100%); }
+        .demo-person:not(.selected).label-left:hover .demo-person-name { right: -10px; left: auto; transform: translate(50%, -100%); }
+      }
       .demo-graph .chart-groups { z-index: 3; }
       .demo-proximity { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
       .layout { --layout-gap: calc(1em + 5px); display: grid; flex: 1; min-height: 0; grid-template-columns: minmax(0, min(calc(100% - min(40%, 21rem) - var(--layout-gap)), var(--chart-available-width, 100%))) min(40%, 21rem); grid-template-rows: minmax(0, 1fr); justify-content: center; gap: var(--layout-gap); }
@@ -843,7 +851,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./proximity.js?v=proximity-pulse"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
-    <script src="./guided-intro.js?v=selected-dot"></script>
+    <script src="./guided-intro.js?v=hover-dot"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas } = window.thePearProximity;
       const CONFIG_KEY = "people-map-supabase-config";
@@ -3411,8 +3419,8 @@
           plotted.forEach(({ index }) => { if (grouped.has(index) && index !== selected) buttons[index].hidden = true; });
           renderGroups(nextGroups);
           buttons.forEach((button, index) => {
-            button.querySelector(".demo-person-dot").style.transform =
-              index !== selected && target?.index === index && !button.hidden && pulse !== 1 ? `scale(${pulse})` : "";
+            button.querySelector(".demo-person-dot").style.setProperty("--proximity-scale",
+              index !== selected && target?.index === index && !button.hidden ? pulse : 1);
           });
           for (const group of nextGroups) {
             const button = groupButtons.get(group.key);
