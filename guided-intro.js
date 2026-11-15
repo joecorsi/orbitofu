@@ -36,8 +36,7 @@
     tryButton: $("starter-try"),
     authEmail: $("auth-email"),
     demo: $("demo-column"),
-    graph: $("starter-graph"),
-    graphCaption: $("starter-graph-caption")
+    graph: $("starter-graph")
   };
 
   const emptyDraft = () => ({
@@ -146,7 +145,6 @@
     ui.demo.hidden = false;
     ui.demo.classList.remove("starter-active");
     ui.graph.hidden = true;
-    ui.graphCaption.hidden = true;
   }
 
   function showGuide() {
@@ -266,7 +264,6 @@
     ui.finishActions.hidden = !reveal;
     ui.demo.hidden = !reveal;
     ui.graph.hidden = !reveal;
-    ui.graphCaption.hidden = !reveal;
     ui.step.textContent = reveal ? "Your four-person graph" : "Step " + (index + 1) + " of 4";
     const complete = reveal ? 4 : index;
     ui.progress.setAttribute("aria-valuenow", String(complete));

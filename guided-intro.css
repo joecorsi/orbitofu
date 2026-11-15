@@ -31,8 +31,7 @@
 #starter-graph .starter-person { z-index: 2; }
 #starter-graph .starter-person.is-current { z-index: 5; }
 #starter-graph .starter-person:focus-visible .demo-person-dot { outline: 2px solid #000; outline-offset: 4px; }
-.starter-graph-caption { margin: 8px 0 0; color: #444; font-size: 12px; }
-.auth-panel:not([hidden]):has(#demo-column[hidden]) { width: min(460px, 100%); grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+.auth-panel:not([hidden]):has(#demo-column[hidden]) { width: min(460px, 100%); margin-inline: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
 .auth-panel:has(#demo-column[hidden]) .auth-copy { grid-column: 1; grid-row: 1; max-width: none; }
 @media (max-width: 680px) {
   .auth-panel:not([hidden]):has(#demo-column[hidden]) { grid-template-columns: minmax(0, 1fr); }
