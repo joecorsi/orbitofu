@@ -133,6 +133,60 @@ test("canvas draws both proximity lines without clearing between them", () => {
   ]);
   assert.equal(context.calls.filter(call => call[0] === "clearRect").length, 1);
   assert.deepEqual(context.calls.filter(call => call[0] === "stroke").map(call => call[1]), [2, 1]);
+  const highlighted = drawingContext();
+  drawProximityCanvas({}, highlighted, 100, 100, { x: 0, y: 0 }, [
+    { to: { x: 10, y: 0 }, mode: "closest", progress: 1 },
+    { to: { x: 20, y: 0 }, mode: "furthest", progress: 1 }
+  ], "closest");
+  assert.deepEqual(highlighted.calls.filter(call => call[0] === "stroke").map(call => [call[1], call[2]]),
+    [[1, "rgba(0, 0, 0, 0.23)"], [2, "#000"]]);
+});
+
+test("homepage proximity hover follows the pointer and clears on exit or dragging", () => {
+  const context = drawingContext();
+  context.isPointInStroke = (x, y) => x < 200 && y === 10;
+  const doc = { createElement: () => ({ getContext: () => context }) };
+  const win = {};
+  new Function("window", "document", source)(win, doc);
+  const frame = {
+    clientWidth: 300, clientHeight: 200, clientLeft: 1, clientTop: 1, listeners: {},
+    getBoundingClientRect: () => ({ left: 0, top: 0 }),
+    addEventListener(type, fn) { this.listeners[type] = fn; }
+  };
+  const label = { hidden: true, offsetWidth: 80, offsetHeight: 24, style: {} };
+  const from = { x: 20, y: 10 };
+  let lines = [{ to: { x: 180, y: 10 }, mode: "furthest", progress: 1 }];
+  let dragging = false, draws = 0;
+  const hover = win.thePearProximity.setupProximityHover(frame, label, () => {
+    draws++;
+    hover.update(from, lines);
+  }, () => dragging);
+  hover.update(from, lines);
+  const move = (x, target = { closest: () => null }) => frame.listeners.pointermove({
+    clientX: x + 1, clientY: 11, pointerType: "mouse", buttons: 0, target
+  });
+  move(100);
+  assert.equal(label.hidden, false);
+  assert.equal(label.textContent, "Furthest");
+  assert.equal(label.style.left, "60px");
+  move(120);
+  assert.equal(label.style.left, "80px");
+  assert.equal(draws, 2);
+  move(120, { closest: () => ({}) });
+  assert.equal(label.hidden, true);
+  move(100);
+  dragging = true;
+  move(110);
+  assert.equal(label.hidden, true);
+  dragging = false;
+  move(100);
+  lines = [];
+  hover.update(from, lines);
+  assert.equal(label.hidden, true);
+  lines = [{ to: { x: 180, y: 10 }, mode: "furthest", progress: 1 }];
+  hover.update(from, lines);
+  frame.listeners.pointerleave();
+  assert.equal(label.hidden, true);
 });
 
 test("furthest sweep ends on the original wave at the requested progress", () => {

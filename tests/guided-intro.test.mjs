@@ -88,6 +88,7 @@ function mount(initialStorage = {}, initialHash = "", navigationType = "navigate
   el("starter-proximity-toggle").parentElement = el("starter-proximity");
   el("starter-proximity-menu").hidden = true;
   el("starter-proximity-closest").checked = true;
+  el("starter-proximity-furthest").checked = true;
   el("auth-intro").textContent = "See your world from a new angle. Your graphs are private and only accesible in your account.";
   let now = 0;
   let nextFrame = 0;
@@ -439,7 +440,7 @@ test("the personalized graph zooms, pans, resets, and keeps ratings unchanged", 
     [[85, 10], [42, 75], [74, 22], [62, 33]]);
 });
 
-test("the revealed graph shows closest and furthest proximity without exposing it during questions", () => {
+test("the revealed graph shows both proximity modes by default without exposing them during questions", () => {
   const ui = startGuide();
   assert.equal(ui.el("starter-footer").hidden, false);
   assert.equal(ui.el("starter-proximity").hidden, true);
@@ -447,14 +448,17 @@ test("the revealed graph shows closest and furthest proximity without exposing i
   assert.equal(ui.el("starter-footer").hidden, false);
   assert.equal(ui.el("starter-proximity").hidden, false);
   assert.equal(ui.el("starter-reset").hidden, false);
-  assert.equal(ui.el("starter-proximity-toggle").firstElementChild.textContent, "Closest: Casey");
-  ui.el("starter-proximity-line").getContext().strokes.length = 0;
-  ui.el("starter-proximity-furthest").checked = true;
-  ui.el("starter-proximity-furthest").dispatch("change");
   assert.equal(ui.el("starter-proximity-closest").checked, true);
+  assert.equal(ui.el("starter-proximity-furthest").checked, true);
   assert.equal(ui.el("starter-proximity-toggle").firstElementChild.textContent, "Proximity");
+  ui.el("starter-proximity-line").getContext().strokes.length = 0;
   ui.advance(700 / 1.15 + 1);
   assert.deepEqual(ui.el("starter-proximity-line").getContext().strokes.slice(-2), [2, 1]);
+  ui.el("starter-proximity-furthest").checked = false;
+  ui.el("starter-proximity-furthest").dispatch("change");
+  assert.equal(ui.el("starter-proximity-toggle").firstElementChild.textContent, "Closest: Casey");
+  ui.el("starter-proximity-furthest").checked = true;
+  ui.el("starter-proximity-furthest").dispatch("change");
   ui.el("starter-proximity-closest").checked = false;
   ui.el("starter-proximity-closest").dispatch("change");
   assert.equal(ui.el("starter-proximity-toggle").firstElementChild.textContent, "Furthest: Blair");

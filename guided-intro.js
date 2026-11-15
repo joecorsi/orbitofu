@@ -8,7 +8,7 @@
   const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
   const ROLES = ["friend", "family", "choice", "me"];
   const COLORS = ["#e83c9b", "#35a84d", "#ed8615", "#145c92"];
-  const { findProximity, setProximityLabel, setupProximityMenu, drawProximityCanvas } = window.thePearProximity;
+  const { findProximity, setProximityLabel, setupProximityMenu, drawProximityCanvas, setupProximityHover } = window.thePearProximity;
   const $ = id => document.getElementById(id);
   const ui = {
     flow: $("starter-flow"),
@@ -48,10 +48,12 @@
     proximityMenu: $("starter-proximity-menu"),
     proximityClosest: $("starter-proximity-closest"),
     proximityFurthest: $("starter-proximity-furthest"),
-    proximityCanvas: $("starter-proximity-line")
+    proximityCanvas: $("starter-proximity-line"),
+    proximityLabel: $("starter-proximity-label")
   };
   const proximityContext = ui.proximityCanvas.getContext("2d");
   const proximityControl = setupProximityMenu(ui.proximityToggle, ui.proximityMenu, ui.proximityClosest, ui.proximityFurthest, updateDots);
+  const proximityHover = setupProximityHover(ui.graph, ui.proximityLabel, updateDots, () => Boolean(drag));
 
   const emptyDraft = () => ({
     version: 2, answers: [], step: 0, phase: "questions", ready: false, updatedAt: Date.now()
@@ -352,8 +354,10 @@
     const targets = modes.map(mode => ({ mode,
       person: findProximity(draft.answers, me, mode, person => person === me ? null : person) }));
     setProximityLabel(ui.proximityToggle, modes.length > 1 ? "both" : modes[0], targets[0]?.person?.name);
-    drawProximityCanvas(ui.proximityCanvas, proximityContext, size, size, me && displayedPoint(me),
-      targets.map(({ mode, person }) => ({ mode, to: person && displayedPoint(person), progress: proximityControl.progress(mode) })));
+    const from = me && displayedPoint(me);
+    const lines = targets.map(({ mode, person }) => ({ mode, to: person && displayedPoint(person), progress: proximityControl.progress(mode) }));
+    const hoveredMode = proximityHover.update(from, lines);
+    drawProximityCanvas(ui.proximityCanvas, proximityContext, size, size, from, lines, hoveredMode);
     const pulses = targets.map(({ mode, person }) => {
       const index = person && me ? draft.answers.indexOf(person) : null;
       return { index, scale: proximityControl.pulseFor(mode, index) };

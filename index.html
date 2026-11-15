@@ -115,6 +115,7 @@
       }
       .demo-graph .chart-groups { z-index: 3; }
       .demo-proximity { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
+      .demo-proximity-label { position: absolute; z-index: 6; box-sizing: border-box; max-width: calc(100% - 2px); overflow: hidden; border: 1px solid #000; border-radius: 3px; padding: 2px 6px; background: #fff; color: #000; font: bold 16px/18px serif; white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
       .layout { --layout-gap: calc(1em + 5px); display: grid; flex: 1; min-height: 0; grid-template-columns: minmax(0, min(calc(100% - min(40%, 21rem) - var(--layout-gap)), var(--chart-available-width, 100%))) min(40%, 21rem); grid-template-rows: minmax(0, 1fr); justify-content: center; gap: var(--layout-gap); }
       .graph-select { position: relative; flex: 1 1 90px; min-width: 90px; }
       .graph-dates { display: flex; flex-wrap: wrap; gap: var(--control-gap); }
@@ -483,6 +484,7 @@
               <span class="demo-axis-label demo-y-low">Benevolent</span>
               <span class="demo-axis-label demo-y-high">Malevolent</span>
               <canvas class="demo-proximity" id="starter-proximity-line" aria-hidden="true" hidden></canvas>
+              <span class="demo-proximity-label" id="starter-proximity-label" aria-hidden="true" hidden></span>
               <span class="chart-info">
                 <button class="chart-info-button" type="button" aria-label="Graph controls information" aria-describedby="starter-info-tooltip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="currentColor"/></svg></button>
                 <span class="chart-info-tooltip" id="starter-info-tooltip" role="tooltip">Once the graph is populated, scroll to zoom, drag empty space or use Shift and arrow keys to pan. Select a dot, then use the mouse or arrow keys to adjust values.</span>
@@ -494,7 +496,7 @@
                   <button class="graph-options-toggle proximity-toggle" id="starter-proximity-toggle" type="button" aria-expanded="false" aria-controls="starter-proximity-menu"><span aria-live="polite">Proximity</span></button>
                   <span class="graph-options-menu proximity-menu" id="starter-proximity-menu" role="group" aria-label="Your graph proximity" hidden>
                     <label><input id="starter-proximity-closest" type="checkbox" checked> Current closest</label>
-                    <label><input id="starter-proximity-furthest" type="checkbox"> Current furthest</label>
+                    <label><input id="starter-proximity-furthest" type="checkbox" checked> Current furthest</label>
                   </span>
                 </span>
                 <button type="button" id="starter-reset">Reset view</button>
@@ -509,6 +511,7 @@
               <span class="demo-axis-label demo-y-low">Benevolent</span>
               <span class="demo-axis-label demo-y-high">Malevolent</span>
               <canvas class="demo-proximity" id="demo-proximity-line" aria-hidden="true"></canvas>
+              <span class="demo-proximity-label" id="demo-proximity-label" aria-hidden="true" hidden></span>
               <span class="chart-info">
                 <button class="chart-info-button" type="button" aria-label="Graph controls information" aria-describedby="demo-info-tooltip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="currentColor"/></svg></button>
                 <span class="chart-info-tooltip" id="demo-info-tooltip" role="tooltip">Scroll to zoom, drag empty space or use Shift and arrow keys to pan. Select a dot, then use the mouse or arrow keys to adjust values.</span>
@@ -537,7 +540,7 @@
                   <button class="graph-options-toggle proximity-toggle" id="demo-proximity-toggle" type="button" aria-expanded="false" aria-controls="demo-proximity-menu"><span aria-live="polite">Proximity</span></button>
                   <span class="graph-options-menu proximity-menu" id="demo-proximity-menu" role="group" aria-label="Sample graph proximity" hidden>
                     <label><input id="demo-proximity-closest" type="checkbox" checked> Current closest</label>
-                    <label><input id="demo-proximity-furthest" type="checkbox"> Current furthest</label>
+                    <label><input id="demo-proximity-furthest" type="checkbox" checked> Current furthest</label>
                   </span>
                 </span>
                 <button type="button" id="demo-reset" hidden>Reset view</button>
@@ -852,12 +855,12 @@
     </aside>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./proximity.js?v=persist-proximity"></script>
+    <script src="./proximity.js?v=homepage-proximity-hover"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
-    <script src="./guided-intro.js?v=both-proximity"></script>
+    <script src="./guided-intro.js?v=homepage-proximity-hover"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
-        hitProximityLine, modeLabels } = window.thePearProximity;
+        hitProximityLine, modeLabels, setupProximityHover } = window.thePearProximity;
       const CONFIG_KEY = "people-map-supabase-config";
       const BACKGROUND_KEY = "the-pear-background";
       const GOOGLE_SIGN_IN_KEY = "the-pear-previous-google-sign-in";
@@ -3183,6 +3186,7 @@
         const proximityCanvas = document.getElementById("demo-proximity-line");
         const proximityContext = proximityCanvas.getContext("2d");
         const proximityControl = setupProximityMenu(proximityToggle, proximityMenu, proximityClosest, proximityFurthest, draw);
+        const proximityHover = setupProximityHover(frame, document.getElementById("demo-proximity-label"), draw, () => Boolean(drag));
         const optionsToggle = document.getElementById("demo-options-toggle");
         const optionsMenu = document.getElementById("demo-options-menu");
         const relationshipColors = document.getElementById("demo-relationship-colors");
@@ -3430,8 +3434,9 @@
           const targets = modes.map(mode => ({ mode, entry: findProximity(plotted, me?.actual, mode,
             entry => entry.person.id === ME_ID ? null : entry.actual) }));
           setProximityLabel(proximityToggle, modes.length > 1 ? "both" : modes[0], targets[0]?.entry?.person.name);
-          drawProximityCanvas(proximityCanvas, proximityContext, width, height, me?.point,
-            targets.map(({ mode, entry }) => ({ mode, to: entry?.point, progress: proximityControl.progress(mode) })));
+          const lines = targets.map(({ mode, entry }) => ({ mode, to: entry?.point, progress: proximityControl.progress(mode) }));
+          const hoveredMode = proximityHover.update(me?.point, lines);
+          drawProximityCanvas(proximityCanvas, proximityContext, width, height, me?.point, lines, hoveredMode);
           const pulses = targets.map(({ mode, entry }) => ({ entry,
             scale: proximityControl.pulseFor(mode, me && entry ? entry.person.id : null) }));
           const labels = showNames.checked ? plotted.map(({ person, point }) => {

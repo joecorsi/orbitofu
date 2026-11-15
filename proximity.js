@@ -182,7 +182,7 @@
     return hit;
   }
 
-  function drawProximityCanvas(canvas, context, width, height, from, lines) {
+  function drawProximityCanvas(canvas, context, width, height, from, lines, highlightedMode = null) {
     const scale = window.devicePixelRatio || 1;
     const canvasWidth = Math.round(width * scale);
     const canvasHeight = Math.round(height * scale);
@@ -190,13 +190,65 @@
     if (canvas.height !== canvasHeight) canvas.height = canvasHeight;
     context.setTransform(scale, 0, 0, scale, 0, 0);
     context.clearRect(0, 0, width, height);
-    if (from) for (const { to, mode, progress } of lines) {
-      if (to) drawProximityLine(context, from, to, mode, progress);
+    if (from) {
+      for (const { to, mode, progress } of lines) {
+        if (to && mode !== highlightedMode) drawProximityLine(context, from, to, mode, progress);
+      }
+      const highlighted = lines.find(line => line.mode === highlightedMode && line.to);
+      if (highlighted) drawProximityLine(context, from, highlighted.to, highlighted.mode, highlighted.progress, true);
     }
+  }
+
+  function setupProximityHover(frame, label, draw, isDragging) {
+    const hitContext = document.createElement("canvas").getContext("2d");
+    let point = null, from = null, lines = [], hovered = null;
+    const hit = location => {
+      if (!from) return null;
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i];
+        if (line.to && hitProximityLine(hitContext, from, line.to, line.mode, line.progress, location)) return line;
+      }
+      return null;
+    };
+    const update = (origin, nextLines) => {
+      from = origin;
+      lines = nextLines;
+      hovered = point ? hit(point) : null;
+      label.hidden = !hovered;
+      if (hovered) {
+        label.textContent = modeLabels[hovered.mode];
+        const width = label.offsetWidth, height = label.offsetHeight;
+        label.style.left = `${Math.max(1, Math.min(point.x - width / 2, frame.clientWidth - width - 1))}px`;
+        label.style.top = `${point.y >= height + 11 ? point.y - height - 10 :
+          Math.min(frame.clientHeight - height - 1, point.y + 10)}px`;
+      }
+      return hovered?.mode ?? null;
+    };
+    const clear = () => {
+      point = null;
+      if (!hovered) return;
+      hovered = null;
+      label.hidden = true;
+      draw();
+    };
+    frame.addEventListener("pointermove", event => {
+      if (isDragging() || event.buttons || event.pointerType === "touch" ||
+          event.target.closest(".demo-person, .chart-group-button, .chart-group-popover, .chart-info")) return clear();
+      const rect = frame.getBoundingClientRect();
+      const next = { x: event.clientX - rect.left - frame.clientLeft,
+        y: event.clientY - rect.top - frame.clientTop };
+      const moved = !point || next.x !== point.x || next.y !== point.y;
+      point = next;
+      const nextMode = hit(point)?.mode ?? null;
+      if (nextMode !== (hovered?.mode ?? null) || (nextMode && moved)) draw();
+    });
+    frame.addEventListener("pointerdown", clear);
+    frame.addEventListener("pointerleave", clear);
+    return { update };
   }
 
   window.thePearProximity = {
     findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
-    hitProximityLine, modeLabels
+    hitProximityLine, modeLabels, setupProximityHover
   };
 })();
