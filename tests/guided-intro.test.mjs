@@ -27,7 +27,17 @@ function mount(initialStorage = {}) {
       this.listeners = {};
       this.attributes = {};
       this.style = { setProperty() {} };
-      this.classList = { add() {}, remove() {}, toggle() {} };
+      const classes = new Set();
+      this.classList = {
+        add: name => classes.add(name),
+        remove: name => classes.delete(name),
+        contains: name => classes.has(name),
+        toggle(name, force = !classes.has(name)) {
+          if (force) classes.add(name);
+          else classes.delete(name);
+          return force;
+        }
+      };
       this.clientWidth = 400;
       this.clientHeight = 400;
       this.clientLeft = 1;
@@ -118,6 +128,8 @@ test("save hands off four ratings and the correct relationships without signing 
   ui.el("starter-save").dispatch("click");
   assert.equal(ui.el("auth-details").hidden, false);
   assert.equal(ui.el("starter-auth-note").hidden, false);
+  assert.equal(ui.el("starter-graph").hidden, false);
+  assert.equal(ui.el("demo-column").classList.contains("starter-active"), true);
   assert.deepEqual(ui.api.pendingPeople(), [
     { name: "Alex", relationship: "friend", x: 85, y: 10 },
     { name: "Blair", relationship: "family", x: 42, y: 75 },
@@ -171,6 +183,11 @@ test("ready draft survives refresh and clears only after confirmed account impor
   ui.el("starter-save").dispatch("click");
   const afterReload = mount(Object.fromEntries(ui.store));
   assert.equal(afterReload.el("auth-details").hidden, false);
+  assert.equal(afterReload.el("starter-graph").hidden, false);
+  assert.equal(afterReload.el("demo-column").classList.contains("starter-active"), true);
+  assert.equal(afterReload.el("starter-graph").children.length, 4);
+  afterReload.el("starter-graph").children[0].dispatch("keydown", { key: "ArrowRight" });
+  assert.equal(afterReload.api.pendingPeople()[0].x, 87);
   assert.equal(afterReload.api.pendingPeople().length, 4);
   afterReload.api.confirmImported();
   const nextVisit = mount(Object.fromEntries(afterReload.store));
@@ -184,6 +201,8 @@ test("skip is remembered but visitors can reopen the questionnaire", () => {
   ui.el("starter-skip").dispatch("click");
   const again = mount(Object.fromEntries(ui.store));
   assert.equal(again.el("auth-details").hidden, false);
+  assert.equal(again.el("starter-graph").hidden, true);
+  assert.equal(again.el("demo-column").classList.contains("starter-active"), false);
   again.el("starter-try").dispatch("click");
   assert.equal(again.el("starter-flow").hidden, false);
   assert.equal(again.el("demo-column").hidden, true);

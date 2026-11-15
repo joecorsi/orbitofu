@@ -143,8 +143,12 @@
     ui.authDetails.hidden = false;
     ui.authNote.hidden = !hasDraft;
     ui.demo.hidden = false;
-    ui.demo.classList.remove("starter-active");
-    ui.graph.hidden = true;
+    ui.demo.classList.toggle("starter-active", hasDraft);
+    ui.graph.hidden = !hasDraft;
+    if (hasDraft) {
+      updateDots();
+      window.requestAnimationFrame?.(updateDots);
+    }
   }
 
   function showGuide() {

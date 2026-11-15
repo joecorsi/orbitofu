@@ -1,6 +1,14 @@
 /* The first-use questionnaire shares The Pear's retro controls and graph vocabulary. */
 .starter-flow { box-sizing: border-box; width: 100%; padding: 3px; border: 2px outset #ddd; background: #c0c0c0; color: #000; box-shadow: 2px 2px 0 #333; font: 13px Arial, sans-serif; }
 .starter-flow [hidden], #demo-column[hidden] { display: none !important; }
+.starter-flow:has(#starter-finish-actions:not([hidden])) { padding: 0; border: 0; background: transparent; box-shadow: none; font: inherit; }
+.starter-flow:has(#starter-finish-actions:not([hidden])) .tutorial-titlebar,
+.starter-flow:has(#starter-finish-actions:not([hidden])) .starter-step,
+.starter-flow:has(#starter-finish-actions:not([hidden])) .tutorial-progress { display: none; }
+.starter-flow:has(#starter-finish-actions:not([hidden])) .starter-content { padding: 0; }
+.starter-flow:has(#starter-finish-actions:not([hidden])) .starter-content h2 { font-size: 1.25em; }
+.starter-flow:has(#starter-finish-actions:not([hidden])) .starter-actions button { padding: 6px 10px; border: 1px solid #767676; border-radius: 4px; background: #fff; color: #000; font: inherit; cursor: pointer; }
+.starter-flow:has(#starter-finish-actions:not([hidden])) .starter-actions .starter-primary { border-color: #000; background: #000; color: #fff; }
 .starter-content { padding: 12px 10px 10px; }
 .starter-content h2 { margin: 0 0 .6em; font-size: 16px; }
 .starter-content p { margin: 0 0 1em; line-height: 1.4; }
