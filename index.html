@@ -790,6 +790,7 @@
     <script>
       const CONFIG_KEY = "people-map-supabase-config";
       const BACKGROUND_KEY = "the-pear-background";
+      const GOOGLE_SIGN_IN_KEY = "the-pear-previous-google-sign-in";
       const AGE_AXIS = "__person_age__";
       const ME_ID = "__me__";
       const RING_EXPANSION_DURATION = 650;
@@ -1671,6 +1672,29 @@
         return `${window.location.origin}${window.location.pathname}`;
       }
 
+      function rememberGoogleSignIn(user) {
+        const metadata = user?.app_metadata;
+        const usedGoogle = metadata?.provider === "google" ||
+          (Array.isArray(metadata?.providers) && metadata.providers.includes("google")) ||
+          (Array.isArray(user?.identities) && user.identities.some(identity => identity.provider === "google"));
+        if (!usedGoogle) return;
+        try {
+          localStorage.setItem(GOOGLE_SIGN_IN_KEY, "1");
+        } catch (error) {
+          console.warn("Couldn't remember Google sign-in on this browser:", error);
+          showNotice(el.workspace.hidden ? el.authNotice : el.appNotice,
+            "Couldn't remember Google sign-in on this browser. You can still use Sign in with Google.");
+        }
+      }
+
+      async function signInWithGoogle() {
+        const { error } = await client.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: getRedirectUrl() }
+        });
+        if (error) throw error;
+      }
+
       function readConfig() {
         try {
           const value = localStorage.getItem(CONFIG_KEY);
@@ -1720,6 +1744,7 @@
 
       async function applySession(session, returnFromHomepage = false) {
         const nextUser = session?.user ?? null;
+        if (nextUser) rememberGoogleSignIn(nextUser);
         if (nextUser && showingHomepage && !returnFromHomepage) {
           el.accountEmail.textContent = nextUser.email || "Account";
           el.accountBar.hidden = false;
@@ -1855,13 +1880,16 @@
         if (!preserveRoute) window.thePearStarter.showHomepage();
       }
 
-      async function returnToAccount() {
-        if (!client) return;
+      async function returnToAccount(useRememberedGoogle = false) {
+        if (!client) throw new Error("The sign-in connection isn't ready. Please try again.");
         const { data, error } = await client.auth.getSession();
         if (error) throw error;
         const session = data.session;
         if (!session?.user) {
           if (currentUser) await applySession(null);
+          if (useRememberedGoogle && localStorage.getItem(GOOGLE_SIGN_IN_KEY) === "1") {
+            await signInWithGoogle();
+          }
           return;
         }
         if (showingHomepage && currentUser?.id === session.user.id && state &&
@@ -1892,7 +1920,7 @@
       });
       el.starterSignIn.addEventListener("click", () => {
         el.starterSignIn.disabled = true;
-        void returnToAccount()
+        void returnToAccount(true)
           .catch(error => showNotice(el.authNotice, `Couldn't check your sign-in: ${error.message}`))
           .finally(() => { el.starterSignIn.disabled = false; });
       });
@@ -4410,11 +4438,7 @@
         }
         setButtonsDisabled(true);
         try {
-          const { error } = await client.auth.signInWithOAuth({
-            provider: "google",
-            options: { redirectTo: getRedirectUrl() }
-          });
-          if (error) throw error;
+          await signInWithGoogle();
         } catch (error) {
           showNotice(el.authNotice, `Google sign-in failed: ${error.message}`);
           setButtonsDisabled(false);

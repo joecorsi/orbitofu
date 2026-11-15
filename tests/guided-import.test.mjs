@@ -82,7 +82,7 @@ const navigationEnd = html.indexOf("      el.homeLink.addEventListener", navigat
 assert.ok(navigationStart >= 0 && navigationEnd > navigationStart, "homepage navigation helpers are present");
 const navigation = html.slice(navigationStart, navigationEnd);
 
-function navigationHarness({ session = { user: { id: "user-1" } }, saveError = null, pending = null } = {}) {
+function navigationHarness({ session = { user: { id: "user-1" } }, saveError = null, pending = null, rememberedGoogle = false, googleError = null } = {}) {
   const calls = [];
   const el = { workspace: { hidden: false }, accountBar: { hidden: false }, authScreen: { hidden: true } };
   const client = { auth: { getSession: async () => ({ data: { session }, error: null }) } };
@@ -97,12 +97,19 @@ function navigationHarness({ session = { user: { id: "user-1" } }, saveError = n
   const closeMenu = () => {};
   const applySession = async (...args) => { calls.push(["session", ...args]); };
   const drawChart = () => calls.push("draw");
+  const localStorage = { getItem: () => rememberedGoogle ? "1" : null };
+  const signInWithGoogle = async () => {
+    calls.push("google");
+    if (googleError) throw googleError;
+  };
   const api = new Function("el", "client", "window", "flushPendingSave", "closeAccountMenu",
     "closePeopleFilter", "closeGraphOptions", "closeProximityMenu", "applySession", "drawChart",
+    "localStorage", "GOOGLE_SIGN_IN_KEY", "signInWithGoogle",
     `let showingHomepage = false, currentUser = { id: "user-1" }, state = {};
      ${navigation}
      return { openHomepage, returnToAccount };`)(
-    el, client, window, flushPendingSave, closeMenu, closeMenu, closeMenu, closeMenu, applySession, drawChart
+    el, client, window, flushPendingSave, closeMenu, closeMenu, closeMenu, closeMenu, applySession, drawChart,
+    localStorage, "google-sign-in", signInWithGoogle
   );
   return { ...api, el, calls };
 }
@@ -137,4 +144,43 @@ test("sign-in falls back to options without a session and imports an explicitly 
   await ready.openHomepage();
   await ready.returnToAccount();
   assert.deepEqual(ready.calls.at(-1), ["session", session, true]);
+});
+
+test("header sign-in starts Google only when this browser remembers a Google account", async () => {
+  const google = navigationHarness({ session: null, rememberedGoogle: true });
+  await google.openHomepage();
+  await google.returnToAccount(true);
+  assert.equal(google.calls.at(-1), "google");
+
+  const firstVisit = navigationHarness({ session: null });
+  await firstVisit.openHomepage();
+  await firstVisit.returnToAccount(true);
+  assert.deepEqual(firstVisit.calls.at(-1), ["session", null]);
+
+  const menu = navigationHarness({ session: null, rememberedGoogle: true });
+  await menu.openHomepage();
+  await menu.returnToAccount();
+  assert.deepEqual(menu.calls.at(-1), ["session", null]);
+});
+
+test("Google sign-in errors reach the caller", async () => {
+  const ui = navigationHarness({ session: null, rememberedGoogle: true, googleError: new Error("Google unavailable") });
+  await assert.rejects(ui.returnToAccount(true), /Google unavailable/);
+});
+
+const rememberStart = html.indexOf("      function rememberGoogleSignIn(");
+const rememberEnd = html.indexOf("      async function signInWithGoogle(", rememberStart);
+assert.ok(rememberStart >= 0 && rememberEnd > rememberStart, "Google preference helper is present");
+const rememberGoogleSignIn = new Function("localStorage", "GOOGLE_SIGN_IN_KEY", "console", "showNotice", "el",
+  html.slice(rememberStart, rememberEnd) + "\nreturn rememberGoogleSignIn;");
+
+test("only a successful account with Google linked records the preference", () => {
+  const writes = [];
+  const remember = rememberGoogleSignIn({ setItem: (...args) => writes.push(args) },
+    "google-sign-in", console, () => {}, {});
+  remember({ app_metadata: { provider: "email", providers: ["email"] } });
+  assert.equal(writes.length, 0);
+  remember({ app_metadata: { provider: "google" } });
+  remember({ identities: [{ provider: "google" }] });
+  assert.deepEqual(writes, [["google-sign-in", "1"], ["google-sign-in", "1"]]);
 });
