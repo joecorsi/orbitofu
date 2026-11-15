@@ -821,7 +821,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./proximity.js"></script>
-    <script src="./guided-intro.js"></script>
+    <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
+    <script src="./guided-intro.js?v=29dd8e3"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas } = window.thePearProximity;
       const CONFIG_KEY = "people-map-supabase-config";
