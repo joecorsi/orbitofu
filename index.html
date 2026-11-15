@@ -299,7 +299,8 @@
       .graph-options, .proximity { position: relative; display: flex; align-items: center; }
       #edit-graph-toggle, .graph-options-toggle { position: relative; padding-right: 24px; padding-left: 2px; text-align: left; }
       .graph-options-toggle::after { content: ""; position: absolute; right: 6px; top: 50%; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 5px solid currentColor; transform: translateY(-50%); pointer-events: none; }
-      .graph-options-menu:not([hidden]) { position: absolute; z-index: 4; bottom: calc(100% + var(--control-gap)); left: 0; min-width: 100%; width: max-content; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; padding: 4px; background: rgba(255, 255, 255, .5); color: #000; }
+      .graph-options-menu:not([hidden]) { position: absolute; z-index: 4; bottom: calc(100% + var(--control-gap)); left: 0; min-width: 100%; width: max-content; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; padding: 4px; background: #fff; color: #000; }
+      .proximity-menu.overlaps-target:not([hidden]) { background: rgba(255, 255, 255, .5); }
       .graph-options-menu label { display: flex; align-items: center; gap: 4px; padding: 4px 6px; white-space: nowrap; font: 13.3333px Arial, sans-serif; cursor: pointer; }
       .graph-options-menu input { margin: 0; }
       .graph-options-separator { display: block; border-top: 1px solid #767676; margin: 4px 0; }
@@ -855,12 +856,12 @@
     </aside>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./proximity.js?v=homepage-proximity-hover"></script>
+    <script src="./proximity.js?v=proximity-menu-overlap"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
-    <script src="./guided-intro.js?v=homepage-proximity-hover"></script>
+    <script src="./guided-intro.js?v=proximity-menu-overlap"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
-        hitProximityLine, modeLabels, setupProximityHover } = window.thePearProximity;
+        hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground } = window.thePearProximity;
       const CONFIG_KEY = "people-map-supabase-config";
       const BACKGROUND_KEY = "the-pear-background";
       const GOOGLE_SIGN_IN_KEY = "the-pear-previous-google-sign-in";
@@ -3435,6 +3436,7 @@
             entry => entry.person.id === ME_ID ? null : entry.actual) }));
           setProximityLabel(proximityToggle, modes.length > 1 ? "both" : modes[0], targets[0]?.entry?.person.name);
           const lines = targets.map(({ mode, entry }) => ({ mode, to: entry?.point, progress: proximityControl.progress(mode) }));
+          updateProximityMenuBackground(proximityMenu, frame, lines.map(line => line.to), 7);
           const hoveredMode = proximityHover.update(me?.point, lines);
           drawProximityCanvas(proximityCanvas, proximityContext, width, height, me?.point, lines, hoveredMode);
           const pulses = targets.map(({ mode, entry }) => ({ entry,
@@ -4305,6 +4307,7 @@
         el.resetZoom.hidden = chartView.zoom === 1;
         const bounds = canvas.getBoundingClientRect();
         if (!state || bounds.width === 0) {
+          updateProximityMenuBackground(el.proximityMenu, canvas, [], personDotRadius);
           chartProximityLines = [];
           hoveredProximityPoint = null;
           hoveredProximityMode = null;
@@ -4456,6 +4459,7 @@
           return { person, scale, line: from && to ? { from, to, mode, name, progress: proximityControl.progress(mode) } : null };
         });
         chartProximityLines = pulses.map(pulse => pulse.line).filter(Boolean);
+        updateProximityMenuBackground(el.proximityMenu, canvas, chartProximityLines.map(line => line.to), personDotRadius);
         const hoveredLine = hoveredProximityPoint ? proximityAtPoint(hoveredProximityPoint) : null;
         hoveredProximityMode = hoveredLine?.mode ?? null;
         for (const line of chartProximityLines) {

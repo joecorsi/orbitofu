@@ -34,6 +34,24 @@
     if (toggle.title !== description) toggle.title = description;
   }
 
+  function updateProximityMenuBackground(menu, chart, points, radius) {
+    if (menu.hidden) {
+      menu.classList.remove("overlaps-target");
+      return;
+    }
+    const menuRect = menu.getBoundingClientRect();
+    const chartRect = chart.getBoundingClientRect();
+    const overlaps = points.some(point => {
+      if (!point) return false;
+      const x = chartRect.left + chart.clientLeft + point.x;
+      const y = chartRect.top + chart.clientTop + point.y;
+      const dx = Math.max(menuRect.left - x, 0, x - menuRect.right);
+      const dy = Math.max(menuRect.top - y, 0, y - menuRect.bottom);
+      return dx * dx + dy * dy < radius * radius;
+    });
+    menu.classList.toggle("overlaps-target", overlaps);
+  }
+
   function setupProximityMenu(toggle, menu, closest, furthest, draw, additional = {}) {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const duration = 700 / 1.15;
@@ -88,10 +106,13 @@
       if (!menu.hidden) return close();
       menu.hidden = false;
       toggle.setAttribute("aria-expanded", "true");
-      draw();
       menu.style.left = "0px";
+      draw();
       const overflow = menu.getBoundingClientRect().right - document.documentElement.clientWidth;
-      if (overflow > 0) menu.style.left = `${-overflow}px`;
+      if (overflow > 0) {
+        menu.style.left = `${-overflow}px`;
+        draw();
+      }
     });
     toggle.parentElement.addEventListener("keydown", event => {
       if (event.key === "Escape") {
@@ -249,6 +270,6 @@
 
   window.thePearProximity = {
     findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
-    hitProximityLine, modeLabels, setupProximityHover
+    hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground
   };
 })();

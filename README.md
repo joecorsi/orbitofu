@@ -23,6 +23,8 @@ The direct sign-in view includes a sample graph with Me and randomized sample pe
 
 Homepage graphs are 500 pixels square on desktop and shrink to fit narrow screens. Scrolling remains available when the content cannot otherwise fit.
 
+The Proximity menu becomes translucent when it covers an active match's dot; its text stays opaque.
+
 A retro loading indicator fills in steps as your profile and graphs load, then disappears when loading finishes or fails.
 
 New accounts that sign in without importing a guided guest graph see the existing six-step getting-started tour after their first graph loads. Use **Back**, **Next**, **Skip**, or Escape to navigate or close it. **Start over** returns to the first step, and **Restart tutorial** in the email menu reopens it after closing. Completing or skipping the tour is saved with the account, so it stays dismissed across devices. The tour explains the controls without changing graph data. The email menu also contains **Sign out** and a disabled **Account** placeholder.

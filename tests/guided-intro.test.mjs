@@ -468,6 +468,24 @@ test("the revealed graph shows both proximity modes by default without exposing 
   assert.equal(ui.el("starter-proximity-line").hidden, true);
 });
 
+test("the walkthrough menu responds only to selected targets behind it", () => {
+  const ui = startGuide();
+  complete(ui);
+  const menu = ui.el("starter-proximity-menu");
+  menu.getBoundingClientRect = () => ({ left: 270, right: 290, top: 280, bottom: 300 });
+  ui.el("starter-proximity-toggle").dispatch("click");
+  assert.equal(menu.classList.contains("overlaps-target"), true);
+  ui.el("starter-proximity-closest").checked = false;
+  ui.el("starter-proximity-closest").dispatch("change");
+  assert.equal(menu.classList.contains("overlaps-target"), false);
+  ui.el("starter-proximity-closest").checked = true;
+  ui.el("starter-proximity-closest").dispatch("change");
+  assert.equal(menu.classList.contains("overlaps-target"), true);
+  menu.getBoundingClientRect = () => ({ left: 0, right: 20, top: 0, bottom: 20 });
+  ui.el("starter-proximity-closest").dispatch("change");
+  assert.equal(menu.classList.contains("overlaps-target"), false);
+});
+
 test("selecting a pulsing proximity target keeps its selected size until deselected", () => {
   const ui = startGuide();
   complete(ui);

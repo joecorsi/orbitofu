@@ -5,7 +5,35 @@ import { readFileSync } from "node:fs";
 const source = readFileSync(new URL("../proximity.js", import.meta.url), "utf8");
 const window = {};
 new Function("window", "document", source)(window, {});
-const { findProximity, setProximityLabel, drawProximityLine, drawProximityCanvas, hitProximityLine } = window.thePearProximity;
+const { findProximity, setProximityLabel, drawProximityLine, drawProximityCanvas, hitProximityLine,
+  updateProximityMenuBackground } = window.thePearProximity;
+
+test("proximity menu becomes translucent only when an active target overlaps it", () => {
+  const classes = new Set();
+  const menu = {
+    hidden: false,
+    classList: {
+      remove: name => classes.delete(name),
+      toggle(name, enabled) { enabled ? classes.add(name) : classes.delete(name); }
+    },
+    getBoundingClientRect: () => ({ left: 120, right: 180, top: 220, bottom: 260 })
+  };
+  const chart = { clientLeft: 1, clientTop: 1, getBoundingClientRect: () => ({ left: 100, top: 200 }) };
+  const translucent = () => classes.has("overlaps-target");
+  updateProximityMenuBackground(menu, chart, [{ x: 25, y: 25 }], 6);
+  assert.equal(translucent(), true);
+  updateProximityMenuBackground(menu, chart, [{ x: 14, y: 25 }], 6);
+  assert.equal(translucent(), true);
+  updateProximityMenuBackground(menu, chart, [{ x: 14, y: 14 }], 6);
+  assert.equal(translucent(), false);
+  updateProximityMenuBackground(menu, chart, [null, { x: 25, y: 25 }], 6);
+  assert.equal(translucent(), true);
+  updateProximityMenuBackground(menu, chart, [], 6);
+  assert.equal(translucent(), false);
+  menu.hidden = true;
+  updateProximityMenuBackground(menu, chart, [{ x: 25, y: 25 }], 6);
+  assert.equal(translucent(), false);
+});
 
 test("closest and furthest use both graph axes and skip hidden people", () => {
   const people = [
@@ -272,6 +300,11 @@ test("proximity modes sweep and pulse independently, including cancellation and 
   assert.equal(draws.length, 1);
   toggle.listeners.click();
   assert.equal(menu.hidden, true);
+  menu.getBoundingClientRect = () => ({ right: 1100 });
+  toggle.listeners.click();
+  assert.equal(menu.style.left, "-100px");
+  assert.equal(draws.length, 3);
+  toggle.listeners.click();
   const duration = 700 / 1.15;
   closest.checked = true;
   closest.listeners.change();

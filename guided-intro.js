@@ -8,7 +8,8 @@
   const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
   const ROLES = ["friend", "family", "choice", "me"];
   const COLORS = ["#e83c9b", "#35a84d", "#ed8615", "#145c92"];
-  const { findProximity, setProximityLabel, setupProximityMenu, drawProximityCanvas, setupProximityHover } = window.thePearProximity;
+  const { findProximity, setProximityLabel, setupProximityMenu, drawProximityCanvas, setupProximityHover,
+    updateProximityMenuBackground } = window.thePearProximity;
   const $ = id => document.getElementById(id);
   const ui = {
     flow: $("starter-flow"),
@@ -356,6 +357,7 @@
     setProximityLabel(ui.proximityToggle, modes.length > 1 ? "both" : modes[0], targets[0]?.person?.name);
     const from = me && displayedPoint(me);
     const lines = targets.map(({ mode, person }) => ({ mode, to: person && displayedPoint(person), progress: proximityControl.progress(mode) }));
+    updateProximityMenuBackground(ui.proximityMenu, ui.graph, lines.map(line => line.to), 7);
     const hoveredMode = proximityHover.update(from, lines);
     drawProximityCanvas(ui.proximityCanvas, proximityContext, size, size, from, lines, hoveredMode);
     const pulses = targets.map(({ mode, person }) => {
