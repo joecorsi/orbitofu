@@ -351,7 +351,7 @@
     const target = findProximity(draft.answers, me, mode, person => person === me ? null : person);
     setProximityLabel(ui.proximityToggle, mode, target?.name);
     drawProximityCanvas(ui.proximityCanvas, proximityContext, size, size,
-      me && displayedPoint(me), target && displayedPoint(target));
+      me && displayedPoint(me), target && displayedPoint(target), mode);
   }
 
   ui.graph.addEventListener("wheel", event => {

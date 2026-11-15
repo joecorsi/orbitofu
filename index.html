@@ -821,9 +821,9 @@
     </aside>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./proximity.js"></script>
+    <script src="./proximity.js?v=closest-slot"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
-    <script src="./guided-intro.js?v=29dd8e3"></script>
+    <script src="./guided-intro.js?v=closest-slot"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas } = window.thePearProximity;
       const CONFIG_KEY = "people-map-supabase-config";
@@ -3354,7 +3354,7 @@
           const target = findProximity(plotted, me?.actual, mode,
             entry => entry.person.id === ME_ID ? null : entry.actual);
           setProximityLabel(proximityToggle, mode, target?.person.name);
-          drawProximityCanvas(proximityCanvas, proximityContext, width, height, me?.point, target?.point);
+          drawProximityCanvas(proximityCanvas, proximityContext, width, height, me?.point, target?.point, mode);
           const labels = showNames.checked ? plotted.map(({ person, point }) => {
             const metrics = measure.measureText(person.name);
             const left = point.x > width - 90 ? point.x - 9 - metrics.width : point.x + 9;
@@ -4318,7 +4318,7 @@
           };
           const from = displayPoint(mePerson);
           const to = displayPoint(proximityPerson);
-          if (from && to) drawProximityLine(context, from, to);
+          if (from && to) drawProximityLine(context, from, to, el.proximityClosest.checked ? "closest" : "furthest");
         }
         chartLabelHits = labels.flatMap(label => {
           if (groupedPersonIds.has(label.hit.personId)) return label.nameHit ? [label.nameHit] : [];

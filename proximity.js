@@ -61,27 +61,41 @@
     return close;
   }
 
-  function drawProximityLine(context, from, to) {
+  function drawProximityLine(context, from, to, mode) {
     const dx = to.x - from.x;
     const dy = to.y - from.y;
     const length = Math.hypot(dx, dy);
     context.save();
     context.strokeStyle = "rgba(0, 0, 0, 0.23)";
-    context.lineWidth = 1;
     context.beginPath();
-    context.moveTo(from.x, from.y);
-    for (let distance = 0.5; distance < length; distance += 0.5) {
-      const wave = 3 * Math.sin(2 * Math.PI * distance / 10) *
-        Math.min(1, distance / 10, (length - distance) / 10);
-      context.lineTo(from.x + (dx * distance - dy * wave) / length,
-        from.y + (dy * distance + dx * wave) / length);
+    if (mode === "closest") {
+      const radius = 10;
+      const angle = Math.atan2(dy, dx);
+      const offsetX = -Math.sin(angle) * radius;
+      const offsetY = Math.cos(angle) * radius;
+      context.lineWidth = 2;
+      context.moveTo(from.x + offsetX, from.y + offsetY);
+      context.lineTo(to.x + offsetX, to.y + offsetY);
+      context.arc(to.x, to.y, radius, angle + Math.PI / 2, angle - Math.PI / 2, true);
+      context.lineTo(from.x - offsetX, from.y - offsetY);
+      context.arc(from.x, from.y, radius, angle - Math.PI / 2, angle + Math.PI / 2, true);
+      context.closePath();
+    } else {
+      context.lineWidth = 1;
+      context.moveTo(from.x, from.y);
+      for (let distance = 0.5; distance < length; distance += 0.5) {
+        const wave = 3 * Math.sin(2 * Math.PI * distance / 10) *
+          Math.min(1, distance / 10, (length - distance) / 10);
+        context.lineTo(from.x + (dx * distance - dy * wave) / length,
+          from.y + (dy * distance + dx * wave) / length);
+      }
+      context.lineTo(to.x, to.y);
     }
-    context.lineTo(to.x, to.y);
     context.stroke();
     context.restore();
   }
 
-  function drawProximityCanvas(canvas, context, width, height, from, to) {
+  function drawProximityCanvas(canvas, context, width, height, from, to, mode) {
     const scale = window.devicePixelRatio || 1;
     const canvasWidth = Math.round(width * scale);
     const canvasHeight = Math.round(height * scale);
@@ -89,7 +103,7 @@
     if (canvas.height !== canvasHeight) canvas.height = canvasHeight;
     context.setTransform(scale, 0, 0, scale, 0, 0);
     context.clearRect(0, 0, width, height);
-    if (from && to) drawProximityLine(context, from, to);
+    if (from && to) drawProximityLine(context, from, to, mode);
   }
 
   window.thePearProximity = {
