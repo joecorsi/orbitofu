@@ -1,52 +1,48 @@
-/* The first-use questionnaire shares The Pear's retro controls and graph vocabulary. */
-.starter-flow { box-sizing: border-box; width: 100%; padding: 3px; border: 2px outset #ddd; background: #c0c0c0; color: #000; box-shadow: 2px 2px 0 #333; font: 13px Arial, sans-serif; }
+.starter-flow { width: 100%; min-width: 0; }
 .starter-flow [hidden], #demo-column[hidden] { display: none !important; }
-.starter-flow:has(#starter-finish-actions:not([hidden])) { padding: 0; border: 0; background: transparent; box-shadow: none; font: inherit; }
-.starter-flow:has(#starter-finish-actions:not([hidden])) .tutorial-titlebar,
 .starter-flow:has(#starter-finish-actions:not([hidden])) .starter-step,
-.starter-flow:has(#starter-finish-actions:not([hidden])) .tutorial-progress { display: none; }
-.starter-flow:has(#starter-finish-actions:not([hidden])) .starter-content { padding: 0; }
+.starter-flow:has(#starter-finish-actions:not([hidden])) .starter-progress { display: none; }
+.starter-flow:has(#starter-finish-actions:not([hidden])) .starter-prompt { min-height: 0; }
 .starter-flow:has(#starter-finish-actions:not([hidden])) #starter-description { margin: 1em 0; line-height: normal; text-align: justify; }
 .starter-flow:has(#starter-finish-actions:not([hidden])) #starter-finish-actions { display: grid; gap: .5em; margin: 1em 0; }
-.starter-flow:has(#starter-finish-actions:not([hidden])) .starter-actions .starter-primary { font-weight: normal; }
-.starter-content { padding: 12px 10px 10px; }
-.starter-content h2 { margin: 0 0 .6em; font-size: 16px; }
-.starter-content p { margin: 0 0 1em; line-height: 1.4; }
-.starter-content .tutorial-progress { margin: 0 0 14px; }
-.starter-step { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
-#starter-answer-form, .starter-name-field { display: grid; gap: 7px; min-width: 0; }
-#starter-answer-form { gap: 12px; }
-.starter-content input[type="text"] { box-sizing: border-box; width: 100%; min-width: 0; padding: 6px; font: inherit; }
-.starter-kind { display: flex; flex-wrap: wrap; gap: 12px; margin: 0; padding: 9px; border: 1px solid #767676; }
-.starter-kind legend { padding: 0 4px; }
+.starter-content h2 { margin: .65em 0 .5em; font-size: 1.15em; }
+.starter-content p { margin: 0 0 1em; }
+.starter-prompt { display: flow-root; min-height: 10rem; }
+.starter-content #starter-description { margin-bottom: .5em; }
+.starter-content .starter-step { margin-bottom: .5em; font-size: .85em; }
+.starter-progress { display: flex; gap: 4px; margin: 0 0 .5em; }
+.starter-progress span { flex: 1; height: 5px; border-radius: 3px; background: #ddd; }
+.starter-progress span.filled { background: var(--highlight-blue); }
+.starter-name-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 7px; min-width: 0; }
+.starter-name-field:not(:has(.starter-kind:not([hidden]))) { grid-template-columns: minmax(0, 1fr); }
+.starter-name-field > label { grid-column: 1 / -1; }
+#starter-answer-form { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 12.5rem; }
+.starter-content input[type="text"] { box-sizing: border-box; width: 100%; min-width: 0; }
+.starter-kind { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 0; padding: 0; border: 0; }
 .starter-kind label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
 .starter-kind input { margin: 0; }
-.starter-content .starter-slider-heading { margin: 2px 0 -3px; }
-.starter-trait { display: grid; gap: 5px; }
-.starter-trait-ends { display: flex; justify-content: space-between; gap: 12px; }
+.starter-content .starter-slider-heading { margin: 0; }
+.starter-trait { display: grid; gap: 5px; min-width: 0; }
+.starter-trait-ends { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
 .starter-trait input { box-sizing: border-box; width: 100%; margin: 0; cursor: pointer; accent-color: var(--highlight-blue); }
 .starter-actions { display: flex; flex-wrap: wrap; gap: var(--control-gap); margin-top: 8px; align-items: center; }
 .starter-actions > button { flex: none; }
-.starter-actions .starter-primary { font-weight: bold; }
+#starter-answer-form .starter-actions { margin-top: auto; }
+.starter-sign-in { display: none; justify-self: end; }
+.page:has(#auth-screen:not([hidden])):has(#account-bar[hidden]) .starter-sign-in { display: block; }
 .starter-link { margin-top: 14px; border: 0; padding: 2px 0; background: none; color: #000080; text-decoration: underline; cursor: pointer; font: inherit; }
 .starter-privacy { display: none; margin: 0; text-align: center; font-size: .85em; }
 .page:has(#auth-screen:not([hidden])):has(#starter-privacy:not([hidden])) .masthead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr); }
 .page:has(#auth-screen:not([hidden])) .starter-privacy:not([hidden]) { display: block; grid-column: 2; }
 .starter-content .starter-error { margin: 10px 0 0; color: #a00; }
-.starter-auth-note { border: 1px solid #767676; padding: 9px; background: #f2f2f2; font: 13px Arial, sans-serif; line-height: 1.45; }
+.starter-auth-note { margin: 1em 0; }
 .starter-auth-note strong { display: block; margin-bottom: 4px; }
 #starter-try { margin-top: .4em; }
 .demo.starter-active #demo-graph, .demo.starter-active #demo-footer { display: none; }
 #starter-footer[hidden] { display: none; }
-#starter-graph { width: min(500px, 100%, 65dvh); }
 #starter-graph .starter-person { z-index: 2; }
 #starter-graph .starter-person.is-current { z-index: 5; }
 #starter-graph .starter-person:focus-visible .demo-person-dot { outline: 2px solid #000; outline-offset: 4px; }
-.auth-panel:not([hidden]):has(#demo-column[hidden]) { width: min(460px, 100%); margin-inline: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
-.auth-panel:has(#demo-column[hidden]) .auth-copy { grid-column: 1; grid-row: 1; max-width: none; }
-@media (max-width: 680px) {
-  .auth-panel:not([hidden]):has(#demo-column[hidden]) { grid-template-columns: minmax(0, 1fr); }
-}
 @media (max-width: 360px) {
   .page:has(#auth-screen:not([hidden])):has(#starter-privacy:not([hidden])) .brand { white-space: nowrap; }
   .starter-privacy { box-sizing: border-box; padding-inline: 6px; font-size: .75em; line-height: 1.15; }

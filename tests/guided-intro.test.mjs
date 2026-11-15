@@ -98,22 +98,27 @@ function complete(ui, kind = "lover") {
   answer(ui, "", 62, 33);
 }
 
-test("the graph stays hidden until friend, family, lover or foe, and Me are rated", () => {
+test("the graph stays empty until friend, family, lover or foe, and Me are rated", () => {
   const ui = mount();
   assert.equal(ui.el("starter-flow").hidden, false);
-  assert.equal(ui.el("demo-column").hidden, true);
-  assert.equal(ui.el("starter-graph").hidden, true);
+  assert.equal(ui.el("demo-column").hidden, false);
+  assert.equal(ui.el("starter-graph").hidden, false);
+  assert.equal(ui.el("starter-graph").children.length, 0);
+  assert.equal(ui.el("starter-back").disabled, true);
+  assert.match(ui.el("starter-description").textContent, /know well/i);
   assert.match(ui.el("starter-title").textContent, /friend/i);
   answer(ui, "Alex", 85, 10);
+  assert.equal(ui.el("starter-back").disabled, false);
   assert.match(ui.el("starter-title").textContent, /family/i);
-  assert.equal(ui.el("demo-column").hidden, true);
+  assert.equal(ui.el("starter-graph").children.length, 0);
   answer(ui, "Blair", 42, 75);
   assert.match(ui.el("starter-title").textContent, /lover or a foe/i);
   assert.equal(ui.el("starter-kind-field").hidden, false);
+  assert.equal(ui.el("starter-graph").children.length, 0);
   answer(ui, "Casey", 74, 22, "lover");
   assert.match(ui.el("starter-title").textContent, /yourself/i);
   assert.equal(ui.el("starter-name-field").hidden, true);
-  assert.equal(ui.el("starter-graph").hidden, true);
+  assert.equal(ui.el("starter-graph").children.length, 0);
   answer(ui, "", 62, 33);
   assert.equal(ui.el("starter-graph").hidden, false);
   assert.equal(ui.el("demo-column").hidden, false);
@@ -121,6 +126,7 @@ test("the graph stays hidden until friend, family, lover or foe, and Me are rate
   assert.equal(ui.el("starter-description").textContent, ui.el("auth-intro").textContent);
   assert.equal(ui.el("starter-privacy").hidden, false);
   assert.equal(ui.el("starter-graph").children.length, 4);
+  assert.ok(ui.el("starter-graph").children.every(dot => !dot.hidden));
   assert.equal(ui.el("starter-answer-form").hidden, true);
   assert.equal(ui.el("starter-finish-actions").hidden, false);
 });
@@ -134,9 +140,12 @@ test("save hands off four ratings and the correct relationships without signing 
   assert.equal(ui.el("auth-details").hidden, false);
   assert.equal(ui.el("starter-auth-note").hidden, false);
   assert.equal(ui.el("starter-try").hidden, true);
-  assert.equal(ui.el("starter-privacy").hidden, false);
+  assert.equal(ui.el("starter-privacy").hidden, true);
   assert.equal(ui.el("starter-graph").hidden, false);
   assert.equal(ui.el("demo-column").classList.contains("starter-active"), true);
+  ui.el("starter-skip").dispatch("click");
+  assert.equal(ui.el("starter-auth-note").hidden, false);
+  assert.equal(ui.el("starter-graph").hidden, false);
   assert.deepEqual(ui.api.pendingPeople(), [
     { name: "Alex", relationship: "friend", x: 85, y: 10 },
     { name: "Blair", relationship: "family", x: 42, y: 75 },
@@ -162,10 +171,12 @@ test("back and edit permit changing ratings before reveal and after reveal", () 
   answer(ui, "Casey", 74, 22, "lover");
   answer(ui, "", 62, 33);
   ui.el("starter-edit").dispatch("click");
-  assert.equal(ui.el("starter-graph").hidden, true);
+  assert.equal(ui.el("starter-graph").hidden, false);
+  assert.ok(ui.el("starter-graph").children.every(dot => dot.hidden));
   assert.equal(ui.el("starter-title").hidden, false);
   assert.equal(ui.el("starter-cool").value, "62");
   answer(ui, "", 33, 64);
+  assert.ok(ui.el("starter-graph").children.every(dot => !dot.hidden));
   ui.el("starter-save").dispatch("click");
   assert.equal(ui.api.pendingPeople()[0].x, 40);
   assert.equal(ui.api.pendingPeople()[3].y, 64);
@@ -194,6 +205,7 @@ test("ready draft survives refresh and clears only after confirmed account impor
   assert.equal(afterReload.el("starter-graph").hidden, false);
   assert.equal(afterReload.el("demo-column").classList.contains("starter-active"), true);
   assert.equal(afterReload.el("starter-try").hidden, true);
+  assert.equal(afterReload.el("starter-privacy").hidden, true);
   assert.equal(afterReload.el("starter-graph").children.length, 4);
   afterReload.el("starter-graph").children[0].dispatch("keydown", { key: "ArrowRight" });
   assert.equal(afterReload.api.pendingPeople()[0].x, 87);
@@ -207,7 +219,9 @@ test("ready draft survives refresh and clears only after confirmed account impor
 
 test("skip is remembered but visitors can reopen the questionnaire", () => {
   const ui = mount();
+  answer(ui, "Alex", 85, 10);
   ui.el("starter-skip").dispatch("click");
+  assert.equal(ui.api.pendingPeople(), null);
   assert.equal(ui.el("starter-privacy").hidden, true);
   const again = mount(Object.fromEntries(ui.store));
   assert.equal(again.el("auth-details").hidden, false);
@@ -217,7 +231,11 @@ test("skip is remembered but visitors can reopen the questionnaire", () => {
   again.el("starter-try").dispatch("click");
   assert.equal(again.el("starter-flow").hidden, false);
   assert.equal(again.el("starter-privacy").hidden, false);
-  assert.equal(again.el("demo-column").hidden, true);
+  assert.equal(again.el("demo-column").hidden, false);
+  assert.equal(again.el("starter-graph").hidden, false);
+  assert.equal(again.el("starter-graph").children.length, 0);
+  assert.match(again.el("starter-title").textContent, /family/i);
+  assert.equal(JSON.parse(again.store.get(DRAFT_KEY)).answers[0].name, "Alex");
   assert.equal(again.store.get(DISMISSED_KEY), undefined);
 });
 
@@ -293,7 +311,8 @@ test("stale draft ratings expire rather than import silently", () => {
     ]
   });
   const ui = mount({ [DRAFT_KEY]: old });
-  assert.equal(ui.el("starter-graph").hidden, true);
+  assert.equal(ui.el("starter-graph").hidden, false);
+  assert.equal(ui.el("starter-graph").children.length, 0);
   assert.equal(ui.api.pendingPeople(), null);
   assert.equal(ui.store.get(DRAFT_KEY), undefined);
 });

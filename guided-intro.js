@@ -1,4 +1,4 @@
-/* A private four-person questionnaire that reveals the graph only after self-rating. */
+/* A private four-person questionnaire that reveals its dots only after self-rating. */
 (() => {
   "use strict";
 
@@ -149,7 +149,7 @@
     ui.authDetails.hidden = false;
     ui.authNote.hidden = !hasDraft;
     ui.tryButton.hidden = hasDraft;
-    ui.privacy.hidden = !hasDraft;
+    ui.privacy.hidden = true;
     ui.demo.hidden = false;
     ui.demo.classList.toggle("starter-active", hasDraft);
     ui.graph.hidden = !hasDraft;
@@ -260,8 +260,9 @@
   }
 
   function updateDots() {
-    if (draft.phase !== "reveal") return;
-    ui.footer.hidden = view.zoom === 1;
+    const reveal = draft.phase === "reveal";
+    for (const button of nodes.values()) button.hidden = !reveal;
+    ui.footer.hidden = ui.graph.hidden || view.zoom === 1;
     const { size, inset, span, viewedSpan, left, top } = graphBounds();
     if (!size || !span) return;
     const midX = left + viewedSpan / 2;
@@ -271,7 +272,7 @@
     ui.center.hidden = midX < 20 || midX > size - 20 || midY < 20 || midY > size - 20;
     ui.center.style.left = `${midX}px`;
     ui.center.style.top = `${midY}px`;
-    for (let index = 0; index < draft.answers.length; index++) {
+    for (let index = 0; reveal && index < draft.answers.length; index++) {
       if (!nodes.has(index)) createDot(index);
       const person = draft.answers[index];
       const button = nodes.get(index);
@@ -355,10 +356,10 @@
   });
 
   const prompts = [
-    ["Think of a friend.", "Choose a friend you know well. How do you see them?"],
-    ["Think of someone in your family.", "Choose a relative. Where do they land on these scales?"],
-    ["Think of a lover or a foe.", "Choose someone you love, or someone you really don't get along with."],
-    ["Now, think about yourself.", "Same two scales. Where would you put yourself?"]
+    ["Think of a friend.", "How do you see someone you know well?"],
+    ["Think of someone in your family.", "Where do they land on these scales?"],
+    ["Think of a lover or a foe.", "Who brings out strong feelings in you?"],
+    ["Now, think about yourself.", "Where would you put yourself?"]
   ];
 
   function render() {
@@ -367,9 +368,8 @@
     ui.title.hidden = reveal;
     ui.answerForm.hidden = reveal;
     ui.finishActions.hidden = !reveal;
-    ui.demo.hidden = !reveal;
-    ui.graph.hidden = !reveal;
-    if (!reveal) ui.footer.hidden = true;
+    ui.demo.hidden = false;
+    ui.graph.hidden = false;
     ui.step.textContent = reveal ? "Your four-person graph" : "Step " + (index + 1) + " of 4";
     const complete = reveal ? 4 : index;
     ui.progress.setAttribute("aria-valuenow", String(complete));
@@ -377,25 +377,24 @@
     if (reveal) {
       ui.description.textContent = ui.authIntro.textContent;
       selectedIndex = -1;
-      updateDots();
-      window.requestAnimationFrame?.(updateDots);
-      return;
+    } else {
+      const current = draft.answers[index];
+      ui.title.textContent = prompts[index][0];
+      ui.description.textContent = prompts[index][1];
+      ui.nameField.hidden = index === 3;
+      ui.name.required = index !== 3;
+      ui.name.value = index === 3 ? "" : (current?.name ?? "");
+      ui.kindField.hidden = index !== 2;
+      ui.lover.checked = current?.relationship === "lover";
+      ui.foe.checked = current?.relationship === "enemy";
+      ui.cool.value = String(current?.x ?? 50);
+      ui.benevolence.value = String(current?.y ?? 50);
+      ui.sliderHeading.textContent = index === 3 ? "Rate yourself:" : "Rate them:";
+      ui.back.disabled = index === 0;
+      ui.next.textContent = index === 3 ? "Show my graph" : "Next";
     }
-    const current = draft.answers[index];
-    ui.title.textContent = prompts[index][0];
-    ui.description.textContent = prompts[index][1];
-    ui.nameField.hidden = index === 3;
-    ui.name.required = index !== 3;
-    ui.name.value = index === 3 ? "" : (current?.name ?? "");
-    ui.kindField.hidden = index !== 2;
-    ui.lover.checked = current?.relationship === "lover";
-    ui.foe.checked = current?.relationship === "enemy";
-    ui.cool.value = String(current?.x ?? 50);
-    ui.benevolence.value = String(current?.y ?? 50);
-    ui.sliderHeading.textContent = index === 3 ?
-      "How would you rate yourself?" : "Where would you put them on these two scales?";
-    ui.back.hidden = index === 0;
-    ui.next.textContent = index === 3 ? "Show my graph" : "Next";
+    updateDots();
+    window.requestAnimationFrame?.(updateDots);
   }
 
   ui.answerForm.addEventListener("submit", event => {
@@ -470,8 +469,11 @@
   });
 
   ui.skip.addEventListener("click", () => {
-    try { localStorage.setItem(DISMISSED_KEY, "1"); } catch { /* optional preference */ }
-    showAuth(false);
+    if (!ui.flow.hidden) {
+      try { localStorage.setItem(DISMISSED_KEY, "1"); } catch { /* optional preference */ }
+      showAuth(false);
+    }
+    ui.authEmail.focus();
   });
 
   ui.tryButton.addEventListener("click", () => {

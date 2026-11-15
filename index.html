@@ -59,7 +59,7 @@
       .masthead .account-bar { justify-self: end; }
       .privacy-note { display: none; margin: 0; text-align: center; font-size: .85em; }
       .page:has(#workspace:not([hidden])) .privacy-note { display: block; }
-      .auth-panel:not([hidden]) { display: grid; width: fit-content; max-width: 100%; grid-template-columns: min(300px, 100%) minmax(0, 500px); grid-template-rows: auto auto; align-items: start; column-gap: 2rem; }
+      .auth-panel:not([hidden]) { display: grid; width: min(100%, calc(800px + 2rem)); grid-template-columns: min(300px, 100%) minmax(0, 500px); grid-template-rows: auto auto; align-items: start; column-gap: 2rem; }
       .auth-copy { display: grid; grid-column: 1; grid-row: 1 / span 2; grid-template-rows: subgrid; width: 100%; max-width: 300px; align-self: stretch; }
       #auth-title { margin-bottom: 0; font-size: min(1.9em, calc((100vw - 50px) / 10)); white-space: nowrap; }
       .auth-details { min-width: 0; }
@@ -73,7 +73,7 @@
       }
       #sign-in-form .auth-actions { display: grid; }
       .setup-details { margin: 1em 0; }
-      .demo-graph { --demo-axis-x: 50%; --demo-axis-y: 50%; position: relative; container-type: inline-size; box-sizing: border-box; width: min(500px, 100%, var(--demo-available-size, 500px)); aspect-ratio: 1; overflow: hidden; border: 1px solid rgba(0, 0, 0, .15); border-radius: 8px; background: #fff; color: #000; touch-action: none; }
+      .demo-graph { --demo-axis-x: 50%; --demo-axis-y: 50%; position: relative; container-type: inline-size; box-sizing: border-box; width: min(500px, 100%); aspect-ratio: 1; overflow: hidden; border: 1px solid rgba(0, 0, 0, .15); border-radius: 8px; background: #fff; color: #000; touch-action: none; }
       .demo-graph:focus-within { border-color: #000; }
       .demo-axis-line { position: absolute; pointer-events: none; }
       .demo-axis-horizontal { left: 20px; right: 20px; top: var(--demo-axis-y); border-top: 1px solid #000; }
@@ -334,7 +334,7 @@
       @media (max-width: 760px) {
         .layout { grid-template-columns: 1fr; grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
       }
-      @media (max-width: 680px) {
+      @media (max-width: 882px) {
         .auth-panel:not([hidden]) { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; }
         .demo { grid-column: 1; grid-row: 3; margin-top: 1rem; }
       }
@@ -370,6 +370,7 @@
         <p class="brand"><span aria-hidden="true">🍐</span> The Pear</p>
         <p class="privacy-note">Your graphs are private to your account</p>
         <p class="starter-privacy" id="starter-privacy" hidden>Your draft is private to this browser until you choose to save it.</p>
+        <button class="starter-sign-in" id="starter-skip" type="button">Sign in</button>
         <div class="account-bar" id="account-bar" hidden>
           <button class="account-email" id="account-email" type="button" aria-expanded="false" aria-controls="account-menu"></button>
           <div class="account-menu" id="account-menu" role="group" aria-label="Account options" hidden>
@@ -386,23 +387,24 @@
           <div class="auth-copy">
             <h1 id="auth-title">Welcome to The Pear!</h1>
             <section class="starter-flow" id="starter-flow" aria-label="Your first graph" hidden>
-              <div class="tutorial-titlebar"><span><span aria-hidden="true">🍐</span> The Pear</span><span>Your first graph</span></div>
               <div class="starter-content">
-                <h2 id="starter-title">Think of a friend.</h2>
-                <p id="starter-description">Choose someone you know well. How do you see them?</p>
-                <p class="starter-step" id="starter-step">Step 1 of 4</p>
-                <div class="tutorial-progress" id="starter-progress" role="progressbar" aria-label="People rated" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0"><span></span><span></span><span></span><span></span></div>
+                <div class="starter-prompt">
+                  <h2 id="starter-title">Think of a friend.</h2>
+                  <p id="starter-description">How do you see someone you know well?</p>
+                  <p class="starter-step" id="starter-step">Step 1 of 4</p>
+                  <div class="starter-progress" id="starter-progress" role="progressbar" aria-label="People rated" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0"><span></span><span></span><span></span><span></span></div>
+                </div>
                 <form id="starter-answer-form">
                   <div class="starter-name-field" id="starter-name-field">
                     <label for="starter-name">Their name</label>
                     <input id="starter-name" type="text" maxlength="80" autocomplete="off" placeholder="Who comes to mind?">
+                    <fieldset id="starter-kind-field" class="starter-kind" hidden>
+                      <legend class="visually-hidden">Who are you thinking of?</legend>
+                      <label><input id="starter-lover" type="radio" name="starter-kind" value="lover"> Lover</label>
+                      <label><input id="starter-foe" type="radio" name="starter-kind" value="enemy"> Foe</label>
+                    </fieldset>
                   </div>
-                  <fieldset id="starter-kind-field" class="starter-kind" hidden>
-                    <legend>Who are you thinking of?</legend>
-                    <label><input id="starter-lover" type="radio" name="starter-kind" value="lover"> Lover</label>
-                    <label><input id="starter-foe" type="radio" name="starter-kind" value="enemy"> Foe</label>
-                  </fieldset>
-                  <p class="starter-slider-heading" id="starter-slider-heading">Where would you put them on these two scales?</p>
+                  <p class="starter-slider-heading" id="starter-slider-heading">Rate them:</p>
                   <div class="starter-trait">
                     <div class="starter-trait-ends"><label for="starter-cool">Lame</label><span>Cool</span></div>
                     <input id="starter-cool" type="range" min="0" max="100" step="1" value="50" aria-label="Lame to Cool">
@@ -412,7 +414,7 @@
                     <input id="starter-benevolence" type="range" min="0" max="100" step="1" value="50" aria-label="Benevolent to Malevolent">
                   </div>
                   <div class="starter-actions">
-                    <button class="button" id="starter-back" type="button" hidden>Back</button>
+                    <button class="button" id="starter-back" type="button" disabled>Back</button>
                     <button class="button button-pink starter-primary" id="starter-next" type="submit">Next person</button>
                   </div>
                 </form>
@@ -421,7 +423,6 @@
                   <button class="button" id="starter-edit" type="button">Edit my answers</button>
                 </div>
                 <p class="starter-error" id="starter-error" role="alert" hidden></p>
-                <button class="starter-link" id="starter-skip" type="button">Already have an account? Sign in</button>
               </div>
             </section>
             <div class="auth-details" id="auth-details">
@@ -450,7 +451,7 @@
             </div>
           </div>
           <div class="demo" id="demo-column">
-            <div class="demo-graph" id="starter-graph" role="group" tabindex="0" aria-label="Your revealed graph of three people and yourself. Select a person, then use arrow keys to adjust." hidden>
+            <div class="demo-graph" id="starter-graph" role="group" tabindex="0" aria-label="Your graph. Once revealed, select a person and use arrow keys to adjust." hidden>
               <span class="demo-axis-line demo-axis-horizontal"></span>
               <span class="demo-axis-line demo-axis-vertical"></span>
               <span class="demo-center" id="starter-center" aria-hidden="true"></span>
@@ -2877,23 +2878,8 @@
         return { begin, point, stop };
       }
 
-      function fitDemoGraph(frame, footer) {
-        if (!frame.getClientRects().length) return;
-        const doc = frame.ownerDocument;
-        const win = doc.defaultView;
-        const top = frame.getBoundingClientRect().top + win.scrollY;
-        const footerMargin = parseFloat(win.getComputedStyle(footer).marginTop);
-        const bottomMargin = parseFloat(win.getComputedStyle(doc.body).marginBottom);
-        const size = Math.max(160, win.innerHeight - top - footer.offsetHeight - footerMargin - bottomMargin);
-        const value = `${size}px`;
-        if (frame.style.getPropertyValue("--demo-available-size") !== value) {
-          frame.style.setProperty("--demo-available-size", value);
-        }
-      }
-
       function setupDemoGraph() {
         const frame = document.getElementById("demo-graph");
-        const footer = document.getElementById("demo-footer");
         const reset = document.getElementById("demo-reset");
         const optionsToggle = document.getElementById("demo-options-toggle");
         const optionsMenu = document.getElementById("demo-options-menu");
@@ -3298,15 +3284,12 @@
           if (resizeFrame !== null) return;
           resizeFrame = requestAnimationFrame(() => {
             resizeFrame = null;
-            fitDemoGraph(frame, footer);
             axisTransition.stop();
             draw();
           });
         };
         const observer = new ResizeObserver(resize);
-        for (const element of [frame, footer, document.querySelector(".auth-copy"), document.querySelector(".masthead")]) {
-          observer.observe(element);
-        }
+        observer.observe(frame);
         window.addEventListener("resize", resize);
       }
 
