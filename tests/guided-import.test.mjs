@@ -82,6 +82,29 @@ const navigationEnd = html.indexOf("      el.homeLink.addEventListener", navigat
 assert.ok(navigationStart >= 0 && navigationEnd > navigationStart, "homepage navigation helpers are present");
 const navigation = html.slice(navigationStart, navigationEnd);
 
+test("people expand button uses short labels and toggles only visible people", () => {
+  const start = html.indexOf("      function updatePeopleExpandButton()");
+  const end = html.indexOf("      function updatePeopleSearch()", start);
+  assert.ok(start >= 0 && end > start);
+  const cards = [{ open: false, hidden: false }, { open: false, hidden: true }];
+  const button = {
+    firstElementChild: {}, setAttribute() {},
+    addEventListener(_type, listener) { this.click = listener; }
+  };
+  const el = { meRow: { children: [] }, peopleList: { children: cards }, peopleExpandAll: button };
+  const update = new Function("el", "graphOpenedPeople",
+    html.slice(start, end) + "\nreturn updatePeopleExpandButton;")(el, new Set());
+  update();
+  assert.equal(button.firstElementChild.textContent, "Expand");
+  button.click();
+  assert.equal(button.firstElementChild.textContent, "Collapse");
+  assert.equal(cards[0].open, true);
+  assert.equal(cards[1].open, false);
+  button.click();
+  assert.equal(button.firstElementChild.textContent, "Expand");
+  assert.equal(cards[0].open, false);
+});
+
 test("graph edit menu supports keyboard navigation and dismissal", () => {
   const start = html.indexOf("      function closeGraphEditMenu(");
   const end = html.indexOf("      el.accountEmail.addEventListener", start);

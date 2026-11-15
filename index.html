@@ -153,8 +153,8 @@
       .graph-toggle, .axis-toggle, .relationship-toggle { position: relative; display: flex; width: 100%; padding-right: 24px; text-align: left; }
       .graph-toggle { padding-left: 2px; }
       .graph-toggle span, .axis-toggle span, .relationship-toggle span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-      .graph-toggle::after, .axis-toggle::after, .relationship-toggle::after, #edit-graph-toggle::after { content: "▾"; position: absolute; right: 6px; top: 50%; transform: translateY(-50%); }
-      .graph-toggle::after, .relationship-toggle::after, #edit-graph-toggle::after { content: ""; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid currentColor; pointer-events: none; }
+      .graph-toggle::after, .axis-toggle::after, .relationship-toggle::after, #edit-graph-toggle::after, #people-count::after { content: "▾"; position: absolute; right: 6px; top: 50%; transform: translateY(-50%); }
+      .graph-toggle::after, .relationship-toggle::after, #edit-graph-toggle::after, #people-count::after { content: ""; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid currentColor; pointer-events: none; }
       .panel { min-width: 0; }
       .graph-panel, .people-panel { display: flex; flex-direction: column; min-height: 0; }
       .chart-space { flex: 1; min-height: 0; container-type: size; }
@@ -216,12 +216,12 @@
       #open-traits, #people-expand-all { padding-inline: 2px; }
       .people-sort { flex: 0 0 var(--person-action-width); margin-left: auto; }
       #people-expand-all { display: grid; }
-      #people-expand-all::before { content: "Collapse all"; visibility: hidden; grid-area: 1 / 1; }
+      #people-expand-all::before { content: "Collapse"; visibility: hidden; grid-area: 1 / 1; }
       #people-expand-all span { grid-area: 1 / 1; }
       .people-filter, .people-sort { position: relative; }
       #people-count, #people-sort-toggle { width: 100%; }
-      #people-count { cursor: pointer; white-space: nowrap; }
-      #people-count.filtered { border: 0; border-radius: 2px; padding: 3px 8px; background: var(--highlight-blue); color: #fff; }
+      #people-count { position: relative; padding-right: 22px; cursor: pointer; white-space: nowrap; }
+      #people-count.filtered { border: 0; border-radius: 2px; padding: 3px 22px 3px 8px; background: var(--highlight-blue); color: #fff; }
       .people-count-content { display: grid; }
       .people-count-content > span, .people-count-content::before, .people-count-content::after { grid-area: 1 / 1; }
       .people-count-content::before { content: "1 person"; visibility: hidden; }
@@ -613,7 +613,7 @@
                   <h2 id="people-title">People</h2>
                   <div class="people-controls">
                     <button id="open-traits" type="button">Traits</button>
-                    <button id="people-expand-all" type="button" aria-label="Expand all people" aria-controls="people-list" disabled><span>Expand all</span></button>
+                    <button id="people-expand-all" type="button" aria-label="Expand all people" aria-controls="people-list" disabled><span>Expand</span></button>
                     <span class="people-filter">
                       <button id="people-count" type="button" aria-label="Filter people" aria-haspopup="menu" aria-expanded="false" aria-controls="people-filter-menu"><span class="people-count-content" data-size="8 people"><span id="people-count-label">0 people</span></span></button>
                       <div id="people-filter-menu" role="menu" aria-label="Filter people" hidden>
@@ -2512,7 +2512,7 @@
         const cards = [...el.meRow.children, ...el.peopleList.children].filter(card => !card.hidden);
         const collapse = cards.some(card => card.open);
         const action = collapse ? "Collapse" : "Expand";
-        el.peopleExpandAll.firstElementChild.textContent = `${action} all`;
+        el.peopleExpandAll.firstElementChild.textContent = action;
         el.peopleExpandAll.setAttribute("aria-label", `${action} all people`);
         el.peopleExpandAll.disabled = cards.length === 0;
       }
