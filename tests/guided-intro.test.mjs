@@ -88,7 +88,7 @@ function mount(initialStorage = {}, initialHash = "", navigationType = "navigate
   el("starter-proximity-toggle").parentElement = el("starter-proximity");
   el("starter-proximity-menu").hidden = true;
   el("starter-proximity-closest").checked = true;
-  el("auth-intro").textContent = "See your world from a new angle. Your graphs are private and available anywhere.";
+  el("auth-intro").textContent = "See your world from a new angle. Your graphs are private and only accesible in your account.";
   const win = {
     location: { pathname: "/", search: "", hash: initialHash },
     performance: { getEntriesByType: () => [{ type: navigationType }], now: () => 0 },
