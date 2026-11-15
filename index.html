@@ -299,13 +299,13 @@
       .graph-options, .proximity { position: relative; display: flex; align-items: center; }
       #edit-graph-toggle, .graph-options-toggle { position: relative; padding-right: 24px; padding-left: 2px; text-align: left; }
       .graph-options-toggle::after { content: ""; position: absolute; right: 6px; top: 50%; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 5px solid currentColor; transform: translateY(-50%); pointer-events: none; }
-      .graph-options-menu:not([hidden]) { position: absolute; z-index: 4; bottom: calc(100% + var(--control-gap)); left: 0; min-width: 100%; width: max-content; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; padding: 4px; background: #fff; color: #000; }
+      .graph-options-menu:not([hidden]) { position: absolute; z-index: 4; bottom: calc(100% + var(--control-gap)); left: 0; min-width: 100%; width: max-content; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; padding: 4px; background: rgba(255, 255, 255, .5); color: #000; }
       .graph-options-menu label { display: flex; align-items: center; gap: 4px; padding: 4px 6px; white-space: nowrap; font: 13.3333px Arial, sans-serif; cursor: pointer; }
       .graph-options-menu input { margin: 0; }
       .graph-options-separator { display: block; border-top: 1px solid #767676; margin: 4px 0; }
       #proximity-menu { max-width: calc(100vw - 20px); }
       #proximity-menu .proximity-option-name { min-width: 0; max-width: 14rem; margin-left: auto; padding-left: 1em; overflow: hidden; text-align: right; text-overflow: ellipsis; }
-      #proximity-clear { display: block; width: 100%; border: 0; padding: 4px 6px; background: #fff; color: #000; font: 13.3333px Arial, sans-serif; text-align: left; cursor: pointer; }
+      #proximity-clear { display: block; width: 100%; border: 0; padding: 4px 6px; background: transparent; color: #000; font: 13.3333px Arial, sans-serif; text-align: left; cursor: pointer; }
       #proximity-clear:is(:hover, :focus-visible) { outline: none; background: var(--highlight-blue); color: #fff; }
       .proximity-toggle span { display: block; max-width: 150px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
       .person-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--control-gap); margin: var(--control-gap) 0 0 calc(10px + var(--control-gap)); }
