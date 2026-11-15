@@ -129,6 +129,48 @@ test("relationship color picker saves the account profile and rolls back a faile
   assert.match(notices.at(-1), /offline/);
 });
 
+test("hover and selection highlight labels without drawing dotted dot outlines", () => {
+  const start = html.indexOf("        const drawHighlight = index => {");
+  const end = html.indexOf("        if (focusedIndex", start);
+  assert.ok(start >= 0 && end > start);
+  const labels = [];
+  const arcs = [];
+  const context = { setLineDash() {}, beginPath() {}, arc(...args) { arcs.push(args); }, stroke() {} };
+  const highlight = new Function("state", "drawLabel", "context", "plotted", "personDotRadius", "selectedIndex",
+    html.slice(start, end) + "\nreturn drawHighlight;")(
+    { hideNames: false }, (...args) => labels.push(args), context,
+    [{ point: { x: 10, y: 20 } }, { point: { x: 30, y: 40 } }], 6, 1
+  );
+  highlight(0);
+  highlight(1);
+  assert.deepEqual(labels, [[0, true], [1, true]]);
+  assert.deepEqual(arcs, []);
+});
+
+test("hovered and selected dots match the proximity pulse peak", () => {
+  const start = html.indexOf("        const drawDot = index => {");
+  const end = html.indexOf("        plotted.forEach", start);
+  assert.ok(start >= 0 && end > start);
+  const dots = [];
+  const context = {
+    beginPath() {}, arc(x, y, radius) { dots.push({ radius, border: this.lineWidth }); },
+    fill() {}, stroke() {}
+  };
+  const plotted = [0, 1, 2, 3].map(id => ({
+    person: { id, color: "#123456" }, point: { x: id, y: id }, sticky: false
+  }));
+  const draw = new Function("context", "plotted", "hoveredIndex", "hoveredPersonId", "selectedIndex",
+    "focusedIndex", "proximityPerson", "pulse", "state", "personDotBorderWidth", "personDotRadius",
+    html.slice(start, end) + "\nreturn drawDot;")(
+    context, plotted, 0, 0, 1, -1, plotted[2].person, 1.5, { colorByRelationship: false }, 2, 6
+  );
+  [0, 1, 2, 3].forEach(draw);
+  assert.deepEqual(dots, [
+    { radius: 9, border: 3 }, { radius: 9, border: 3 },
+    { radius: 9, border: 3 }, { radius: 6, border: 2 }
+  ]);
+});
+
 const navigationStart = html.indexOf("      async function openHomepage(");
 const navigationEnd = html.indexOf("      el.homeLink.addEventListener", navigationStart);
 assert.ok(navigationStart >= 0 && navigationEnd > navigationStart, "homepage navigation helpers are present");
