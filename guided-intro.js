@@ -38,7 +38,10 @@
     tryButton: $("starter-try"),
     authEmail: $("auth-email"),
     demo: $("demo-column"),
-    graph: $("starter-graph")
+    graph: $("starter-graph"),
+    center: $("starter-center"),
+    footer: $("starter-footer"),
+    reset: $("starter-reset")
   };
 
   const emptyDraft = () => ({
@@ -97,6 +100,7 @@
   let draft = loadDraft() || emptyDraft();
   let selectedIndex = -1;
   let drag = null;
+  let view = { zoom: 1, x: 0.5, y: 0.5 };
   const nodes = new Map();
 
   function error(message) {
@@ -144,10 +148,12 @@
     ui.flow.hidden = true;
     ui.authDetails.hidden = false;
     ui.authNote.hidden = !hasDraft;
+    ui.tryButton.hidden = hasDraft;
     ui.privacy.hidden = !hasDraft;
     ui.demo.hidden = false;
     ui.demo.classList.toggle("starter-active", hasDraft);
     ui.graph.hidden = !hasDraft;
+    ui.footer.hidden = !hasDraft || view.zoom === 1;
     if (hasDraft) {
       updateDots();
       window.requestAnimationFrame?.(updateDots);
@@ -176,7 +182,12 @@
     button.addEventListener("pointerdown", event => {
       if (!event.isPrimary || event.button !== 0) return;
       selectedIndex = index;
-      drag = { index, pointerId: event.pointerId };
+      const point = eventCoordinates(event);
+      const { left, top, viewedSpan } = graphBounds();
+      const person = draft.answers[index];
+      drag = { index, pointerId: event.pointerId,
+        offsetX: point.x - (left + person.x / 100 * viewedSpan),
+        offsetY: point.y - (top + (1 - person.y / 100) * viewedSpan) };
       button.setPointerCapture(event.pointerId);
       button.focus({ preventScroll: true });
       updateDots();
@@ -184,7 +195,7 @@
     });
     button.addEventListener("pointermove", event => {
       if (!drag || drag.pointerId !== event.pointerId || drag.index !== index) return;
-      const point = pointFromEvent(event);
+      const point = pointFromEvent(event, drag.offsetX, drag.offsetY);
       const person = draft.answers[index];
       person.x = point.x;
       person.y = point.y;
@@ -204,7 +215,7 @@
         ArrowLeft: [-2, 0], ArrowRight: [2, 0],
         ArrowUp: [0, 2], ArrowDown: [0, -2]
       }[event.key];
-      if (!direction) return;
+      if (!direction || (event.shiftKey && view.zoom > 1)) return;
       event.preventDefault();
       const person = draft.answers[index];
       person.x = clamp(person.x + direction[0]);
@@ -220,35 +231,59 @@
   function graphBounds() {
     const size = Math.min(ui.graph.clientWidth, ui.graph.clientHeight);
     const inset = Math.min(38, Math.max(14, (size - 1) / 2));
-    return { size, inset, span: size - 2 * inset };
+    const span = size - 2 * inset;
+    return { size, inset, span, viewedSpan: span * view.zoom,
+      left: inset + (0.5 - view.x * view.zoom) * span,
+      top: inset + (0.5 - view.y * view.zoom) * span };
   }
 
-  function pointFromEvent(event) {
+  function eventCoordinates(event) {
     const rect = ui.graph.getBoundingClientRect();
-    const { size, inset, span } = graphBounds();
-    if (!span) return { x: 50, y: 50 };
-    const x = event.clientX - rect.left - ui.graph.clientLeft;
-    const y = event.clientY - rect.top - ui.graph.clientTop;
+    return { x: event.clientX - rect.left - ui.graph.clientLeft,
+      y: event.clientY - rect.top - ui.graph.clientTop };
+  }
+
+  function constrainView() {
+    const half = 0.5 / view.zoom;
+    view.x = Math.max(half, Math.min(1 - half, view.x));
+    view.y = Math.max(half, Math.min(1 - half, view.y));
+  }
+
+  function pointFromEvent(event, offsetX, offsetY) {
+    const { viewedSpan, left, top } = graphBounds();
+    if (!viewedSpan) return { x: 50, y: 50 };
+    const point = eventCoordinates(event);
     return {
-      x: clamp((x - inset) / span * 100),
-      y: clamp((size - inset - y) / span * 100)
+      x: clamp((point.x - offsetX - left) / viewedSpan * 100),
+      y: clamp((top + viewedSpan - point.y + offsetY) / viewedSpan * 100)
     };
   }
 
   function updateDots() {
     if (draft.phase !== "reveal") return;
-    const { size, inset, span } = graphBounds();
+    ui.footer.hidden = view.zoom === 1;
+    const { size, inset, span, viewedSpan, left, top } = graphBounds();
     if (!size || !span) return;
+    const midX = left + viewedSpan / 2;
+    const midY = top + viewedSpan / 2;
+    ui.graph.style.setProperty("--demo-axis-x", `${Math.max(20, Math.min(size - 20, midX))}px`);
+    ui.graph.style.setProperty("--demo-axis-y", `${Math.max(20, Math.min(size - 20, midY))}px`);
+    ui.center.hidden = midX < 20 || midX > size - 20 || midY < 20 || midY > size - 20;
+    ui.center.style.left = `${midX}px`;
+    ui.center.style.top = `${midY}px`;
     for (let index = 0; index < draft.answers.length; index++) {
       if (!nodes.has(index)) createDot(index);
       const person = draft.answers[index];
       const button = nodes.get(index);
-      const x = inset + person.x / 100 * span;
-      const y = size - inset - person.y / 100 * span;
+      const actualX = left + person.x / 100 * viewedSpan;
+      const actualY = top + (1 - person.y / 100) * viewedSpan;
+      const x = Math.max(inset, Math.min(size - inset, actualX));
+      const y = Math.max(inset, Math.min(size - inset, actualY));
       button.style.left = x + "px";
       button.style.top = y + "px";
       button.classList.toggle("label-left", x > size - 90);
       button.classList.toggle("selected", index === selectedIndex);
+      button.classList.toggle("sticky", x !== actualX || y !== actualY);
       button.querySelector(".demo-person-name").textContent = person.name;
       button.setAttribute("aria-label",
         person.name + ", " + (person.relationship === "enemy" ? "foe" : person.relationship) +
@@ -257,6 +292,67 @@
     }
     ui.graph.classList.toggle("has-selection", selectedIndex >= 0);
   }
+
+  ui.graph.addEventListener("wheel", event => {
+    if (drag || event.target.closest(".chart-info")) return;
+    const { size, inset, span } = graphBounds();
+    if (span <= 0) return;
+    event.preventDefault();
+    const point = eventCoordinates(event);
+    const x = Math.max(0, Math.min(1, (point.x - inset) / span)) - 0.5;
+    const y = Math.max(0, Math.min(1, (point.y - inset) / span)) - 0.5;
+    const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? size : 1);
+    const zoom = Math.max(1, Math.min(8, view.zoom * Math.exp(-delta * 0.0015)));
+    view = { zoom, x: view.x + x / view.zoom - x / zoom, y: view.y + y / view.zoom - y / zoom };
+    constrainView();
+    updateDots();
+  }, { passive: false });
+
+  ui.graph.addEventListener("pointerdown", event => {
+    if (!event.isPrimary || event.button !== 0 || drag || event.target.closest(".demo-person, .chart-info")) return;
+    selectedIndex = -1;
+    ui.graph.focus({ preventScroll: true });
+    if (view.zoom > 1) {
+      drag = { pointerId: event.pointerId, ...eventCoordinates(event) };
+      ui.graph.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    }
+    updateDots();
+  });
+  ui.graph.addEventListener("pointermove", event => {
+    if (!drag || drag.index !== undefined || drag.pointerId !== event.pointerId) return;
+    const point = eventCoordinates(event);
+    const { span } = graphBounds();
+    if (span <= 0) return;
+    view.x -= (point.x - drag.x) / (span * view.zoom);
+    view.y -= (point.y - drag.y) / (span * view.zoom);
+    constrainView();
+    drag.x = point.x;
+    drag.y = point.y;
+    updateDots();
+  });
+  for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
+    ui.graph.addEventListener(type, event => {
+      if (drag && drag.index === undefined && drag.pointerId === event.pointerId) drag = null;
+    });
+  }
+  ui.graph.addEventListener("keydown", event => {
+    if (!event.shiftKey || view.zoom === 1 || drag || event.target.closest(".chart-info")) return;
+    const direction = {
+      ArrowLeft: [-1, 0], ArrowRight: [1, 0],
+      ArrowUp: [0, -1], ArrowDown: [0, 1]
+    }[event.key];
+    if (!direction) return;
+    event.preventDefault();
+    view.x += direction[0] * 0.1 / view.zoom;
+    view.y += direction[1] * 0.1 / view.zoom;
+    constrainView();
+    updateDots();
+  });
+  ui.reset.addEventListener("click", () => {
+    view = { zoom: 1, x: 0.5, y: 0.5 };
+    updateDots();
+  });
 
   const prompts = [
     ["Think of a friend.", "Choose a friend you know well. How do you see them?"],
@@ -273,6 +369,7 @@
     ui.finishActions.hidden = !reveal;
     ui.demo.hidden = !reveal;
     ui.graph.hidden = !reveal;
+    if (!reveal) ui.footer.hidden = true;
     ui.step.textContent = reveal ? "Your four-person graph" : "Step " + (index + 1) + " of 4";
     const complete = reveal ? 4 : index;
     ui.progress.setAttribute("aria-valuenow", String(complete));

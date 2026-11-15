@@ -36,7 +36,8 @@
 .starter-auth-note { border: 1px solid #767676; padding: 9px; background: #f2f2f2; font: 13px Arial, sans-serif; line-height: 1.45; }
 .starter-auth-note strong { display: block; margin-bottom: 4px; }
 #starter-try { margin-top: .4em; }
-.demo.starter-active #demo-graph, .demo.starter-active > .chart-footer { display: none; }
+.demo.starter-active #demo-graph, .demo.starter-active #demo-footer { display: none; }
+#starter-footer[hidden] { display: none; }
 #starter-graph { width: min(500px, 100%, 65dvh); }
 #starter-graph .starter-person { z-index: 2; }
 #starter-graph .starter-person.is-current { z-index: 5; }

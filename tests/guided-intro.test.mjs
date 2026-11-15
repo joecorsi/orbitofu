@@ -48,7 +48,7 @@ function mount(initialStorage = {}) {
       for (const fn of this.listeners[type] ?? []) {
         fn({
           preventDefault() {}, pointerId: 1, isPrimary: true, button: 0,
-          clientX: 305, clientY: 90, ...props
+          clientX: 305, clientY: 90, target: this, ...props
         });
       }
     }
@@ -56,6 +56,7 @@ function mount(initialStorage = {}) {
     querySelector(selector) {
       return this.children.find(child => child.className === selector.slice(1));
     }
+    closest() { return null; }
     setAttribute(name, value) { this.attributes[name] = value; }
     focus() {}
     setPointerCapture() {}
@@ -132,6 +133,7 @@ test("save hands off four ratings and the correct relationships without signing 
   ui.el("starter-save").dispatch("click");
   assert.equal(ui.el("auth-details").hidden, false);
   assert.equal(ui.el("starter-auth-note").hidden, false);
+  assert.equal(ui.el("starter-try").hidden, true);
   assert.equal(ui.el("starter-privacy").hidden, false);
   assert.equal(ui.el("starter-graph").hidden, false);
   assert.equal(ui.el("demo-column").classList.contains("starter-active"), true);
@@ -175,7 +177,7 @@ test("dragging after editing answers changes the current saved dot", () => {
   ui.el("starter-edit").dispatch("click");
   answer(ui, "", 60, 60);
   const dot = ui.el("starter-graph").children[3];
-  dot.dispatch("pointerdown");
+  dot.dispatch("pointerdown", { clientX: parseFloat(dot.style.left) + 1, clientY: parseFloat(dot.style.top) + 1 });
   dot.dispatch("pointermove");
   dot.dispatch("pointerup");
   ui.el("starter-save").dispatch("click");
@@ -191,6 +193,7 @@ test("ready draft survives refresh and clears only after confirmed account impor
   assert.equal(afterReload.el("auth-details").hidden, false);
   assert.equal(afterReload.el("starter-graph").hidden, false);
   assert.equal(afterReload.el("demo-column").classList.contains("starter-active"), true);
+  assert.equal(afterReload.el("starter-try").hidden, true);
   assert.equal(afterReload.el("starter-graph").children.length, 4);
   afterReload.el("starter-graph").children[0].dispatch("keydown", { key: "ArrowRight" });
   assert.equal(afterReload.api.pendingPeople()[0].x, 87);
@@ -208,6 +211,7 @@ test("skip is remembered but visitors can reopen the questionnaire", () => {
   assert.equal(ui.el("starter-privacy").hidden, true);
   const again = mount(Object.fromEntries(ui.store));
   assert.equal(again.el("auth-details").hidden, false);
+  assert.equal(again.el("starter-try").hidden, false);
   assert.equal(again.el("starter-graph").hidden, true);
   assert.equal(again.el("demo-column").classList.contains("starter-active"), false);
   again.el("starter-try").dispatch("click");
@@ -215,6 +219,44 @@ test("skip is remembered but visitors can reopen the questionnaire", () => {
   assert.equal(again.el("starter-privacy").hidden, false);
   assert.equal(again.el("demo-column").hidden, true);
   assert.equal(again.store.get(DISMISSED_KEY), undefined);
+});
+
+test("the personalized graph zooms, pans, resets, and keeps ratings unchanged", () => {
+  const ui = mount();
+  complete(ui);
+  const graph = ui.el("starter-graph");
+  const dot = graph.children[1];
+  const original = { left: dot.style.left, top: dot.style.top };
+  const answers = JSON.parse(ui.store.get(DRAFT_KEY)).answers;
+  graph.dispatch("wheel", { deltaY: -500, deltaMode: 0, clientX: 201, clientY: 201 });
+  assert.equal(ui.el("starter-footer").hidden, false);
+  assert.notEqual(dot.style.left, original.left);
+  const zoomedLeft = dot.style.left;
+  graph.dispatch("keydown", { key: "ArrowRight", shiftKey: true });
+  assert.notEqual(dot.style.left, zoomedLeft);
+  graph.dispatch("pointerdown", { clientX: 200, clientY: 200 });
+  graph.dispatch("pointermove", { clientX: 220, clientY: 200 });
+  graph.dispatch("pointerup");
+  assert.deepEqual(JSON.parse(ui.store.get(DRAFT_KEY)).answers, answers);
+  ui.el("starter-reset").dispatch("click");
+  assert.equal(ui.el("starter-footer").hidden, true);
+  assert.deepEqual({ left: dot.style.left, top: dot.style.top }, original);
+});
+
+test("dragging an offscreen person starts from their actual rating", () => {
+  const ui = mount();
+  complete(ui);
+  const graph = ui.el("starter-graph");
+  graph.dispatch("wheel", { deltaY: -500, deltaMode: 0, clientX: 201, clientY: 201 });
+  const dot = graph.children[0];
+  const x = parseFloat(dot.style.left) + 1;
+  const y = parseFloat(dot.style.top) + 1;
+  dot.dispatch("pointerdown", { clientX: x, clientY: y });
+  dot.dispatch("pointermove", { clientX: x - 10, clientY: y });
+  dot.dispatch("pointerup");
+  const person = JSON.parse(ui.store.get(DRAFT_KEY)).answers[0];
+  assert.ok(person.x >= 80 && person.x < 85);
+  assert.equal(person.y, 10);
 });
 
 test("duplicate names and reserved Me cannot be used for another person", () => {

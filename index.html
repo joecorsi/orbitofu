@@ -73,7 +73,7 @@
       }
       #sign-in-form .auth-actions { display: grid; }
       .setup-details { margin: 1em 0; }
-      .demo-graph { --demo-axis-x: 50%; --demo-axis-y: 50%; position: relative; box-sizing: border-box; width: min(500px, 100%, var(--demo-available-size, 500px)); aspect-ratio: 1; overflow: hidden; border: 1px solid rgba(0, 0, 0, .15); border-radius: 8px; background: #fff; color: #000; touch-action: none; }
+      .demo-graph { --demo-axis-x: 50%; --demo-axis-y: 50%; position: relative; container-type: inline-size; box-sizing: border-box; width: min(500px, 100%, var(--demo-available-size, 500px)); aspect-ratio: 1; overflow: hidden; border: 1px solid rgba(0, 0, 0, .15); border-radius: 8px; background: #fff; color: #000; touch-action: none; }
       .demo-graph:focus-within { border-color: #000; }
       .demo-axis-line { position: absolute; pointer-events: none; }
       .demo-axis-horizontal { left: 20px; right: 20px; top: var(--demo-axis-y); border-top: 1px solid #000; }
@@ -434,7 +434,7 @@
                   <button class="button" id="google-sign-in" type="button">Sign in with Google</button>
                 </div>
               </form>
-              <div class="starter-auth-note" id="starter-auth-note" role="status" hidden><strong>Your graph is ready to save.</strong>Sign in to save a new graph with these three people and your self-ratings. If you have an existing account, its shared Me profile will use your two new ratings across your graphs.</div>
+              <div class="starter-auth-note" id="starter-auth-note" role="status" hidden><strong>Your graph is ready to save.</strong>Sign in to save a new graph with these three people and your self-ratings.</div>
               <button class="starter-link" id="starter-try" type="button">Try it with people you know first</button>
               <details class="setup-details" id="connection-details" hidden>
                 <summary id="connection-summary">Set up Supabase connection</summary>
@@ -450,15 +450,20 @@
             </div>
           </div>
           <div class="demo" id="demo-column">
-            <div class="demo-graph" id="starter-graph" role="group" aria-label="Your revealed graph of three people and yourself. Drag people to adjust their ratings." hidden>
+            <div class="demo-graph" id="starter-graph" role="group" tabindex="0" aria-label="Your revealed graph of three people and yourself. Select a person, then use arrow keys to adjust." hidden>
               <span class="demo-axis-line demo-axis-horizontal"></span>
               <span class="demo-axis-line demo-axis-vertical"></span>
-              <span class="demo-center" aria-hidden="true"></span>
+              <span class="demo-center" id="starter-center" aria-hidden="true"></span>
               <span class="demo-axis-label demo-x-low">Lame</span>
               <span class="demo-axis-label demo-x-high">Cool</span>
               <span class="demo-axis-label demo-y-low">Benevolent</span>
               <span class="demo-axis-label demo-y-high">Malevolent</span>
+              <span class="chart-info">
+                <button class="chart-info-button" type="button" aria-label="Graph controls information" aria-describedby="starter-info-tooltip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="currentColor"/></svg></button>
+                <span class="chart-info-tooltip" id="starter-info-tooltip" role="tooltip">Scroll to zoom, drag empty space or use Shift and arrow keys to pan. Select a dot, then use the mouse or arrow keys to adjust values.</span>
+              </span>
             </div>
+            <div class="chart-footer" id="starter-footer" hidden><button type="button" id="starter-reset">Reset view</button></div>
             <div class="demo-graph" id="demo-graph" role="group" tabindex="-1" aria-label="Interactive sample graph" aria-describedby="demo-help">
               <span class="demo-axis-line demo-axis-horizontal"></span>
               <span class="demo-axis-line demo-axis-vertical"></span>
@@ -467,11 +472,15 @@
               <span class="demo-axis-label demo-x-high">Cool</span>
               <span class="demo-axis-label demo-y-low">Benevolent</span>
               <span class="demo-axis-label demo-y-high">Malevolent</span>
+              <span class="chart-info">
+                <button class="chart-info-button" type="button" aria-label="Graph controls information" aria-describedby="demo-info-tooltip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="currentColor"/></svg></button>
+                <span class="chart-info-tooltip" id="demo-info-tooltip" role="tooltip">Scroll to zoom, drag empty space or use Shift and arrow keys to pan. Select a dot, then use the mouse or arrow keys to adjust values.</span>
+              </span>
               <div class="chart-groups" id="demo-groups"></div>
               <div class="chart-group-popover" id="demo-group-popover" role="group" aria-label="People in this group" hidden></div>
             </div>
             <p class="visually-hidden" id="demo-help">Drag a person, scroll to zoom, or drag empty space to pan.</p>
-            <div class="chart-footer">
+            <div class="chart-footer" id="demo-footer">
               <span class="graph-footer-controls">
                 <span class="graph-options">
                   <button class="graph-options-toggle" id="demo-options-toggle" type="button" aria-expanded="false" aria-controls="demo-options-menu">Options</button>
@@ -899,7 +908,7 @@
         chart: document.getElementById("chart"),
         chartGroups: document.querySelector("#workspace .chart-groups"),
         chartGroupPopover: document.getElementById("chart-group-popover"),
-        chartInfo: document.querySelector(".chart-info"),
+        chartInfo: document.querySelector("#workspace .chart-info"),
         resetZoom: document.getElementById("reset-zoom"),
         chartLabels: document.getElementById("chart-labels"),
         chartLabelHitAreas: document.querySelectorAll(".chart-label-hit"),
@@ -2884,7 +2893,7 @@
 
       function setupDemoGraph() {
         const frame = document.getElementById("demo-graph");
-        const footer = frame.parentElement.querySelector(".chart-footer");
+        const footer = document.getElementById("demo-footer");
         const reset = document.getElementById("demo-reset");
         const optionsToggle = document.getElementById("demo-options-toggle");
         const optionsMenu = document.getElementById("demo-options-menu");
@@ -3141,7 +3150,7 @@
           reset.hidden = view.zoom === 1;
         }
         frame.addEventListener("wheel", event => {
-          if (drag || groupPopover.contains(event.target)) return;
+          if (drag || groupPopover.contains(event.target) || event.target.closest(".chart-info")) return;
           axisTransition.stop();
           closeGroup();
           event.preventDefault();
@@ -3157,7 +3166,7 @@
         }, { passive: false });
         frame.addEventListener("pointerdown", event => {
           if (!event.isPrimary || event.button !== 0 || drag ||
-              event.target.closest(".chart-group-button, .chart-group-popover")) return;
+              event.target.closest(".chart-group-button, .chart-group-popover, .chart-info")) return;
           const index = buttons.indexOf(event.target.closest(".demo-person"));
           const point = eventPoint(event);
           const { viewed, viewport } = bounds();
@@ -3198,6 +3207,7 @@
         frame.addEventListener("pointercancel", endDrag);
         frame.addEventListener("lostpointercapture", endDrag);
         frame.addEventListener("keydown", event => {
+          if (event.target.closest(".chart-info")) return;
           if (event.key === "Escape" && selected !== null) {
             selected = null;
             event.preventDefault();
