@@ -265,4 +265,7 @@ test("proximity modes sweep and pulse independently, including cancellation and 
   advance(now + duration + 200);
   assert.equal(control.progress("verticalSymmetry"), 1);
   assert.ok(Math.abs(control.pulseFor("verticalSymmetry", "mirror") - 1.5) < 1e-10);
+  control.stop();
+  assert.equal(control.pulseFor("verticalSymmetry", "mirror"), 1);
+  assert.equal(frames.size, 0);
 });

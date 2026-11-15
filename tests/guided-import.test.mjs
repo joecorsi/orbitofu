@@ -266,8 +266,9 @@ test("hidden traits keep scores and selected axes use visible alternatives or ag
   const start = html.indexOf("      function isValidState(value)");
   const end = html.indexOf("      function showNotice(", start);
   assert.ok(start >= 0 && end > start);
-  const normalize = new Function("AGE_AXIS", "COLORS", "FUNNY_TRAIT", "RELATIONSHIP_COLORS",
-    html.slice(start, end) + "\nreturn normalizeState;")("__age__", ["#111111"], {}, {});
+  const normalize = new Function("AGE_AXIS", "COLORS", "FUNNY_TRAIT", "RELATIONSHIP_COLORS", "modeLabels",
+    html.slice(start, end) + "\nreturn normalizeState;")("__age__", ["#111111"], {}, {},
+    { closest: "Closest", furthest: "Furthest", verticalSymmetry: "Vertical symmetry", horizontalSymmetry: "Horizontal symmetry" });
   const base = {
     funnyTraitMigrated: true,
     traits: [{ id: "a", name: "A", hidden: true }, { id: "b", name: "B" }, { id: "c", name: "C" }],
@@ -275,6 +276,7 @@ test("hidden traits keep scores and selected axes use visible alternatives or ag
     xTrait: "a", yTrait: "b"
   };
   const hidden = normalize(base);
+  assert.deepEqual(hidden.proximityModes, []);
   assert.deepEqual([hidden.xTrait, hidden.yTrait], ["c", "b"]);
   assert.equal(hidden.people[0].values.a, 12);
   assert.equal(hidden.traits[0].hidden, true);
@@ -282,7 +284,73 @@ test("hidden traits keep scores and selected axes use visible alternatives or ag
   assert.deepEqual([allHidden.xTrait, allHidden.yTrait], ["__age__", "__age__"]);
   const shown = normalize({ ...hidden, traits: hidden.traits.map(trait => ({ ...trait, hidden: false })) });
   assert.equal(shown.people[0].values.a, 12);
+  const saved = ["closest", "horizontalSymmetry"];
+  const restored = normalize({ ...base, proximityModes: saved });
+  assert.deepEqual(restored.proximityModes, saved);
+  assert.notEqual(restored.proximityModes, saved);
+  assert.throws(() => normalize({ ...base, proximityModes: ["unknown"] }), /expected format/);
+  assert.throws(() => normalize({ ...base, proximityModes: "closest" }), /expected format/);
   assert.throws(() => normalize({ ...base, traits: [{ id: "a", name: "A", hidden: "yes" }] }), /expected format/);
+});
+
+test("proximity selections save together and clear as one change", () => {
+  const start = html.indexOf("\n      const proximityControl = setupProximityMenu(");
+  const end = html.indexOf("      function openGraphOptions()", start);
+  assert.ok(start >= 0 && end > start);
+  const element = () => ({
+    checked: false, listeners: {}, addEventListener(type, fn) { this.listeners[type] = fn; }
+  });
+  const checks = { closest: element(), furthest: element(), verticalSymmetry: element(), horizontalSymmetry: element() };
+  const clear = element();
+  const state = { proximityModes: [] };
+  const writes = [];
+  let stops = 0, draws = 0;
+  new Function("el", "proximityChecks", "state", "setupProximityMenu", "drawChart", "scheduleSave",
+    html.slice(start, end))(
+    { proximityClear: clear, proximityClosest: checks.closest, proximityFurthest: checks.furthest,
+      proximityVerticalSymmetry: checks.verticalSymmetry, proximityHorizontalSymmetry: checks.horizontalSymmetry },
+    checks, state, () => ({ close() {}, stop() { stops++; } }), () => { draws++; },
+    () => writes.push([...state.proximityModes])
+  );
+  checks.closest.checked = true;
+  checks.closest.listeners.change();
+  checks.horizontalSymmetry.checked = true;
+  checks.horizontalSymmetry.listeners.change();
+  assert.deepEqual(writes, [["closest"], ["closest", "horizontalSymmetry"]]);
+  clear.listeners.click();
+  assert.deepEqual(state.proximityModes, []);
+  assert.ok(Object.values(checks).every(input => !input.checked));
+  assert.deepEqual(writes.at(-1), []);
+  assert.equal(writes.length, 3);
+  assert.equal(stops, 1);
+  assert.equal(draws, 1);
+  clear.listeners.click();
+  assert.equal(writes.length, 3);
+});
+
+test("render restores saved proximity choices without replaying sweeps", () => {
+  const start = html.indexOf("      function render() {");
+  const end = html.indexOf("      function setButtonsDisabled(", start);
+  assert.ok(start >= 0 && end > start);
+  const checks = { closest: { checked: false }, furthest: { checked: false },
+    verticalSymmetry: { checked: false }, horizontalSymmetry: { checked: false } };
+  const state = { proximityModes: ["closest", "verticalSymmetry"], hiddenRelationships: [] };
+  let stops = 0;
+  const render = new Function("state", "el", "proximityChecks", "proximityControl", "chartAxisTransition",
+    "renderAxes", "renderPeople", "renderDimensions", "drawChart",
+    html.slice(start, end) + "\nreturn render;")(
+    state, { relationshipColors: {}, showNames: {}, graphRelationships: [] }, checks,
+    { stop() { stops++; } }, { stop() {} }, () => {}, () => {}, () => {}, () => {}
+  );
+  render();
+  assert.deepEqual(Object.values(checks).map(input => input.checked), [true, false, true, false]);
+  assert.equal(stops, 1);
+  render();
+  assert.equal(stops, 1);
+  state.proximityModes = ["furthest"];
+  render();
+  assert.deepEqual(Object.values(checks).map(input => input.checked), [false, true, false, false]);
+  assert.equal(stops, 2);
 });
 
 test("axis menus and shuffle exclude hidden traits", () => {

@@ -307,6 +307,8 @@
       .graph-options-separator { display: block; border-top: 1px solid #767676; margin: 4px 0; }
       #proximity-menu { max-width: calc(100vw - 20px); }
       #proximity-menu .proximity-option-name { min-width: 0; max-width: 14rem; margin-left: auto; padding-left: 1em; overflow: hidden; text-align: right; text-overflow: ellipsis; }
+      #proximity-clear { display: block; width: 100%; border: 0; padding: 4px 6px; background: #fff; color: #000; font: 13.3333px Arial, sans-serif; text-align: left; cursor: pointer; }
+      #proximity-clear:is(:hover, :focus-visible) { outline: none; background: var(--highlight-blue); color: #fff; }
       .proximity-toggle span { display: block; max-width: 150px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
       .person-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--control-gap); margin: var(--control-gap) 0 0 calc(10px + var(--control-gap)); }
       .person-dates .graph-badge { text-align: center; white-space: normal; overflow-wrap: anywhere; }
@@ -613,6 +615,8 @@
                           <label><input id="proximity-furthest" type="checkbox"><span>Furthest</span><span class="proximity-option-name"></span></label>
                           <label><input id="proximity-vertical-symmetry" type="checkbox"><span>Vertical symmetry</span><span class="proximity-option-name"></span></label>
                           <label><input id="proximity-horizontal-symmetry" type="checkbox"><span>Horizontal symmetry</span><span class="proximity-option-name"></span></label>
+                          <span class="graph-options-separator" role="separator"></span>
+                          <button id="proximity-clear" type="button" aria-label="Clear proximity selections">Clear</button>
                         </span>
                       </span>
                       <button id="reset-zoom" type="button" hidden>Reset view</button>
@@ -851,7 +855,7 @@
     </aside>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./proximity.js?v=proximity-line-hover"></script>
+    <script src="./proximity.js?v=persist-proximity"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
     <script src="./guided-intro.js?v=both-proximity"></script>
     <script>
@@ -1022,6 +1026,7 @@
         proximityFurthest: document.getElementById("proximity-furthest"),
         proximityVerticalSymmetry: document.getElementById("proximity-vertical-symmetry"),
         proximityHorizontalSymmetry: document.getElementById("proximity-horizontal-symmetry"),
+        proximityClear: document.getElementById("proximity-clear"),
         relationshipColors: document.getElementById("relationship-colors"),
         showNames: document.getElementById("show-names"),
         graphRelationships: document.querySelectorAll("[data-graph-relationship]"),
@@ -1134,7 +1139,8 @@
           yTrait: "benevolent-malevolent",
           colorByRelationship: false,
           hideNames: false,
-          hiddenRelationships: []
+          hiddenRelationships: [],
+          proximityModes: []
         };
       }
 
@@ -1438,6 +1444,8 @@
           (value.hideNames === undefined || typeof value.hideNames === "boolean") &&
           (value.hiddenRelationships === undefined || (Array.isArray(value.hiddenRelationships) &&
             value.hiddenRelationships.every(relationship => typeof relationship === "string" && Object.hasOwn(RELATIONSHIP_COLORS, relationship)))) &&
+          (value.proximityModes === undefined || (Array.isArray(value.proximityModes) &&
+            value.proximityModes.every(mode => typeof mode === "string" && Object.hasOwn(modeLabels, mode)))) &&
           value.people.every(person =>
             person && typeof person.id === "string" && typeof person.name === "string" &&
             (person.age === undefined || (Number.isSafeInteger(person.age) && person.age >= 0)) &&
@@ -1491,7 +1499,8 @@
           yTrait,
           colorByRelationship: value.colorByRelationship ?? false,
           hideNames: value.hideNames ?? false,
-          hiddenRelationships: value.hiddenRelationships ? [...value.hiddenRelationships] : []
+          hiddenRelationships: value.hiddenRelationships ? [...value.hiddenRelationships] : [],
+          proximityModes: value.proximityModes ? [...value.proximityModes] : []
         };
       }
 
@@ -1912,6 +1921,7 @@
         closeGraphOptions();
         closeProximityMenu();
         for (const checkbox of Object.values(proximityChecks)) checkbox.checked = false;
+        proximityControl.stop();
         updateProximity();
         graphOpenedPeople.clear();
         focusedNamePersonId = null;
@@ -2198,11 +2208,14 @@
         setGraphDate(el.graphCreated, "Created", graph.created_at);
         setGraphDate(el.graphModified, "Modified", graph.updated_at);
         closeGraphOptions();
+        closeProximityMenu();
+        proximityControl.stop();
         activeGraphId = graph.id;
         chartView = { zoom: 1, x: 0.5, y: 0.5 };
         chartDrag = null;
         activeGraphName = graph.name;
         hoveredPersonId = null;
+        hoveredProximityPoint = null;
         focusedNamePersonId = null;
         stopNameFocusRing();
         selectedPersonId = null;
@@ -4624,6 +4637,13 @@
         chartAxisTransition.stop();
         el.relationshipColors.checked = state.colorByRelationship;
         el.showNames.checked = !state.hideNames;
+        let proximityChanged = false;
+        for (const [mode, checkbox] of Object.entries(proximityChecks)) {
+          const checked = state.proximityModes.includes(mode);
+          if (checkbox.checked !== checked) proximityChanged = true;
+          checkbox.checked = checked;
+        }
+        if (proximityChanged) proximityControl.stop();
         for (const checkbox of el.graphRelationships) {
           checkbox.checked = !state.hiddenRelationships.includes(checkbox.dataset.graphRelationship);
         }
@@ -5101,6 +5121,21 @@
         { verticalSymmetry: el.proximityVerticalSymmetry, horizontalSymmetry: el.proximityHorizontalSymmetry }
       );
       const closeProximityMenu = proximityControl.close;
+      for (const checkbox of Object.values(proximityChecks)) {
+        checkbox.addEventListener("change", () => {
+          state.proximityModes = Object.entries(proximityChecks)
+            .filter(([, input]) => input.checked).map(([mode]) => mode);
+          scheduleSave();
+        });
+      }
+      el.proximityClear.addEventListener("click", () => {
+        if (!state.proximityModes.length) return;
+        state.proximityModes = [];
+        for (const checkbox of Object.values(proximityChecks)) checkbox.checked = false;
+        proximityControl.stop();
+        drawChart();
+        scheduleSave();
+      });
 
       function openGraphOptions() {
         el.graphOptionsMenu.hidden = false;

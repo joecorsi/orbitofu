@@ -65,6 +65,9 @@
         sweep.frame = window.requestAnimationFrame(time => tick(sweep, time));
       }
     };
+    const stop = () => {
+      for (const sweep of Object.values(sweeps)) stopSweep(sweep);
+    };
     const start = () => {
       for (const sweep of Object.values(sweeps)) startSweep(sweep);
       draw();
@@ -115,7 +118,7 @@
       if (target == null || target !== sweep.pulseTarget) return 1;
       return 1 + 0.5 * Math.sin(Math.PI * sweep.pulseProgress) ** 2;
     };
-    return { close, start, progress: mode => sweeps[mode].progress, pulseFor };
+    return { close, start, stop, progress: mode => sweeps[mode].progress, pulseFor };
   }
 
   function traceProximityLine(context, from, to, mode, progress) {
