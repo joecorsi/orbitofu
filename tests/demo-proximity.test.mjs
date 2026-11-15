@@ -80,3 +80,76 @@ test("furthest retains its wavy line and canvas forwards the proximity mode", ()
   drawProximityCanvas({}, closest, 100, 100, { x: 0, y: 0 }, { x: 20, y: 0 }, "closest");
   assert.equal(closest.calls.filter(call => call[0] === "arc").length, 2);
 });
+
+test("furthest sweep ends on the original wave at the requested progress", () => {
+  const context = drawingContext();
+  drawProximityLine(context, { x: 0, y: 0 }, { x: 100, y: 0 }, "furthest", 0.275);
+  const points = context.calls.filter(call => call[0] === "lineTo");
+  const end = points.at(-1);
+  assert.ok(Math.abs(end[1] - 27.5) < 1e-10);
+  assert.ok(Math.abs(end[2] + 3) < 1e-10);
+  assert.ok(points.every(call => call[1] <= 27.5 + 1e-10));
+});
+
+test("furthest sweeps on enable, cancels on mode change, and respects reduced motion", () => {
+  let now = 100;
+  let nextId = 0;
+  const frames = new Map();
+  const motion = { matches: false, addEventListener(_type, listener) { this.change = listener; } };
+  const fakeWindow = {
+    matchMedia: () => motion, performance: { now: () => now },
+    requestAnimationFrame(callback) { const id = ++nextId; frames.set(id, callback); return id; },
+    cancelAnimationFrame(id) { frames.delete(id); }
+  };
+  const document = { addEventListener() {} };
+  new Function("window", "document", source)(fakeWindow, document);
+  const element = () => ({
+    listeners: {}, checked: false,
+    addEventListener(type, fn) { this.listeners[type] = fn; },
+    setAttribute() {}
+  });
+  const toggle = element();
+  toggle.parentElement = { addEventListener() {} };
+  const closest = element();
+  const furthest = element();
+  const draws = [];
+  const control = fakeWindow.thePearProximity.setupProximityMenu(
+    toggle, { hidden: true }, closest, furthest, () => draws.push(control.progress())
+  );
+  const advance = time => {
+    now = time;
+    const [id, callback] = frames.entries().next().value;
+    frames.delete(id);
+    callback(time);
+  };
+  furthest.checked = true;
+  furthest.listeners.change();
+  assert.equal(draws.at(-1), 0);
+  advance(450);
+  assert.equal(draws.at(-1), 0.5);
+  advance(800);
+  assert.equal(draws.at(-1), 1);
+  assert.equal(frames.size, 0);
+  furthest.checked = false;
+  furthest.listeners.change();
+  furthest.checked = true;
+  furthest.listeners.change();
+  assert.equal(draws.at(-1), 0);
+  closest.checked = true;
+  closest.listeners.change();
+  assert.equal(furthest.checked, false);
+  assert.equal(draws.at(-1), 1);
+  assert.equal(frames.size, 0);
+  furthest.checked = true;
+  furthest.listeners.change();
+  motion.matches = true;
+  motion.change();
+  assert.equal(draws.at(-1), 1);
+  assert.equal(frames.size, 0);
+  furthest.checked = false;
+  furthest.listeners.change();
+  furthest.checked = true;
+  furthest.listeners.change();
+  assert.equal(draws.at(-1), 1);
+  assert.equal(frames.size, 0);
+});

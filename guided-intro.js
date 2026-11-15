@@ -51,7 +51,7 @@
     proximityCanvas: $("starter-proximity-line")
   };
   const proximityContext = ui.proximityCanvas.getContext("2d");
-  const closeProximityMenu = setupProximityMenu(ui.proximityToggle, ui.proximityMenu, ui.proximityClosest, ui.proximityFurthest, updateDots);
+  const proximityControl = setupProximityMenu(ui.proximityToggle, ui.proximityMenu, ui.proximityClosest, ui.proximityFurthest, updateDots);
 
   const emptyDraft = () => ({
     version: 2, answers: [], step: 0, phase: "questions", ready: false, updatedAt: Date.now()
@@ -312,7 +312,7 @@
     for (const button of nodes.values()) button.hidden = !reveal;
     ui.footer.hidden = ui.graph.hidden;
     ui.proximity.hidden = !reveal;
-    if (!reveal) closeProximityMenu();
+    if (!reveal) proximityControl.close();
     ui.proximityCanvas.hidden = !reveal;
     const { size, inset, span, viewedSpan, left, top } = graphBounds();
     if (!size || !span) return;
@@ -351,7 +351,7 @@
     const target = findProximity(draft.answers, me, mode, person => person === me ? null : person);
     setProximityLabel(ui.proximityToggle, mode, target?.name);
     drawProximityCanvas(ui.proximityCanvas, proximityContext, size, size,
-      me && displayedPoint(me), target && displayedPoint(target), mode);
+      me && displayedPoint(me), target && displayedPoint(target), mode, proximityControl.progress());
   }
 
   ui.graph.addEventListener("wheel", event => {

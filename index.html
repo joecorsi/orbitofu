@@ -821,9 +821,9 @@
     </aside>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./proximity.js?v=closest-slot"></script>
+    <script src="./proximity.js?v=furthest-sweep"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
-    <script src="./guided-intro.js?v=closest-slot"></script>
+    <script src="./guided-intro.js?v=furthest-sweep"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas } = window.thePearProximity;
       const CONFIG_KEY = "people-map-supabase-config";
@@ -3107,7 +3107,7 @@
         const proximityFurthest = document.getElementById("demo-proximity-furthest");
         const proximityCanvas = document.getElementById("demo-proximity-line");
         const proximityContext = proximityCanvas.getContext("2d");
-        setupProximityMenu(proximityToggle, proximityMenu, proximityClosest, proximityFurthest, draw);
+        const proximityControl = setupProximityMenu(proximityToggle, proximityMenu, proximityClosest, proximityFurthest, draw);
         const optionsToggle = document.getElementById("demo-options-toggle");
         const optionsMenu = document.getElementById("demo-options-menu");
         const relationshipColors = document.getElementById("demo-relationship-colors");
@@ -3354,7 +3354,7 @@
           const target = findProximity(plotted, me?.actual, mode,
             entry => entry.person.id === ME_ID ? null : entry.actual);
           setProximityLabel(proximityToggle, mode, target?.person.name);
-          drawProximityCanvas(proximityCanvas, proximityContext, width, height, me?.point, target?.point, mode);
+          drawProximityCanvas(proximityCanvas, proximityContext, width, height, me?.point, target?.point, mode, proximityControl.progress());
           const labels = showNames.checked ? plotted.map(({ person, point }) => {
             const metrics = measure.measureText(person.name);
             const left = point.x > width - 90 ? point.x - 9 - metrics.width : point.x + 9;
@@ -4318,7 +4318,8 @@
           };
           const from = displayPoint(mePerson);
           const to = displayPoint(proximityPerson);
-          if (from && to) drawProximityLine(context, from, to, el.proximityClosest.checked ? "closest" : "furthest");
+          if (from && to) drawProximityLine(context, from, to,
+            el.proximityClosest.checked ? "closest" : "furthest", proximityControl.progress());
         }
         chartLabelHits = labels.flatMap(label => {
           if (groupedPersonIds.has(label.hit.personId)) return label.nameHit ? [label.nameHit] : [];
@@ -4897,9 +4898,10 @@
         if (restoreFocus) el.graphOptionsToggle.focus();
       }
 
-      const closeProximityMenu = setupProximityMenu(
+      const proximityControl = setupProximityMenu(
         el.proximityToggle, el.proximityMenu, el.proximityClosest, el.proximityFurthest, drawChart
       );
+      const closeProximityMenu = proximityControl.close;
 
       function openGraphOptions() {
         el.graphOptionsMenu.hidden = false;

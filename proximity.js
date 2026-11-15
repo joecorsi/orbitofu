@@ -26,6 +26,29 @@
   }
 
   function setupProximityMenu(toggle, menu, closest, furthest, draw) {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const duration = 700;
+    let frame = null;
+    let start = 0;
+    let progress = 1;
+    const stopSweep = () => {
+      if (frame !== null) window.cancelAnimationFrame(frame);
+      frame = null;
+      progress = 1;
+    };
+    const tick = time => {
+      frame = null;
+      if (!furthest.checked) return stopSweep();
+      progress = Math.min(1, Math.max(0, (time - start) / duration));
+      draw();
+      if (progress < 1) frame = window.requestAnimationFrame(tick);
+    };
+    reducedMotion.addEventListener("change", () => {
+      if (reducedMotion.matches && frame !== null) {
+        stopSweep();
+        draw();
+      }
+    });
     const close = (restoreFocus = false) => {
       if (menu.hidden) return;
       menu.hidden = true;
@@ -55,13 +78,19 @@
     for (const [checkbox, other] of [[closest, furthest], [furthest, closest]]) {
       checkbox.addEventListener("change", () => {
         if (checkbox.checked) other.checked = false;
+        stopSweep();
+        if (checkbox === furthest && checkbox.checked && !reducedMotion.matches) {
+          progress = 0;
+          start = window.performance.now();
+          frame = window.requestAnimationFrame(tick);
+        }
         draw();
       });
     }
-    return close;
+    return { close, progress: () => progress };
   }
 
-  function drawProximityLine(context, from, to, mode) {
+  function drawProximityLine(context, from, to, mode, progress = 1) {
     const dx = to.x - from.x;
     const dy = to.y - from.y;
     const length = Math.hypot(dx, dy);
@@ -83,19 +112,23 @@
     } else {
       context.lineWidth = 1;
       context.moveTo(from.x, from.y);
-      for (let distance = 0.5; distance < length; distance += 0.5) {
+      const end = length * progress;
+      const pointAt = distance => {
         const wave = 3 * Math.sin(2 * Math.PI * distance / 10) *
           Math.min(1, distance / 10, (length - distance) / 10);
         context.lineTo(from.x + (dx * distance - dy * wave) / length,
           from.y + (dy * distance + dx * wave) / length);
+      };
+      for (let distance = 0.5; distance < end; distance += 0.5) {
+        pointAt(distance);
       }
-      context.lineTo(to.x, to.y);
+      if (length) pointAt(end);
     }
     context.stroke();
     context.restore();
   }
 
-  function drawProximityCanvas(canvas, context, width, height, from, to, mode) {
+  function drawProximityCanvas(canvas, context, width, height, from, to, mode, progress = 1) {
     const scale = window.devicePixelRatio || 1;
     const canvasWidth = Math.round(width * scale);
     const canvasHeight = Math.round(height * scale);
@@ -103,7 +136,7 @@
     if (canvas.height !== canvasHeight) canvas.height = canvasHeight;
     context.setTransform(scale, 0, 0, scale, 0, 0);
     context.clearRect(0, 0, width, height);
-    if (from && to) drawProximityLine(context, from, to, mode);
+    if (from && to) drawProximityLine(context, from, to, mode, progress);
   }
 
   window.thePearProximity = {

@@ -91,7 +91,10 @@ function mount(initialStorage = {}, initialHash = "", navigationType = "navigate
   el("auth-intro").textContent = "See your world from a new angle. Your graphs are private and available anywhere.";
   const win = {
     location: { pathname: "/", search: "", hash: initialHash },
-    performance: { getEntriesByType: () => [{ type: navigationType }] },
+    performance: { getEntriesByType: () => [{ type: navigationType }], now: () => 0 },
+    matchMedia: () => ({ matches: false, addEventListener() {} }),
+    requestAnimationFrame: () => 1,
+    cancelAnimationFrame() {},
     listeners: {},
     addEventListener(type, fn) { this.listeners[type] = fn; }
   };
