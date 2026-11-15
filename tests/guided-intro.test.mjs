@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs";
 
 const source = readFileSync(new URL("../guided-intro.js", import.meta.url), "utf8");
 const DRAFT_KEY = "the-pear-first-graph-v2";
-const DISMISSED_KEY = "the-pear-intro-dismissed-v1";
 
 function mount(initialStorage = {}) {
   const store = new Map(Object.entries(initialStorage));
@@ -91,6 +90,12 @@ function answer(ui, name, x, y, kind = null) {
   ui.el("starter-answer-form").dispatch("submit");
 }
 
+function startGuide() {
+  const ui = mount();
+  ui.el("starter-try").dispatch("click");
+  return ui;
+}
+
 function complete(ui, kind = "lover") {
   answer(ui, "Alex", 85, 10);
   answer(ui, "Blair", 42, 75);
@@ -98,8 +103,14 @@ function complete(ui, kind = "lover") {
   answer(ui, "", 62, 33);
 }
 
-test("the graph stays empty until friend, family, lover or foe, and Me are rated", () => {
+test("the homepage appears first and the graph stays empty until everyone is rated", () => {
   const ui = mount();
+  assert.equal(ui.el("starter-flow").hidden, true);
+  assert.equal(ui.el("auth-details").hidden, false);
+  assert.equal(ui.el("starter-try").hidden, false);
+  assert.equal(ui.el("starter-graph").hidden, true);
+  assert.equal(ui.el("demo-column").classList.contains("starter-active"), false);
+  ui.el("starter-try").dispatch("click");
   assert.equal(ui.el("starter-flow").hidden, false);
   assert.equal(ui.el("demo-column").hidden, false);
   assert.equal(ui.el("starter-graph").hidden, false);
@@ -132,7 +143,7 @@ test("the graph stays empty until friend, family, lover or foe, and Me are rated
 });
 
 test("save hands off four ratings and the correct relationships without signing in early", () => {
-  const ui = mount();
+  const ui = startGuide();
   complete(ui);
   assert.equal(ui.api.pendingPeople(), null);
   assert.equal(ui.el("auth-details").hidden, true);
@@ -155,14 +166,14 @@ test("save hands off four ratings and the correct relationships without signing 
 });
 
 test("foe is represented as enemy in the existing relationship model", () => {
-  const ui = mount();
+  const ui = startGuide();
   complete(ui, "enemy");
   ui.el("starter-save").dispatch("click");
   assert.equal(ui.api.pendingPeople()[2].relationship, "enemy");
 });
 
 test("back and edit permit changing ratings before reveal and after reveal", () => {
-  const ui = mount();
+  const ui = startGuide();
   answer(ui, "Alex", 85, 10);
   ui.el("starter-back").dispatch("click");
   assert.equal(ui.el("starter-name").value, "Alex");
@@ -183,7 +194,7 @@ test("back and edit permit changing ratings before reveal and after reveal", () 
 });
 
 test("dragging after editing answers changes the current saved dot", () => {
-  const ui = mount();
+  const ui = startGuide();
   complete(ui);
   ui.el("starter-edit").dispatch("click");
   answer(ui, "", 60, 60);
@@ -197,7 +208,7 @@ test("dragging after editing answers changes the current saved dot", () => {
 });
 
 test("ready draft survives refresh and clears only after confirmed account import", () => {
-  const ui = mount();
+  const ui = startGuide();
   complete(ui);
   ui.el("starter-save").dispatch("click");
   const afterReload = mount(Object.fromEntries(ui.store));
@@ -214,15 +225,13 @@ test("ready draft survives refresh and clears only after confirmed account impor
   const nextVisit = mount(Object.fromEntries(afterReload.store));
   assert.equal(nextVisit.api.pendingPeople(), null);
   assert.equal(nextVisit.el("auth-details").hidden, false);
-  assert.equal(nextVisit.store.get(DISMISSED_KEY), "1");
+  assert.equal(nextVisit.el("starter-try").hidden, false);
 });
 
-test("skip is remembered but visitors can reopen the questionnaire", () => {
-  const ui = mount();
+test("an unfinished draft resumes from the homepage without being imported", () => {
+  const ui = startGuide();
   answer(ui, "Alex", 85, 10);
-  ui.el("starter-skip").dispatch("click");
   assert.equal(ui.api.pendingPeople(), null);
-  assert.equal(ui.el("starter-privacy").hidden, true);
   const again = mount(Object.fromEntries(ui.store));
   assert.equal(again.el("auth-details").hidden, false);
   assert.equal(again.el("starter-try").hidden, false);
@@ -236,11 +245,14 @@ test("skip is remembered but visitors can reopen the questionnaire", () => {
   assert.equal(again.el("starter-graph").children.length, 0);
   assert.match(again.el("starter-title").textContent, /family/i);
   assert.equal(JSON.parse(again.store.get(DRAFT_KEY)).answers[0].name, "Alex");
-  assert.equal(again.store.get(DISMISSED_KEY), undefined);
+  again.el("starter-skip").dispatch("click");
+  assert.equal(again.el("starter-privacy").hidden, true);
+  assert.equal(again.el("starter-try").hidden, false);
+  assert.equal(again.api.pendingPeople(), null);
 });
 
 test("the personalized graph zooms, pans, resets, and keeps ratings unchanged", () => {
-  const ui = mount();
+  const ui = startGuide();
   complete(ui);
   const graph = ui.el("starter-graph");
   const dot = graph.children[1];
@@ -262,7 +274,7 @@ test("the personalized graph zooms, pans, resets, and keeps ratings unchanged", 
 });
 
 test("dragging an offscreen person starts from their actual rating", () => {
-  const ui = mount();
+  const ui = startGuide();
   complete(ui);
   const graph = ui.el("starter-graph");
   graph.dispatch("wheel", { deltaY: -500, deltaMode: 0, clientX: 201, clientY: 201 });
@@ -278,7 +290,7 @@ test("dragging an offscreen person starts from their actual rating", () => {
 });
 
 test("duplicate names and reserved Me cannot be used for another person", () => {
-  const ui = mount();
+  const ui = startGuide();
   answer(ui, "Alex", 50, 50);
   ui.el("starter-name").value = "alex";
   ui.el("starter-answer-form").dispatch("submit");
@@ -290,7 +302,7 @@ test("duplicate names and reserved Me cannot be used for another person", () => 
 });
 
 test("lover or foe is required at the third step", () => {
-  const ui = mount();
+  const ui = startGuide();
   answer(ui, "Alex", 50, 50);
   answer(ui, "Blair", 50, 50);
   ui.el("starter-name").value = "Casey";
@@ -311,7 +323,7 @@ test("stale draft ratings expire rather than import silently", () => {
     ]
   });
   const ui = mount({ [DRAFT_KEY]: old });
-  assert.equal(ui.el("starter-graph").hidden, false);
+  assert.equal(ui.el("starter-graph").hidden, true);
   assert.equal(ui.el("starter-graph").children.length, 0);
   assert.equal(ui.api.pendingPeople(), null);
   assert.equal(ui.store.get(DRAFT_KEY), undefined);

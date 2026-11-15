@@ -4,7 +4,6 @@
 
   const KEY = "the-pear-first-graph-v2";
   const OLD_KEY = "the-pear-first-graph-v1";
-  const DISMISSED_KEY = "the-pear-intro-dismissed-v1";
   const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
   const ROLES = ["friend", "family", "choice", "me"];
   const COLORS = ["#e83c9b", "#35a84d", "#ed8615", "#145c92"];
@@ -126,23 +125,14 @@
       ? saved.answers.map(person => ({ ...person })) : null;
   }
 
-  function markSignedIn() {
-    try { localStorage.setItem(DISMISSED_KEY, "1"); } catch { /* optional preference */ }
-  }
-
   function confirmImported() {
     try { localStorage.removeItem(KEY); } catch { /* import already succeeded */ }
-    markSignedIn();
     draft = emptyDraft();
-  }
-
-  function wasDismissed() {
-    try { return localStorage.getItem(DISMISSED_KEY) === "1"; }
-    catch { return false; }
+    showAuth(false);
   }
 
   // Only an explicitly saved questionnaire can be read by the authenticated editor.
-  window.thePearStarter = { pendingPeople, confirmImported, markSignedIn };
+  window.thePearStarter = { pendingPeople, confirmImported };
 
   function showAuth(hasDraft) {
     ui.flow.hidden = true;
@@ -470,14 +460,12 @@
 
   ui.skip.addEventListener("click", () => {
     if (!ui.flow.hidden) {
-      try { localStorage.setItem(DISMISSED_KEY, "1"); } catch { /* optional preference */ }
       showAuth(false);
     }
     ui.authEmail.focus();
   });
 
   ui.tryButton.addEventListener("click", () => {
-    try { localStorage.removeItem(DISMISSED_KEY); } catch { /* optional preference */ }
     draft.ready = false;
     persist();
     showGuide();
@@ -485,7 +473,5 @@
   });
 
   new ResizeObserver(updateDots).observe(ui.graph);
-  if (draft.ready) showAuth(true);
-  else if (wasDismissed()) showAuth(false);
-  else showGuide();
+  showAuth(draft.ready);
 })();

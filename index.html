@@ -1790,7 +1790,6 @@
           load.progress = 75;
           updateLoadingProgress();
           el.workspace.hidden = false;
-          window.thePearStarter?.markSignedIn();
           drawChart();
           const tutorialStatus = currentUser.user_metadata?.thepear_tutorial;
           load.startTutorial = !load.importedStarter && (tutorialStatus === "pending" || (load.newAccount && !tutorialStatus));
