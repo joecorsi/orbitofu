@@ -1,15 +1,19 @@
 (() => {
   "use strict";
 
-  function findProximity(people, origin, mode, getPoint) {
+  function findProximity(people, origin, mode, getPoint, center) {
     if (!origin || !mode) return null;
+    const axis = mode === "verticalSymmetry" ? "x" : mode === "horizontalSymmetry" ? "y" : null;
+    const axisValue = axis && center[axis];
+    if (axis && origin[axis] === axisValue) return null;
+    const target = axis ? { ...origin, [axis]: 2 * axisValue - origin[axis] } : origin;
     let result = null;
-    let bestDistance = mode === "closest" ? Infinity : -Infinity;
+    let bestDistance = mode === "furthest" ? -Infinity : Infinity;
     for (const person of people) {
       const point = getPoint(person);
-      if (!point) continue;
-      const distance = (point.x - origin.x) ** 2 + (point.y - origin.y) ** 2;
-      if (mode === "closest" ? distance < bestDistance : distance > bestDistance) {
+      if (!point || (axis && (point[axis] - axisValue) * (origin[axis] - axisValue) >= 0)) continue;
+      const distance = (point.x - target.x) ** 2 + (point.y - target.y) ** 2;
+      if (mode === "furthest" ? distance > bestDistance : distance < bestDistance) {
         result = person;
         bestDistance = distance;
       }
@@ -17,22 +21,24 @@
     return result;
   }
 
-  function setProximityLabel(toggle, mode, name, emptyLabel = "No visible people") {
-    const label = mode && mode !== "both" ? (name ? `${mode === "closest" ? "Closest" : "Furthest"}: ${name}` : emptyLabel) : "Proximity";
-    const description = mode && mode !== "both" ? `Current ${mode}: ${name ?? label}` : label;
+  function setProximityLabel(toggle, mode, name, emptyLabel) {
+    const labels = { closest: "Closest", furthest: "Furthest",
+      verticalSymmetry: "Vertical symmetry", horizontalSymmetry: "Horizontal symmetry" };
+    const modeLabel = labels[mode];
+    const label = modeLabel ? (name ? `${modeLabel}: ${name}` :
+      emptyLabel ?? (mode.endsWith("Symmetry") ? "No opposite-side match" : "No visible people")) : "Proximity";
+    const description = modeLabel ? `Current ${modeLabel.toLowerCase()}: ${name ?? label}` : label;
     if (toggle.firstElementChild.textContent !== label) toggle.firstElementChild.textContent = label;
     if (toggle.getAttribute("aria-label") !== description) toggle.setAttribute("aria-label", description);
     if (toggle.title !== description) toggle.title = description;
   }
 
-  function setupProximityMenu(toggle, menu, closest, furthest, draw) {
+  function setupProximityMenu(toggle, menu, closest, furthest, draw, additional = {}) {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const duration = 700 / 1.15;
     const pulseDuration = 400;
-    const sweeps = {
-      closest: { checkbox: closest },
-      furthest: { checkbox: furthest }
-    };
+    const sweeps = Object.fromEntries(Object.entries({ closest, furthest, ...additional })
+      .map(([mode, checkbox]) => [mode, { checkbox }]));
     const stopSweep = sweep => {
       if (sweep.frame != null) window.cancelAnimationFrame(sweep.frame);
       sweep.frame = null;
@@ -142,8 +148,9 @@
       context.lineWidth = 1;
       context.moveTo(from.x, from.y);
       const end = length * progress;
+      const wavelength = mode === "furthest" ? 10 : 20;
       const pointAt = distance => {
-        const wave = 3 * Math.sin(2 * Math.PI * distance / 10) *
+        const wave = 3 * Math.sin(2 * Math.PI * distance / wavelength) *
           Math.min(1, distance / 10, (length - distance) / 10);
         context.lineTo(from.x + (dx * distance - dy * wave) / length,
           from.y + (dy * distance + dx * wave) / length);

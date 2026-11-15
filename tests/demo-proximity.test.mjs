@@ -20,6 +20,26 @@ test("closest and furthest use both graph axes and skip hidden people", () => {
   assert.equal(findProximity(people, { x: 0, y: 0 }, "closest", () => null), null);
 });
 
+test("symmetry finds the closest reflection on the opposite side of the selected axis", () => {
+  const people = [
+    { name: "same side", x: 0.79, y: 0.25 },
+    { name: "vertical", x: 0.21, y: 0.25 },
+    { name: "horizontal", x: 0.8, y: 0.76 },
+    { name: "hidden", x: 0.2, y: 0.25, hidden: true },
+    { name: "on axis", x: 0.5, y: 0.25 }
+  ];
+  const center = { x: 0.5, y: 0.5 };
+  const point = person => person.hidden ? null : person;
+  const me = { x: 0.8, y: 0.25 };
+  assert.equal(findProximity(people, me, "verticalSymmetry", point, center).name, "vertical");
+  assert.equal(findProximity(people, me, "horizontalSymmetry", point, center).name, "horizontal");
+  assert.equal(findProximity(people, { x: 0.5, y: 0.25 }, "verticalSymmetry", point, center), null);
+  assert.equal(findProximity(people, { x: 0.8, y: 0.5 }, "horizontalSymmetry", point, center), null);
+  assert.equal(findProximity([people[0], people[4]], me, "verticalSymmetry", point, center), null);
+  assert.equal(findProximity([{ x: 0.8, y: 0.25 }], { x: 0.2, y: 0.25 },
+    "verticalSymmetry", point, center).x, 0.8);
+});
+
 test("proximity label reflects the active mode and empty results", () => {
   const attributes = {};
   const toggle = {
@@ -32,6 +52,13 @@ test("proximity label reflects the active mode and empty results", () => {
   assert.equal(attributes["aria-label"], "Current furthest: Alex");
   setProximityLabel(toggle, "closest", undefined);
   assert.equal(toggle.firstElementChild.textContent, "No visible people");
+  setProximityLabel(toggle, "verticalSymmetry", "Alex");
+  assert.equal(toggle.firstElementChild.textContent, "Vertical symmetry: Alex");
+  assert.equal(attributes["aria-label"], "Current vertical symmetry: Alex");
+  setProximityLabel(toggle, "horizontalSymmetry", undefined);
+  assert.equal(toggle.firstElementChild.textContent, "No opposite-side match");
+  setProximityLabel(toggle, "horizontalSymmetry", undefined, "Me needs an age");
+  assert.equal(toggle.firstElementChild.textContent, "Me needs an age");
   setProximityLabel(toggle, "both", "Alex");
   assert.equal(toggle.firstElementChild.textContent, "Proximity");
   assert.equal(attributes["aria-label"], "Proximity");
@@ -118,6 +145,19 @@ test("furthest sweep ends on the original wave at the requested progress", () =>
   assert.ok(points.every(call => call[1] <= 27.5 + 1e-10));
 });
 
+test("symmetry uses a doubled wavelength while retaining the sweeping line", () => {
+  for (const mode of ["verticalSymmetry", "horizontalSymmetry"]) {
+    const context = drawingContext();
+    drawProximityLine(context, { x: 0, y: 0 }, { x: 100, y: 0 }, mode, 0.25);
+    const points = context.calls.filter(call => call[0] === "lineTo");
+    const at15 = points.find(call => call[1] === 15);
+    assert.ok(Math.abs(at15[2] + 3) < 1e-10);
+    assert.ok(Math.abs(points.at(-1)[1] - 25) < 1e-10);
+    assert.ok(Math.abs(points.at(-1)[2] - 3) < 1e-10);
+    assert.equal(context.calls.find(call => call[0] === "stroke")[1], 1);
+  }
+});
+
 test("proximity modes sweep and pulse independently, including cancellation and reduced motion", () => {
   let now = 100;
   let nextId = 0;
@@ -139,6 +179,7 @@ test("proximity modes sweep and pulse independently, including cancellation and 
   toggle.parentElement = { addEventListener() {} };
   const closest = element();
   const furthest = element();
+  const symmetry = element();
   const targets = { closest: "near", furthest: "far" };
   const draws = [];
   const control = fakeWindow.thePearProximity.setupProximityMenu(
@@ -147,7 +188,7 @@ test("proximity modes sweep and pulse independently, including cancellation and 
         closest: control.progress("closest"), furthest: control.progress("furthest"),
         near: control.pulseFor("closest", targets.closest), far: control.pulseFor("furthest", targets.furthest)
       });
-    }
+    }, { verticalSymmetry: symmetry }
   );
   const advance = time => {
     now = time;
@@ -196,4 +237,10 @@ test("proximity modes sweep and pulse independently, including cancellation and 
   targets.furthest = "far";
   advance(now + 100);
   assert.equal(draws.at(-1).far, 1);
+  symmetry.checked = true;
+  symmetry.listeners.change();
+  assert.equal(control.progress("verticalSymmetry"), 0);
+  advance(now + duration + 200);
+  assert.equal(control.progress("verticalSymmetry"), 1);
+  assert.ok(Math.abs(control.pulseFor("verticalSymmetry", "mirror") - 1.5) < 1e-10);
 });

@@ -609,6 +609,8 @@
                         <span class="graph-options-menu proximity-menu" id="proximity-menu" role="group" aria-label="Proximity" hidden>
                           <label><input id="proximity-closest" type="checkbox"> Current closest</label>
                           <label><input id="proximity-furthest" type="checkbox"> Current furthest</label>
+                          <label><input id="proximity-vertical-symmetry" type="checkbox"> Closest vertical symmetry</label>
+                          <label><input id="proximity-horizontal-symmetry" type="checkbox"> Closest horizontal symmetry</label>
                         </span>
                       </span>
                       <button id="reset-zoom" type="button" hidden>Reset view</button>
@@ -847,7 +849,7 @@
     </aside>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./proximity.js?v=both-proximity"></script>
+    <script src="./proximity.js?v=symmetry-proximity"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
     <script src="./guided-intro.js?v=both-proximity"></script>
     <script>
@@ -1015,6 +1017,8 @@
         proximityMenu: document.getElementById("proximity-menu"),
         proximityClosest: document.getElementById("proximity-closest"),
         proximityFurthest: document.getElementById("proximity-furthest"),
+        proximityVerticalSymmetry: document.getElementById("proximity-vertical-symmetry"),
+        proximityHorizontalSymmetry: document.getElementById("proximity-horizontal-symmetry"),
         relationshipColors: document.getElementById("relationship-colors"),
         showNames: document.getElementById("show-names"),
         graphRelationships: document.querySelectorAll("[data-graph-relationship]"),
@@ -1041,6 +1045,12 @@
         newTraitLow: document.getElementById("new-trait-low"),
         swapNewTrait: document.getElementById("swap-new-trait"),
         newTraitName: document.getElementById("new-trait-name")
+      };
+      const proximityChecks = {
+        closest: el.proximityClosest,
+        furthest: el.proximityFurthest,
+        verticalSymmetry: el.proximityVerticalSymmetry,
+        horizontalSymmetry: el.proximityHorizontalSymmetry
       };
 
       let client = null;
@@ -1894,8 +1904,7 @@
         closePeopleFilter();
         closeGraphOptions();
         closeProximityMenu();
-        el.proximityClosest.checked = false;
-        el.proximityFurthest.checked = false;
+        for (const checkbox of Object.values(proximityChecks)) checkbox.checked = false;
         updateProximity();
         graphOpenedPeople.clear();
         focusedNamePersonId = null;
@@ -3674,7 +3683,7 @@
       function updateProximity() {
         let emptyLabel = "Proximity";
         const results = [];
-        const modes = [["closest", el.proximityClosest], ["furthest", el.proximityFurthest]]
+        const modes = Object.entries(proximityChecks)
           .filter(([, checkbox]) => checkbox.checked).map(([mode]) => mode);
         if (modes.length && state && mePerson) {
           const axes = [state.xTrait, state.yTrait];
@@ -3689,11 +3698,11 @@
             for (const mode of modes) {
               const person = findProximity(state.people, me, mode, candidate =>
                 !isPersonVisibleOnGraph(candidate) || (usesAge && candidate.age === undefined)
-                  ? null : axisPosition(candidate, range));
+                  ? null : axisPosition(candidate, range), { x: 0.5, y: 0.5 });
               if (person) results.push({ mode, person,
                 name: person.name.trim() || `Person ${state.people.indexOf(person) + 1}` });
             }
-            emptyLabel = "No visible people";
+            emptyLabel = undefined;
           }
         }
         setProximityLabel(el.proximityToggle, modes.length > 1 ? "both" : modes[0], results[0]?.name, emptyLabel);
@@ -4398,7 +4407,7 @@
           if (from && to) drawProximityLine(context, from, to, mode, proximityControl.progress(mode));
           return { person, scale };
         });
-        for (const mode of ["closest", "furthest"]) {
+        for (const mode of Object.keys(proximityChecks)) {
           if (!proximityPeople.some(result => result.mode === mode)) proximityControl.pulseFor(mode, null);
         }
         for (const group of chartGroups) {
@@ -5028,7 +5037,8 @@
       }
 
       const proximityControl = setupProximityMenu(
-        el.proximityToggle, el.proximityMenu, el.proximityClosest, el.proximityFurthest, drawChart
+        el.proximityToggle, el.proximityMenu, el.proximityClosest, el.proximityFurthest, drawChart,
+        { verticalSymmetry: el.proximityVerticalSymmetry, horizontalSymmetry: el.proximityHorizontalSymmetry }
       );
       const closeProximityMenu = proximityControl.close;
 

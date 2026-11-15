@@ -171,6 +171,41 @@ test("hovered and selected dots match the proximity pulse peak", () => {
   ]);
 });
 
+test("saved graph symmetry uses the selected axes and excludes hidden people", () => {
+  const start = html.indexOf("      function axisScore(person, axis, range) {");
+  const end = html.indexOf("      function chartPoint(person, bounds, range) {", start);
+  assert.ok(start >= 0 && end > start);
+  const window = {};
+  new Function("window", "document", readFileSync(new URL("../proximity.js", import.meta.url), "utf8"))(window, {});
+  const me = { values: { x: 80, y: 25 } };
+  const people = [
+    { name: "same", values: { x: 79, y: 25 } },
+    { name: "vertical", values: { x: 21, y: 25 } },
+    { name: "horizontal", values: { x: 80, y: 75 } },
+    { name: "hidden", hidden: true, values: { x: 20, y: 25 } }
+  ];
+  const checks = Object.fromEntries(["closest", "furthest", "verticalSymmetry", "horizontalSymmetry"]
+    .map(mode => [mode, { checked: false }]));
+  const toggle = { firstElementChild: {}, getAttribute() {}, setAttribute() {} };
+  const update = new Function("state", "mePerson", "proximityChecks", "el", "chartAxisTransition",
+    "isPersonVisibleOnGraph", "findProximity", "setProximityLabel", "AGE_AXIS", "ageRange",
+    html.slice(start, end) + "\nreturn updateProximity;")(
+    { xTrait: "x", yTrait: "y", people }, me, checks, { proximityToggle: toggle },
+    { point: (_id, point) => point }, person => !person.hidden,
+    window.thePearProximity.findProximity, window.thePearProximity.setProximityLabel, "__age__", () => null
+  );
+  checks.verticalSymmetry.checked = true;
+  assert.equal(update()[0].person.name, "vertical");
+  assert.equal(toggle.firstElementChild.textContent, "Vertical symmetry: vertical");
+  checks.horizontalSymmetry.checked = true;
+  assert.deepEqual(update().map(result => result.person.name), ["vertical", "horizontal"]);
+  assert.equal(toggle.firstElementChild.textContent, "Proximity");
+  checks.horizontalSymmetry.checked = false;
+  me.values.x = 50;
+  assert.deepEqual(update(), []);
+  assert.equal(toggle.firstElementChild.textContent, "No opposite-side match");
+});
+
 const navigationStart = html.indexOf("      async function openHomepage(");
 const navigationEnd = html.indexOf("      el.homeLink.addEventListener", navigationStart);
 assert.ok(navigationStart >= 0 && navigationEnd > navigationStart, "homepage navigation helpers are present");
