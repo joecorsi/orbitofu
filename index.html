@@ -120,7 +120,7 @@
       .account-menu button:not(:disabled):is(:hover, :focus-visible) { background: var(--highlight-blue); color: #fff; }
       .account-menu [role="separator"] { display: block; border-top: 1px solid #767676; margin: 4px 0; }
       .graph-edit { position: relative; }
-      #edit-graph-toggle { display: grid; place-items: center; }
+      #edit-graph-toggle { position: relative; display: grid; place-items: center; }
       #edit-graph-toggle::before { content: "New graph"; visibility: hidden; grid-area: 1 / 1; }
       #edit-graph-toggle span { grid-area: 1 / 1; }
       .save-status { flex: none; align-self: center; box-sizing: border-box; max-width: 100%; margin-top: .5em; text-align: center; white-space: normal; overflow-wrap: anywhere; }
@@ -153,8 +153,8 @@
       .graph-toggle, .axis-toggle, .relationship-toggle { position: relative; display: flex; width: 100%; padding-right: 24px; text-align: left; }
       .graph-toggle { padding-left: 2px; }
       .graph-toggle span, .axis-toggle span, .relationship-toggle span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-      .graph-toggle::after, .axis-toggle::after, .relationship-toggle::after { content: "▾"; position: absolute; right: 6px; top: 50%; transform: translateY(-50%); }
-      .graph-toggle::after, .relationship-toggle::after { content: ""; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid currentColor; pointer-events: none; }
+      .graph-toggle::after, .axis-toggle::after, .relationship-toggle::after, #edit-graph-toggle::after { content: "▾"; position: absolute; right: 6px; top: 50%; transform: translateY(-50%); }
+      .graph-toggle::after, .relationship-toggle::after, #edit-graph-toggle::after { content: ""; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid currentColor; pointer-events: none; }
       .panel { min-width: 0; }
       .graph-panel, .people-panel { display: flex; flex-direction: column; min-height: 0; }
       .chart-space { flex: 1; min-height: 0; container-type: size; }
