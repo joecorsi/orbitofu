@@ -333,7 +333,7 @@
   }
 
   ui.graph.addEventListener("wheel", event => {
-    if (drag || event.target.closest(".chart-info")) return;
+    if (draft.phase !== "reveal" || drag || event.target.closest(".chart-info")) return;
     const { size, inset, span } = graphBounds();
     if (span <= 0) return;
     event.preventDefault();
@@ -492,6 +492,7 @@
     draft.phase = "questions";
     draft.step = 3;
     draft.ready = false;
+    view = { zoom: 1, x: 0.5, y: 0.5 };
     selectedIndex = -1;
     persist();
     render();

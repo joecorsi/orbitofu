@@ -35,7 +35,7 @@
 .starter-privacy { display: none; margin: 0; text-align: center; font-size: .85em; }
 .page:has(#auth-screen:not([hidden])):has(#starter-privacy:not([hidden])) .masthead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr); }
 .page:has(#auth-screen:not([hidden])) .starter-privacy:not([hidden]) { display: block; grid-column: 2; }
-.starter-content .starter-error { margin: 10px 0 0; color: #a00; }
+.starter-content .starter-error:not([hidden]) { width: fit-content; margin-inline: auto; }
 .starter-auth-note { margin: 1em 0; }
 .starter-auth-note strong { display: block; margin-bottom: 4px; }
 #starter-try { margin-top: .4em; }

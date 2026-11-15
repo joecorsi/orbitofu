@@ -327,7 +327,7 @@ test("other URL fragments remain available to authentication", () => {
   assert.equal(ui.win.location.hash, "#access_token=example");
 });
 
-test("reset view is available while answering and restores the graph", () => {
+test("the guided graph cannot zoom before results and resets when editing answers", () => {
   const ui = startGuide();
   const graph = ui.el("starter-graph");
   const center = ui.el("starter-center");
@@ -336,10 +336,17 @@ test("reset view is available while answering and restores the graph", () => {
   assert.equal(ui.el("starter-reset").hidden, false);
   assert.equal(ui.el("starter-proximity").hidden, true);
   graph.dispatch("wheel", { deltaY: -500, deltaMode: 0, clientX: 100, clientY: 100 });
-  assert.notDeepEqual({ left: center.style.left, top: center.style.top }, original);
+  assert.deepEqual({ left: center.style.left, top: center.style.top }, original);
   ui.el("starter-reset").dispatch("click");
   assert.deepEqual({ left: center.style.left, top: center.style.top }, original);
   assert.equal(ui.el("starter-reset").hidden, false);
+  complete(ui);
+  graph.dispatch("wheel", { deltaY: -500, deltaMode: 0, clientX: 100, clientY: 100 });
+  assert.notDeepEqual({ left: center.style.left, top: center.style.top }, original);
+  ui.el("starter-edit").dispatch("click");
+  assert.deepEqual({ left: center.style.left, top: center.style.top }, original);
+  graph.dispatch("wheel", { deltaY: -500, deltaMode: 0, clientX: 100, clientY: 100 });
+  assert.deepEqual({ left: center.style.left, top: center.style.top }, original);
 });
 
 test("the personalized graph zooms, pans, resets, and keeps ratings unchanged", () => {

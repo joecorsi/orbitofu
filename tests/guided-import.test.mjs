@@ -82,6 +82,42 @@ const navigationEnd = html.indexOf("      el.homeLink.addEventListener", navigat
 assert.ok(navigationStart >= 0 && navigationEnd > navigationStart, "homepage navigation helpers are present");
 const navigation = html.slice(navigationStart, navigationEnd);
 
+test("graph edit menu supports keyboard navigation and dismissal", () => {
+  const start = html.indexOf("      function closeGraphEditMenu(");
+  const end = html.indexOf("      el.accountEmail.addEventListener", start);
+  assert.ok(start >= 0 && end > start);
+  const document = { activeElement: null, listeners: {}, addEventListener(type, fn) { this.listeners[type] = fn; } };
+  function element() {
+    return {
+      listeners: {}, attributes: {},
+      addEventListener(type, fn) { this.listeners[type] = fn; },
+      setAttribute(name, value) { this.attributes[name] = value; },
+      focus() { document.activeElement = this; }
+    };
+  }
+  const toggle = element();
+  const items = [element(), element(), element()];
+  const menu = { hidden: true, querySelectorAll: () => items };
+  const graphEdit = { ...element(), contains: target => [toggle, menu, ...items].includes(target) };
+  const el = { graphEdit, graphEditToggle: toggle, graphEditMenu: menu };
+  new Function("el", "document", html.slice(start, end))(el, document);
+
+  toggle.listeners.click();
+  assert.equal(menu.hidden, false);
+  assert.equal(toggle.attributes["aria-expanded"], "true");
+  graphEdit.listeners.keydown({ key: "ArrowDown", preventDefault() {} });
+  assert.equal(document.activeElement, items[0]);
+  graphEdit.listeners.keydown({ key: "End", preventDefault() {} });
+  assert.equal(document.activeElement, items[2]);
+  graphEdit.listeners.keydown({ key: "Escape", preventDefault() {} });
+  assert.equal(menu.hidden, true);
+  assert.equal(document.activeElement, toggle);
+  assert.equal(toggle.attributes["aria-expanded"], "false");
+  toggle.listeners.click();
+  document.listeners.pointerdown({ target: {} });
+  assert.equal(menu.hidden, true);
+});
+
 function navigationHarness({ session = { user: { id: "user-1" } }, saveError = null, pending = null, rememberedGoogle = false, googleError = null } = {}) {
   const calls = [];
   const el = { workspace: { hidden: false }, accountBar: { hidden: false }, authScreen: { hidden: true } };
@@ -103,12 +139,12 @@ function navigationHarness({ session = { user: { id: "user-1" } }, saveError = n
     if (googleError) throw googleError;
   };
   const api = new Function("el", "client", "window", "flushPendingSave", "closeAccountMenu",
-    "closePeopleFilter", "closeGraphOptions", "closeProximityMenu", "applySession", "drawChart",
+    "closeGraphEditMenu", "closePeopleFilter", "closeGraphOptions", "closeProximityMenu", "applySession", "drawChart",
     "localStorage", "GOOGLE_SIGN_IN_KEY", "signInWithGoogle",
     `let showingHomepage = false, currentUser = { id: "user-1" }, state = {};
      ${navigation}
      return { openHomepage, returnToAccount };`)(
-    el, client, window, flushPendingSave, closeMenu, closeMenu, closeMenu, closeMenu, applySession, drawChart,
+    el, client, window, flushPendingSave, closeMenu, closeMenu, closeMenu, closeMenu, closeMenu, applySession, drawChart,
     localStorage, "google-sign-in", signInWithGoogle
   );
   return { ...api, el, calls };

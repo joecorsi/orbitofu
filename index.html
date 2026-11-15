@@ -32,7 +32,7 @@
       [hidden], .notice { display: none; }
       .notice.visible { display: block; margin: 1em 0; }
       .notice:not(.notice-ok), .save-status.error { color: #a00; }
-      .notice.visible.name-error { align-self: center; box-sizing: border-box; max-width: 100%; margin: var(--control-gap) 0 0; padding: 3px 7px; border-radius: 2px; background: #a00; color: #fff; font: 13.3333px Arial, sans-serif; text-align: center; overflow-wrap: anywhere; }
+      .notice.visible.name-error, .starter-content .starter-error:not([hidden]) { align-self: center; box-sizing: border-box; max-width: 100%; margin: var(--control-gap) 0 0; padding: 3px 7px; border-radius: 2px; background: #a00; color: #fff; font: 13.3333px Arial, sans-serif; text-align: center; overflow-wrap: anywhere; }
       .page { max-width: 1200px; margin: 0 auto; padding-bottom: 4em; }
       .page:has(#auth-screen:not([hidden])) { padding-bottom: 0; }
       html:has(#workspace:not([hidden])) { overflow: hidden; }
@@ -119,6 +119,10 @@
       .account-menu button:disabled { color: #888; cursor: default; }
       .account-menu button:not(:disabled):is(:hover, :focus-visible) { background: var(--highlight-blue); color: #fff; }
       .account-menu [role="separator"] { display: block; border-top: 1px solid #767676; margin: 4px 0; }
+      .graph-edit { position: relative; }
+      #edit-graph-toggle { display: grid; place-items: center; }
+      #edit-graph-toggle::before { content: "New graph"; visibility: hidden; grid-area: 1 / 1; }
+      #edit-graph-toggle span { grid-area: 1 / 1; }
       .save-status { flex: none; align-self: center; box-sizing: border-box; max-width: 100%; margin-top: .5em; text-align: center; white-space: normal; overflow-wrap: anywhere; }
       .status-spinner:not([hidden]) { display: inline-block; width: 1ch; margin-right: .5em; font-family: monospace; font-weight: bold; animation: status-spin .8s steps(8) infinite; }
       @keyframes status-spin { to { transform: rotate(360deg); } }
@@ -273,10 +277,10 @@
       #me-row .person-card { margin: 0; }
       #me-row .person-actions { grid-template-columns: 1fr; }
       .person-actions button { box-sizing: border-box; width: 100%; min-width: 0; }
-      .person-actions button, .graph-action { display: grid; place-items: center; padding: 1px 3px; }
+      .person-actions button { display: grid; place-items: center; padding: 1px 3px; }
       /* Preserve the height of the text buttons while centering the icons. */
-      .person-actions button::before, .graph-action::before { content: "\200b"; visibility: hidden; grid-area: 1 / 1; }
-      .person-actions svg, .graph-action svg { display: block; width: 12px; height: 12px; margin: auto; grid-area: 1 / 1; }
+      .person-actions button::before { content: "\200b"; visibility: hidden; grid-area: 1 / 1; }
+      .person-actions svg { display: block; width: 12px; height: 12px; margin: auto; grid-area: 1 / 1; }
       .person-visibility[aria-pressed="true"] .visibility-slash { display: none; }
       .person-visibility[aria-pressed="false"] { border: 0; border-radius: 2px; padding: 3px 5px; background: #000; color: #fff; }
       .person-color { flex: none; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; }
@@ -469,7 +473,7 @@
               <canvas class="demo-proximity" id="starter-proximity-line" aria-hidden="true" hidden></canvas>
               <span class="chart-info">
                 <button class="chart-info-button" type="button" aria-label="Graph controls information" aria-describedby="starter-info-tooltip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="currentColor"/></svg></button>
-                <span class="chart-info-tooltip" id="starter-info-tooltip" role="tooltip">Scroll to zoom, drag empty space or use Shift and arrow keys to pan. Select a dot, then use the mouse or arrow keys to adjust values.</span>
+                <span class="chart-info-tooltip" id="starter-info-tooltip" role="tooltip">Once the graph is populated, scroll to zoom, drag empty space or use Shift and arrow keys to pan. Select a dot, then use the mouse or arrow keys to adjust values.</span>
               </span>
             </div>
             <div class="chart-footer" id="starter-footer" hidden>
@@ -542,9 +546,15 @@
                   <time class="graph-badge" id="graph-created"></time>
                   <time class="graph-badge" id="graph-modified"></time>
                 </span>
-                <button class="button graph-action" id="rename-graph" type="button" aria-label="Rename graph" title="Rename graph"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 11.5 11.5 3a1.4 1.4 0 0 1 2 2L5 13.5 2.5 14zM10 4.5l2 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                <button class="button button-danger graph-action" id="delete-graph" type="button" aria-label="Delete graph" title="Delete graph"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-                <button class="button" id="new-graph" type="button">New graph</button>
+                <span class="graph-edit" id="graph-edit">
+                  <button class="button" id="edit-graph-toggle" type="button" aria-expanded="false" aria-controls="edit-graph-menu"><span>Edit</span></button>
+                  <span class="account-menu" id="edit-graph-menu" role="group" aria-label="Graph editing options" hidden>
+                    <button id="new-graph" type="button">New graph</button>
+                    <button id="rename-graph" type="button">Rename</button>
+                    <span role="separator"></span>
+                    <button id="delete-graph" type="button">Delete graph</button>
+                  </span>
+                </span>
               </header>
               <div class="chart-space">
                 <div class="chart-body">
@@ -890,6 +900,9 @@
         graphSelect: document.getElementById("graph-select"),
         graphCreated: document.getElementById("graph-created"),
         graphModified: document.getElementById("graph-modified"),
+        graphEdit: document.getElementById("graph-edit"),
+        graphEditToggle: document.getElementById("edit-graph-toggle"),
+        graphEditMenu: document.getElementById("edit-graph-menu"),
         peopleExpandAll: document.getElementById("people-expand-all"),
         peopleCount: document.getElementById("people-count"),
         peopleCountLabel: document.getElementById("people-count-label"),
@@ -1618,6 +1631,40 @@
         if (restoreFocus) el.accountEmail.focus();
       }
 
+      function closeGraphEditMenu(restoreFocus = false) {
+        if (el.graphEditMenu.hidden) return;
+        el.graphEditMenu.hidden = true;
+        el.graphEditToggle.setAttribute("aria-expanded", "false");
+        if (restoreFocus) el.graphEditToggle.focus();
+      }
+
+      el.graphEditToggle.addEventListener("click", () => {
+        if (!el.graphEditMenu.hidden) return closeGraphEditMenu();
+        el.graphEditMenu.hidden = false;
+        el.graphEditToggle.setAttribute("aria-expanded", "true");
+      });
+      el.graphEdit.addEventListener("keydown", event => {
+        if (el.graphEditMenu.hidden) return;
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeGraphEditMenu(true);
+        } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+          event.preventDefault();
+          const items = [...el.graphEditMenu.querySelectorAll("button:not(:disabled)")];
+          const index = items.indexOf(document.activeElement);
+          const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 :
+            event.key === "ArrowDown" ? Math.min(index + 1, items.length - 1) :
+              index < 0 ? items.length - 1 : Math.max(0, index - 1);
+          items[next].focus();
+        }
+      });
+      el.graphEdit.addEventListener("focusout", event => {
+        if (!el.graphEdit.contains(event.relatedTarget)) closeGraphEditMenu();
+      });
+      document.addEventListener("pointerdown", event => {
+        if (!el.graphEdit.contains(event.target)) closeGraphEditMenu();
+      });
+
       el.accountEmail.addEventListener("click", () => {
         if (!el.accountMenu.hidden) {
           closeAccountMenu();
@@ -1786,6 +1833,7 @@
         }
         const unsavedMe = Boolean(currentUser && currentUser.id !== nextUser?.id && meSaveVersion !== meSavedVersion);
         closeAccountMenu();
+        closeGraphEditMenu();
         closePeopleFilter();
         closeGraphOptions();
         closeProximityMenu();
@@ -1897,6 +1945,7 @@
         if (!el.workspace.hidden) await flushPendingSave();
         showingHomepage = true;
         closeAccountMenu();
+        closeGraphEditMenu();
         closePeopleFilter();
         closeGraphOptions();
         closeProximityMenu();
@@ -4481,6 +4530,7 @@
       });
 
       el.renameGraph.addEventListener("click", () => {
+        closeGraphEditMenu();
         el.renameGraphName.value = activeGraphName;
         el.renameGraphNotice.classList.remove("visible");
         el.renameGraphDialog.showModal();
@@ -4526,6 +4576,7 @@
       });
 
       el.newGraph.addEventListener("click", () => {
+        closeGraphEditMenu();
         el.newGraphName.value = "Untitled graph";
         el.copyGraphPeople.checked = false;
         el.newGraphNotice.classList.remove("visible");
@@ -4556,6 +4607,7 @@
       });
 
       el.deleteGraph.addEventListener("click", () => {
+        closeGraphEditMenu();
         if (!activeGraphId) return;
         deleteTargetId = activeGraphId;
         el.deleteGraphMessage.textContent = `Delete "${activeGraphName}" and all its people? This cannot be undone.`;
