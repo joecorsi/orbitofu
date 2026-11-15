@@ -181,6 +181,7 @@
       .chart-info-button { display: grid; place-items: center; padding: 2px; border: 0; background: transparent; color: #000; opacity: .35; cursor: help; }
       .chart-info:hover .chart-info-button, .chart-info:focus-within .chart-info-button { opacity: 1; }
       .chart-info-button svg { display: block; width: 18px; height: 18px; }
+      .demo-label { position: absolute; top: calc(var(--control-gap) / 2); right: calc(var(--control-gap) / 2); z-index: 4; padding: 2px; color: #000; opacity: .35; font: 13.3333px/18px Arial, sans-serif; pointer-events: none; }
       .chart-info-tooltip { position: absolute; top: 100%; left: 0; box-sizing: border-box; width: max-content; max-width: min(250px, calc(100cqw - 2 * var(--control-gap))); padding: var(--control-gap); border: 1px solid #767676; border-radius: 2px; background: #fff; color: #000; font: 13.3333px Arial, sans-serif; visibility: hidden; }
       .chart-info:hover .chart-info-tooltip, .chart-info:focus-within .chart-info-tooltip { visibility: visible; }
       .axis-end { position: absolute; max-width: calc(50% - var(--plot-inset) - 12px); color: #000; }
@@ -499,6 +500,7 @@
                 <button class="chart-info-button" type="button" aria-label="Graph controls information" aria-describedby="demo-info-tooltip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="currentColor"/></svg></button>
                 <span class="chart-info-tooltip" id="demo-info-tooltip" role="tooltip">Scroll to zoom, drag empty space or use Shift and arrow keys to pan. Select a dot, then use the mouse or arrow keys to adjust values.</span>
               </span>
+              <span class="demo-label">Demo</span>
               <div class="chart-groups" id="demo-groups"></div>
               <div class="chart-group-popover" id="demo-group-popover" role="group" aria-label="People in this group" hidden></div>
             </div>
@@ -3097,7 +3099,7 @@
           return values;
         };
         const relationships = shuffle(Object.keys(RELATIONSHIP_COLORS));
-        const names = ["Me", "Alex", "Blair", "Casey", "Drew", "Emery", "Frankie", "Harper", "Jules", "Morgan", "Riley"];
+        const names = ["Me", "Alan", "Blair", "Casey", "Drew", "Emery", "Frankie", "Harper", "Jules", "Morgan", "Riley"];
         const colors = ["#1681d4", "#e83c9b", "#35a84d", "#ed8615", "#9d58cd", "#00aeb0", "#e5474e", "#6b69d6"];
         const scores = Object.fromEntries(traits.map(trait => {
           const values = names.map((_, index) => 15 + index * 7 + randomBetween(-1, 1));
