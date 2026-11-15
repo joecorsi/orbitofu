@@ -474,14 +474,14 @@
             </div>
             <div class="chart-footer" id="starter-footer" hidden>
               <span class="graph-footer-controls">
-                <span class="proximity">
+                <span class="proximity" id="starter-proximity" hidden>
                   <button class="graph-options-toggle proximity-toggle" id="starter-proximity-toggle" type="button" aria-expanded="false" aria-controls="starter-proximity-menu"><span aria-live="polite">Proximity</span></button>
                   <span class="graph-options-menu proximity-menu" id="starter-proximity-menu" role="group" aria-label="Your graph proximity" hidden>
                     <label><input id="starter-proximity-closest" type="checkbox" checked> Current closest</label>
                     <label><input id="starter-proximity-furthest" type="checkbox"> Current furthest</label>
                   </span>
                 </span>
-                <button type="button" id="starter-reset" hidden>Reset view</button>
+                <button type="button" id="starter-reset">Reset view</button>
               </span>
             </div>
             <div class="demo-graph" id="demo-graph" role="group" tabindex="-1" aria-label="Interactive sample graph" aria-describedby="demo-help">

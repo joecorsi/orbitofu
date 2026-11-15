@@ -82,7 +82,7 @@ function mount(initialStorage = {}, initialHash = "") {
   const el = id => doc.getElementById(id);
   el("starter-progress").children = Array.from({ length: 4 }, () => new Element("span"));
   el("starter-proximity-toggle").firstElementChild = new Element("span");
-  el("starter-proximity-toggle").parentElement = new Element("span");
+  el("starter-proximity-toggle").parentElement = el("starter-proximity");
   el("starter-proximity-menu").hidden = true;
   el("starter-proximity-closest").checked = true;
   el("auth-intro").textContent = "See your world from a new angle. Your graphs are private and available anywhere.";
@@ -327,6 +327,21 @@ test("other URL fragments remain available to authentication", () => {
   assert.equal(ui.win.location.hash, "#access_token=example");
 });
 
+test("reset view is available while answering and restores the graph", () => {
+  const ui = startGuide();
+  const graph = ui.el("starter-graph");
+  const center = ui.el("starter-center");
+  const original = { left: center.style.left, top: center.style.top };
+  assert.equal(ui.el("starter-footer").hidden, false);
+  assert.equal(ui.el("starter-reset").hidden, false);
+  assert.equal(ui.el("starter-proximity").hidden, true);
+  graph.dispatch("wheel", { deltaY: -500, deltaMode: 0, clientX: 100, clientY: 100 });
+  assert.notDeepEqual({ left: center.style.left, top: center.style.top }, original);
+  ui.el("starter-reset").dispatch("click");
+  assert.deepEqual({ left: center.style.left, top: center.style.top }, original);
+  assert.equal(ui.el("starter-reset").hidden, false);
+});
+
 test("the personalized graph zooms, pans, resets, and keeps ratings unchanged", () => {
   const ui = startGuide();
   complete(ui);
@@ -343,7 +358,7 @@ test("the personalized graph zooms, pans, resets, and keeps ratings unchanged", 
   graph.dispatch("pointermove", { clientX: 220, clientY: 200 });
   graph.dispatch("pointerup");
   ui.el("starter-reset").dispatch("click");
-  assert.equal(ui.el("starter-reset").hidden, true);
+  assert.equal(ui.el("starter-reset").hidden, false);
   assert.equal(ui.el("starter-footer").hidden, false);
   assert.deepEqual({ left: dot.style.left, top: dot.style.top }, original);
   ui.el("starter-save").dispatch("click");
@@ -353,17 +368,20 @@ test("the personalized graph zooms, pans, resets, and keeps ratings unchanged", 
 
 test("the revealed graph shows closest and furthest proximity without exposing it during questions", () => {
   const ui = startGuide();
-  assert.equal(ui.el("starter-footer").hidden, true);
+  assert.equal(ui.el("starter-footer").hidden, false);
+  assert.equal(ui.el("starter-proximity").hidden, true);
   complete(ui);
   assert.equal(ui.el("starter-footer").hidden, false);
-  assert.equal(ui.el("starter-reset").hidden, true);
+  assert.equal(ui.el("starter-proximity").hidden, false);
+  assert.equal(ui.el("starter-reset").hidden, false);
   assert.equal(ui.el("starter-proximity-toggle").firstElementChild.textContent, "Closest: Casey");
   ui.el("starter-proximity-furthest").checked = true;
   ui.el("starter-proximity-furthest").dispatch("change");
   assert.equal(ui.el("starter-proximity-closest").checked, false);
   assert.equal(ui.el("starter-proximity-toggle").firstElementChild.textContent, "Furthest: Blair");
   ui.el("starter-edit").dispatch("click");
-  assert.equal(ui.el("starter-footer").hidden, true);
+  assert.equal(ui.el("starter-footer").hidden, false);
+  assert.equal(ui.el("starter-proximity").hidden, true);
   assert.equal(ui.el("starter-proximity-line").hidden, true);
 });
 

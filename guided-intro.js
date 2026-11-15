@@ -43,6 +43,7 @@
     center: $("starter-center"),
     footer: $("starter-footer"),
     reset: $("starter-reset"),
+    proximity: $("starter-proximity"),
     proximityToggle: $("starter-proximity-toggle"),
     proximityMenu: $("starter-proximity-menu"),
     proximityClosest: $("starter-proximity-closest"),
@@ -50,7 +51,7 @@
     proximityCanvas: $("starter-proximity-line")
   };
   const proximityContext = ui.proximityCanvas.getContext("2d");
-  setupProximityMenu(ui.proximityToggle, ui.proximityMenu, ui.proximityClosest, ui.proximityFurthest, updateDots);
+  const closeProximityMenu = setupProximityMenu(ui.proximityToggle, ui.proximityMenu, ui.proximityClosest, ui.proximityFurthest, updateDots);
 
   const emptyDraft = () => ({
     version: 2, answers: [], step: 0, phase: "questions", ready: false, updatedAt: Date.now()
@@ -287,8 +288,9 @@
   function updateDots() {
     const reveal = draft.phase === "reveal";
     for (const button of nodes.values()) button.hidden = !reveal;
-    ui.footer.hidden = ui.graph.hidden || !reveal;
-    ui.reset.hidden = !reveal || view.zoom === 1;
+    ui.footer.hidden = ui.graph.hidden;
+    ui.proximity.hidden = !reveal;
+    if (!reveal) closeProximityMenu();
     ui.proximityCanvas.hidden = !reveal;
     const { size, inset, span, viewedSpan, left, top } = graphBounds();
     if (!size || !span) return;
