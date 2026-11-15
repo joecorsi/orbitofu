@@ -1241,7 +1241,7 @@
               select.style.left = `${bounds.left}px`;
               select.style.minWidth = `${bounds.width}px`;
             }
-            select.style.top = options.fixed ? `calc(${bounds.bottom}px + var(--control-gap))` : "calc(100% + var(--control-gap))";
+            select.style.top = options.fixed ? `${bounds.bottom}px` : "calc(100% + var(--control-gap))";
             select.style.bottom = "auto";
             const gap = Math.max(0, select.getBoundingClientRect().top - bounds.bottom);
             const below = Math.max(0, window.innerHeight - bounds.bottom - gap - 20);
@@ -1250,7 +1250,7 @@
             if (opensUp) {
               select.style.top = "auto";
               select.style.bottom = options.fixed
-                ? `calc(${window.innerHeight - bounds.top}px + var(--control-gap))`
+                ? `${window.innerHeight - bounds.top}px`
                 : "calc(100% + var(--control-gap))";
             }
             select.style.maxHeight = `${opensUp ? above : below}px`;
