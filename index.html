@@ -224,7 +224,8 @@
       .people-list-area { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; margin-top: var(--control-gap); padding-bottom: var(--control-gap); border-top: 1px solid rgba(0, 0, 0, .15); }
       .people-list-area::before { content: ""; flex: none; height: var(--control-gap); background: #fff; }
       .people-list-wrap { display: flex; flex: 1 1 0; flex-direction: column; min-width: 0; min-height: 0; }
-      .people-scroll-hint { position: absolute; top: calc(100% + var(--control-gap)); left: 0; box-sizing: border-box; width: 100%; border: 0; border-radius: 2px; padding: 4px 7px; appearance: none; background: #efefef; color: #000; font: 13.3333px Arial, sans-serif; text-align: center; cursor: pointer; }
+      .people-scroll-hint { position: absolute; top: calc(100% + var(--control-gap)); left: 0; box-sizing: border-box; width: 100%; border: 1px solid transparent; border-radius: 2px; padding: 3px 6px; appearance: none; background: #efefef; color: #000; font: 13.3333px Arial, sans-serif; text-align: center; cursor: pointer; }
+      .people-scroll-hint:is(:hover, :focus-visible) { border-color: #000; }
       .people-scroll-hint .scroll-to-top-label { display: none; }
       .people-scroll-hint:is(:hover, :focus-visible) .scroll-for-more-label { display: none; }
       .people-scroll-hint:is(:hover, :focus-visible) .scroll-to-top-label { display: inline; }
