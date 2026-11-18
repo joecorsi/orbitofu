@@ -224,7 +224,10 @@
       .people-list-area { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; margin-top: var(--control-gap); padding-bottom: var(--control-gap); border-top: 1px solid rgba(0, 0, 0, .15); }
       .people-list-area::before { content: ""; flex: none; height: var(--control-gap); background: #fff; }
       .people-list-wrap { display: flex; flex: 1 1 0; flex-direction: column; min-width: 0; min-height: 0; }
-      .people-scroll-hint { position: absolute; top: calc(100% + var(--control-gap)); left: 0; box-sizing: border-box; width: 100%; border-radius: 2px; padding: 4px 7px; background: #efefef; color: #000; font: 13.3333px Arial, sans-serif; text-align: center; }
+      .people-scroll-hint { position: absolute; top: calc(100% + var(--control-gap)); left: 0; box-sizing: border-box; width: 100%; border: 0; border-radius: 2px; padding: 4px 7px; appearance: none; background: #efefef; color: #000; font: 13.3333px Arial, sans-serif; text-align: center; cursor: pointer; }
+      .people-scroll-hint .scroll-to-top-label { display: none; }
+      .people-scroll-hint:is(:hover, :focus-visible) .scroll-for-more-label { display: none; }
+      .people-scroll-hint:is(:hover, :focus-visible) .scroll-to-top-label { display: inline; }
       .people-list { box-sizing: border-box; flex: 1 1 0; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
       /* Hide the People panel's scrollbar without disabling wheel, touch or keyboard scrolling. */
       #people-scroll {
@@ -674,7 +677,7 @@
                   <div id="app-notice" class="notice" role="status" aria-live="polite"></div>
                 </div>
               </div>
-              <div class="people-scroll-hint" id="people-scroll-hint" hidden>Scroll for more</div>
+              <button class="people-scroll-hint" id="people-scroll-hint" type="button" aria-label="Scroll people list to top" hidden><span class="scroll-for-more-label">Scroll for more</span><span class="scroll-to-top-label" aria-hidden="true">Scroll to top</span></button>
             </section>
           </div>
 
@@ -5241,6 +5244,13 @@
         panel.classList.toggle("has-scroll-overflow", overflowing);
         el.peopleScrollHint.hidden = !overflowing;
       }
+
+      el.peopleScrollHint.addEventListener("click", () => {
+        el.peopleScroll.scrollTo({
+          top: 0,
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth"
+        });
+      });
 
       const peopleOverflowObserver = new ResizeObserver(updatePeopleOverflow);
       for (const element of [el.peopleScroll, el.meRow, el.peopleList]) {
