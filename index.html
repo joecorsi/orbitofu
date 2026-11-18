@@ -139,7 +139,7 @@
       .panel { min-width: 0; }
       .graph-panel, .people-panel { display: flex; flex-direction: column; min-height: 0; }
       .people-panel { position: relative; }
-      .people-panel::after { content: ""; position: absolute; top: 100%; left: 0; width: 100%; border-top: 1px solid rgba(0, 0, 0, .15); }
+      .people-panel.has-scroll-overflow::after { content: ""; position: absolute; top: 100%; left: 0; width: 100%; border-top: 1px solid rgba(0, 0, 0, .15); }
       .chart-space { flex: 1; min-height: 0; container-type: size; }
       .chart-body { width: min(100%, 100cqh - var(--chart-footer-space, 2em)); }
       .chart-frame { --plot-inset: 20px; position: relative; box-sizing: border-box; border: 1px solid rgba(0, 0, 0, .15); border-radius: 8px; }
@@ -224,6 +224,7 @@
       .people-list-area { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; margin-top: var(--control-gap); padding-bottom: var(--control-gap); border-top: 1px solid rgba(0, 0, 0, .15); }
       .people-list-area::before { content: ""; flex: none; height: var(--control-gap); background: #fff; }
       .people-list-wrap { display: flex; flex: 1 1 0; flex-direction: column; min-width: 0; min-height: 0; }
+      .people-scroll-hint { position: absolute; top: calc(100% + var(--control-gap)); left: 0; box-sizing: border-box; width: 100%; border-radius: 2px; padding: 4px 7px; background: #efefef; color: #000; font: 13.3333px Arial, sans-serif; text-align: center; }
       .people-list { box-sizing: border-box; flex: 1 1 0; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
       /* Hide the People panel's scrollbar without disabling wheel, touch or keyboard scrolling. */
       #people-scroll {
@@ -673,6 +674,7 @@
                   <div id="app-notice" class="notice" role="status" aria-live="polite"></div>
                 </div>
               </div>
+              <div class="people-scroll-hint" id="people-scroll-hint" hidden>Scroll for more</div>
             </section>
           </div>
 
@@ -998,6 +1000,7 @@
         peopleList: document.getElementById("people-list"),
         peopleScroll: document.getElementById("people-scroll"),
         peopleListWrap: document.getElementById("people-list-wrap"),
+        peopleScrollHint: document.getElementById("people-scroll-hint"),
         dimensions: document.getElementById("dimensions"),
         traitsDialog: document.getElementById("traits-dialog"),
         traitsNotice: document.getElementById("traits-notice"),
@@ -5228,12 +5231,29 @@
         });
       }
 
+      function updatePeopleOverflow() {
+        const panel = document.querySelector(".people-panel");
+        // Compare the list's scrollable content to its actual viewport, not the
+        // outer wrapper. This also handles expanded rows and filtered results.
+        const overflowing = !el.workspace.hidden &&
+          el.peopleScroll.clientHeight > 0 &&
+          el.peopleScroll.scrollHeight - el.peopleScroll.clientHeight > 1;
+        panel.classList.toggle("has-scroll-overflow", overflowing);
+        el.peopleScrollHint.hidden = !overflowing;
+      }
+
+      const peopleOverflowObserver = new ResizeObserver(updatePeopleOverflow);
+      for (const element of [el.peopleScroll, el.meRow, el.peopleList]) {
+        peopleOverflowObserver.observe(element);
+      }
+
       function alignPeopleList() {
         const panel = document.querySelector(".people-panel");
         if (window.matchMedia("(max-width: 760px)").matches || el.workspace.hidden) {
           panel.style.height = "";
           panel.style.maxHeight = "";
           el.peopleListWrap.style.maxHeight = "";
+          updatePeopleOverflow();
           return;
         }
         // Bound the entire People column to the chart frame's bottom edge,
@@ -5244,6 +5264,7 @@
         panel.style.height = `${height}px`;
         panel.style.maxHeight = `${height}px`;
         el.peopleListWrap.style.maxHeight = "";
+        updatePeopleOverflow();
       }
 
       function alignGraphColumn() {
