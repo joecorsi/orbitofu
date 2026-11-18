@@ -301,7 +301,7 @@
         .trait-row input::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; margin-top: -3px; border: 0; border-radius: 50%; background: var(--slider-color); }
         .trait-row input::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 50%; background: var(--slider-color); }
       }
-      .trait-row span { overflow-wrap: anywhere; }
+      .trait-row span { max-width: var(--trait-label-width); white-space: nowrap; }
       .trait-row span:last-child { text-align: right; }
       .dimension-row { margin: .5em 0; }
       .swap-trait { border: 0; background: transparent; padding: 0 2px; font-size: 1.15em; cursor: pointer; }
@@ -2535,11 +2535,30 @@
         slider.style.setProperty("--slider-progress", `${slider.value}%`);
       }
 
+      function traitLabelFitter() {
+        const measure = document.createElement("canvas").getContext("2d");
+        if (!measure) return { width: null, fit: () => {} };
+        const font = getComputedStyle(el.peopleScroll);
+        measure.font = `${font.fontStyle} ${font.fontWeight} ${font.fontSize} ${font.fontFamily}`;
+        const width = measure.measureText("Performative").width;
+        return {
+          width,
+          fit(label) {
+            const labelWidth = measure.measureText(label.textContent).width;
+            if (labelWidth > width) {
+              // Keep every label within the rendered width of "Performative".
+              label.style.fontSize = `${(width / labelWidth * 98).toFixed(2)}%`;
+            }
+          }
+        };
+      }
+
       function renderPeople() {
         updatePeopleFilter();
         const openPeople = new Set([...el.peopleList.querySelectorAll("details[open]")].map(item => item.dataset.personId));
         if (el.meRow.querySelector("details[open]")) openPeople.add(ME_ID);
         const scrollTop = el.peopleScroll.scrollTop;
+        const labelFitter = traitLabelFitter();
         peopleScrollObserver.disconnect();
         peopleScrollObserver.observe(el.peopleScroll);
         personDropdowns.forEach(dropdown => dropdown.destroy());
@@ -2792,6 +2811,9 @@
 
           const traitList = document.createElement("div");
           traitList.className = "trait-list";
+          if (labelFitter.width !== null) {
+            traitList.style.setProperty("--trait-label-width", `${labelFitter.width}px`);
+          }
           traitList.addEventListener("keydown", event => {
             if ((event.key !== "ArrowUp" && event.key !== "ArrowDown") ||
                 event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
@@ -2818,6 +2840,8 @@
             slider.setAttribute("aria-describedby", "trait-slider-instructions");
             const highLabel = document.createElement("span");
             highLabel.textContent = trait.name;
+            labelFitter.fit(lowLabel);
+            labelFitter.fit(highLabel);
             slider.addEventListener("input", () => {
               updateSliderFill(slider);
               const value = Number(slider.value);
