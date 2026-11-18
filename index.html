@@ -241,7 +241,6 @@
       }
       .people-scroll-hint { box-sizing: border-box; flex: none; width: 100%; padding-top: var(--control-gap); border-top: 1px solid rgba(0, 0, 0, .15); background: #fff; }
       .people-scroll-hint span { display: block; box-sizing: border-box; width: 100%; padding: 4px 7px; border-radius: 2px; background: #efefef; color: #000; font: 13.3333px Arial, sans-serif; text-align: center; }
-      .people-scroll-hint.at-bottom { visibility: hidden; }
       .people-search { position: relative; margin-bottom: var(--control-gap); }
       #people-search { appearance: none; display: block; box-sizing: border-box; width: 100%; height: 28px; border: 1px solid rgba(0, 0, 0, .15); border-radius: 2px; padding: 2px 30px 0; }
       #people-search::-webkit-search-cancel-button { display: none; }
@@ -670,7 +669,7 @@
                       <div id="me-row"></div>
                       <div id="people-list"></div>
                     </div>
-                    <div class="people-scroll-hint" id="people-scroll-hint" hidden><span>Scroll for more</span></div>
+                    <div class="people-scroll-hint" id="people-scroll-hint"><span>Scroll for more</span></div>
                   </div>
                   <div id="app-notice" class="notice" role="status" aria-live="polite"></div>
                 </div>
@@ -2481,10 +2480,9 @@
       }
 
       function updatePeopleScrollHint() {
-        el.peopleScrollHint.hidden = el.peopleListWrap.clientHeight === 0 ||
-          el.peopleScroll.scrollHeight - el.peopleListWrap.clientHeight <= 1;
-        el.peopleScrollHint.classList.toggle("at-bottom",
-          el.peopleScroll.scrollHeight - el.peopleScroll.scrollTop - el.peopleScroll.clientHeight <= 1);
+        // Keep the scroll cue visible below the list divider, even when the
+        // current list fits or the user has reached its end.
+        el.peopleScrollHint.hidden = false;
       }
 
       const peopleScrollObserver = new ResizeObserver(updatePeopleScrollHint);
