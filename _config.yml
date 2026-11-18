@@ -1,0 +1,10 @@
+# Temporarily hide the published site without deleting application source.
+# Delete this file to make the site publish normally again.
+exclude:
+  - index.html
+  - guided-intro.css
+  - guided-intro.js
+  - proximity.js
+  - supabase
+  - tests
+  - README.md
