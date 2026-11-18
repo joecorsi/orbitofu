@@ -139,6 +139,7 @@
       .panel { min-width: 0; }
       .graph-panel, .people-panel { display: flex; flex-direction: column; min-height: 0; }
       .people-panel { position: relative; }
+      .people-panel::after { content: ""; position: absolute; top: 100%; left: 0; width: 100%; border-top: 1px solid rgba(0, 0, 0, .15); }
       .chart-space { flex: 1; min-height: 0; container-type: size; }
       .chart-body { width: min(100%, 100cqh - var(--chart-footer-space, 2em)); }
       .chart-frame { --plot-inset: 20px; position: relative; box-sizing: border-box; border: 1px solid rgba(0, 0, 0, .15); border-radius: 8px; }
@@ -240,9 +241,6 @@
         display: none !important;
         background: transparent !important;
       }
-      .people-scroll-hint { position: absolute; top: 100%; left: 0; box-sizing: border-box; width: 100%; padding-top: var(--control-gap); border-top: 1px solid rgba(0, 0, 0, .15); background: #fff; }
-      .people-scroll-hint span { display: block; box-sizing: border-box; width: 100%; padding: 4px 7px; border-radius: 2px; background: #efefef; color: #000; font: 13.3333px Arial, sans-serif; text-align: center; }
-      @media (max-width: 760px) { .people-scroll-hint { position: static; } }
       .people-search { position: relative; margin-bottom: var(--control-gap); }
       #people-search { appearance: none; display: block; box-sizing: border-box; width: 100%; height: 28px; border: 1px solid rgba(0, 0, 0, .15); border-radius: 2px; padding: 2px 30px 0; }
       #people-search::-webkit-search-cancel-button { display: none; }
@@ -675,7 +673,6 @@
                   <div id="app-notice" class="notice" role="status" aria-live="polite"></div>
                 </div>
               </div>
-              <div class="people-scroll-hint" id="people-scroll-hint"><span>Scroll for more</span></div>
             </section>
           </div>
 
@@ -1001,7 +998,6 @@
         peopleList: document.getElementById("people-list"),
         peopleScroll: document.getElementById("people-scroll"),
         peopleListWrap: document.getElementById("people-list-wrap"),
-        peopleScrollHint: document.getElementById("people-scroll-hint"),
         dimensions: document.getElementById("dimensions"),
         traitsDialog: document.getElementById("traits-dialog"),
         traitsNotice: document.getElementById("traits-notice"),
@@ -2481,15 +2477,6 @@
         }
       }
 
-      function updatePeopleScrollHint() {
-        // Keep the scroll cue visible below the list divider, even when the
-        // current list fits or the user has reached its end.
-        el.peopleScrollHint.hidden = false;
-      }
-
-      const peopleScrollObserver = new ResizeObserver(updatePeopleScrollHint);
-      el.peopleScroll.addEventListener("scroll", updatePeopleScrollHint);
-
       function updatePeopleExpandButton() {
         const cards = [...el.meRow.children, ...el.peopleList.children].filter(card => !card.hidden);
         const collapse = cards.some(card => card.open);
@@ -2515,7 +2502,6 @@
           card.hidden = !people.get(card.dataset.personId).name.toLowerCase().includes(query);
         }
         updatePeopleExpandButton();
-        updatePeopleScrollHint();
       }
 
       el.peopleSearch.addEventListener("input", updatePeopleSearch);
@@ -2576,8 +2562,6 @@
         if (el.meRow.querySelector("details[open]")) openPeople.add(ME_ID);
         const scrollTop = el.peopleScroll.scrollTop;
         const labelFitter = traitLabelFitter();
-        peopleScrollObserver.disconnect();
-        peopleScrollObserver.observe(el.peopleScroll);
         personDropdowns.forEach(dropdown => dropdown.destroy());
         personDropdowns = [];
         el.peopleList.replaceChildren();
@@ -2882,7 +2866,6 @@
             card.append(summary, dates, traitList);
             el.peopleList.append(card);
           }
-          peopleScrollObserver.observe(card);
         }
         el.peopleScroll.scrollTop = scrollTop;
         updatePeopleSearch();
