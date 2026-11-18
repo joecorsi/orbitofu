@@ -226,11 +226,10 @@
       .people-list-wrap { display: flex; flex: 1 1 0; flex-direction: column; min-width: 0; min-height: 0; }
       .people-scroll-hint { position: absolute; top: calc(100% + var(--control-gap)); left: 0; box-sizing: border-box; width: 100%; border: 1px solid transparent; border-radius: 2px; padding: 3px 6px; appearance: none; background: #efefef; color: #000; font: 13.3333px Arial, sans-serif; text-align: center; cursor: default; }
       .people-scroll-hint:disabled { opacity: 1; color: #000; }
-      .people-scroll-hint.can-scroll-top { cursor: pointer; }
-      .people-scroll-hint.can-scroll-top:is(:hover, :focus-visible) { border-color: #000; }
+      .people-scroll-hint.can-scroll-top { border-color: #000; cursor: pointer; }
       .people-scroll-hint .scroll-to-top-label { display: none; }
-      .people-scroll-hint.can-scroll-top:is(:hover, :focus-visible) .scroll-for-more-label { display: none; }
-      .people-scroll-hint.can-scroll-top:is(:hover, :focus-visible) .scroll-to-top-label { display: inline; }
+      .people-scroll-hint.can-scroll-top .scroll-for-more-label { display: none; }
+      .people-scroll-hint.can-scroll-top .scroll-to-top-label { display: inline; }
       .people-list { box-sizing: border-box; flex: 1 1 0; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
       /* Hide the People panel's scrollbar without disabling wheel, touch or keyboard scrolling. */
       #people-scroll {
