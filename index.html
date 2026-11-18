@@ -219,7 +219,7 @@
       #people-sort-toggle svg { position: absolute; top: 50%; left: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%); }
       #people-sort-toggle .sort-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
       #people-sort-toggle .sort-size { visibility: hidden; }
-      .people-list-area { display: flex; flex-direction: column; min-width: 0; min-height: 0; margin-top: var(--control-gap); border-top: 1px solid rgba(0, 0, 0, .15); }
+      .people-list-area { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; margin-top: var(--control-gap); border-top: 1px solid rgba(0, 0, 0, .15); }
       .people-list-area::before { content: ""; flex: none; height: var(--control-gap); background: #fff; }
       .people-list-wrap { display: flex; flex: 1 1 0; flex-direction: column; min-width: 0; min-height: 0; }
       .people-list { box-sizing: border-box; flex: 1 1 0; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
@@ -5205,13 +5205,21 @@
       }
 
       function alignPeopleList() {
+        const panel = document.querySelector(".people-panel");
         if (window.matchMedia("(max-width: 760px)").matches || el.workspace.hidden) {
+          panel.style.height = "";
+          panel.style.maxHeight = "";
           el.peopleListWrap.style.maxHeight = "";
           return;
         }
+        // Bound the entire People column to the chart frame's bottom edge,
+        // instead of only limiting the list wrapper (which can still overflow).
         const chartBottom = el.chart.parentElement.getBoundingClientRect().bottom;
-        const listTop = el.peopleListWrap.getBoundingClientRect().top;
-        el.peopleListWrap.style.maxHeight = `${Math.max(0, chartBottom - listTop)}px`;
+        const panelTop = panel.getBoundingClientRect().top;
+        const height = Math.max(0, chartBottom - panelTop);
+        panel.style.height = `${height}px`;
+        panel.style.maxHeight = `${height}px`;
+        el.peopleListWrap.style.maxHeight = "";
       }
 
       function alignGraphColumn() {
