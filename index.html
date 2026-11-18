@@ -223,8 +223,22 @@
       .people-list-area::before { content: ""; flex: none; height: var(--control-gap); background: #fff; }
       .people-list-wrap { display: flex; flex: 1 1 0; flex-direction: column; min-width: 0; min-height: 0; }
       .people-list { box-sizing: border-box; flex: 1 1 0; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
-      .people-list { scrollbar-width: none; -ms-overflow-style: none; }
-      .people-list::-webkit-scrollbar { display: none; }
+      /* Hide the People panel's scrollbar without disabling wheel, touch or keyboard scrolling. */
+      #people-scroll {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none;
+        scrollbar-gutter: auto;
+      }
+      #people-scroll::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      #people-scroll::-webkit-scrollbar-thumb,
+      #people-scroll::-webkit-scrollbar-track {
+        display: none !important;
+        background: transparent !important;
+      }
       .people-scroll-hint { flex: none; padding-top: var(--control-gap); border-bottom: 1px solid rgba(0, 0, 0, .15); background: #fff; }
       .people-scroll-hint.at-bottom { visibility: hidden; }
       .people-search { position: relative; margin-bottom: var(--control-gap); }
