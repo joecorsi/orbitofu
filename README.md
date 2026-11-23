@@ -55,7 +55,7 @@ The **Me** row appears at the top of the people list and scrolls with the other 
 
 Use the **Traits** button to add, rename, hide, show, remove, or swap the ends of traits for the current graph, then choose **Save** or **Cancel**. Hidden traits retain their scores but are omitted from people's sliders, axis choices, and Shuffle axes. If a hidden trait is selected on an axis, another visible trait replaces it; when none remain, the axes use Age. New traits appear at the top of the list, which scrolls when it exceeds the available dialog height; sliders follow the same order. Swapping ends leaves scores unchanged. Existing traits keep their scores and names as the high end; their low end is shown as "Low" until you name it.
 
-New graphs include the default traits, including Not funny–Funny, and start with Lame–Cool on the X axis and Benevolent–Malevolent on the Y axis. Existing graphs receive Not funny–Funny once, with a neutral score of 50 until changed; an existing custom Funny trait remains separate. You can remove the new trait from a graph without it being added again.
+New graphs include the default traits, including Not funny–Funny, Like–Dislike, and Rigid–Flexible, and start with Lame–Cool on the X axis and Benevolent–Malevolent on the Y axis. Existing graphs receive these traits once, with a neutral score of 50 until changed; an existing custom Funny trait remains separate. You can remove any of the new traits from a graph without it being added again.
 
 In the New graph dialog, check **Copy people and traits from current graph** to copy its people, ratings, traits, and selected axes into the new graph. The copy is independent of the original; other graph options start at their defaults.
 
