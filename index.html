@@ -3046,6 +3046,32 @@
       }
 
       const personDotRadius = 6;
+      const sunEmojiOffset = (() => {
+        const measureCanvas = document.createElement("canvas");
+        measureCanvas.width = 128;
+        measureCanvas.height = 128;
+        const measureContext = measureCanvas.getContext("2d", { willReadFrequently: true });
+        const fontSize = 40;
+        measureContext.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+        measureContext.textAlign = "center";
+        measureContext.textBaseline = "middle";
+        measureContext.fillText("☀️", 64, 64);
+        const { data, width, height } = measureContext.getImageData(0, 0, measureCanvas.width, measureCanvas.height);
+        let left = width, right = -1, top = height, bottom = -1;
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            if (data[(y * width + x) * 4 + 3] === 0) continue;
+            left = Math.min(left, x);
+            right = Math.max(right, x);
+            top = Math.min(top, y);
+            bottom = Math.max(bottom, y);
+          }
+        }
+        return right < left ? { x: 0, y: 0 } : {
+          x: (left + right + 1) / 2 - 64,
+          y: (top + bottom + 1) / 2 - 64
+        };
+      })();
 
       function chartBounds(width, height) {
         const inset = parseFloat(getComputedStyle(el.chart).getPropertyValue("--plot-inset"));
@@ -4478,7 +4504,8 @@
             context.font = `${personDotRadius * 2.75 * scale}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
             context.textAlign = "center";
             context.textBaseline = "middle";
-            context.fillText("☀️", x, y);
+            const emojiScale = personDotRadius * 2.75 * scale / 40;
+            context.fillText("☀️", x - sunEmojiOffset.x * emojiScale, y - sunEmojiOffset.y * emojiScale);
             context.restore();
             return;
           }
