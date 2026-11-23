@@ -77,7 +77,7 @@
       .demo-person.selected { z-index: 4; }
       .demo-person-dot { position: relative; box-sizing: border-box; flex: none; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: var(--person-color); transform: scale(var(--proximity-scale, 1)); }
       .demo-person-dot.me-dot { display: grid; place-items: center; border: 0; background: transparent; font: normal 16px/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
-      .demo-person-dot.me-dot::before { content: "⭐"; }
+      .demo-person-dot.me-dot::before { content: "🌼"; }
       .demo-person.sticky .demo-person-dot { background: rgba(0, 0, 0, .23); }
       .demo-person.sticky .demo-person-dot.me-dot { background: transparent; opacity: .23; }
       .demo-person.selected .demo-person-dot { transform: scale(1.5); }
@@ -272,7 +272,7 @@
       button.person-caret::before { top: 0; left: 0; }
       .person-card[open] .person-caret::before { transform: translate(10px, 2px) rotate(90deg); }
       .person-name { flex: 1; min-width: 0; }
-      .me-name { box-sizing: border-box; border: 0; font-family: inherit; font-weight: bold; text-align: center; }
+      .me-name { box-sizing: border-box; font-weight: bold; text-align: center; }
       .me-name:focus-visible { outline: 2px solid #000; outline-offset: 1px; }
       .person-relationship { position: relative; flex: none; width: calc(5.75rem - 25px); min-width: 0; }
       .relationship-toggle { box-sizing: border-box; padding-left: 2px; padding-right: 15px; }
@@ -2654,12 +2654,11 @@
             card.addEventListener("toggle", () => {
               caret.setAttribute("aria-expanded", String(card.open));
             });
-            nameControl = document.createElement("span");
-            nameControl.className = "person-name me-name graph-badge";
+            nameControl = document.createElement("button");
+            nameControl.type = "button";
+            nameControl.className = "person-name me-name";
             nameControl.textContent = "Me";
-            nameControl.setAttribute("role", "button");
             nameControl.setAttribute("aria-label", "Select Me on graph");
-            nameControl.tabIndex = 0;
             nameControl.addEventListener("focus", () => {
               focusedNamePersonId = person.id;
               startNameFocusRing();
@@ -3377,7 +3376,8 @@
             button.hidden = relationshipFilters.some(filter => !filter.checked && filter.dataset.demoRelationship === person.relationship);
             button.style.left = `${point.x}px`;
             button.style.top = `${point.y}px`;
-            button.style.color = sticky ? "rgba(0, 0, 0, 0.23)" : relationshipColors.checked ? color : "#000";
+            button.style.color = person.id === ME_ID ? "#000" :
+              sticky ? "rgba(0, 0, 0, 0.23)" : relationshipColors.checked ? color : "#000";
             button.style.setProperty("--person-color", color);
             button.querySelector(".demo-person-name").hidden = !showNames.checked;
             button.classList.toggle("label-left", point.x > width - 90);
@@ -4477,8 +4477,11 @@
             context.globalAlpha *= sticky ? .23 : 1;
             context.font = `${personDotRadius * 2.2 * scale}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
             context.textAlign = "center";
-            context.textBaseline = "middle";
-            context.fillText("⭐", x, y);
+            context.textBaseline = "alphabetic";
+            const flower = context.measureText("🌼");
+            const flowerX = x + (flower.actualBoundingBoxLeft - flower.actualBoundingBoxRight) / 2;
+            const flowerY = y + (flower.actualBoundingBoxAscent - flower.actualBoundingBoxDescent) / 2;
+            context.fillText("🌼", flowerX, flowerY);
             context.restore();
             return;
           }
@@ -4512,7 +4515,7 @@
         };
         const drawLabel = (index, hovered = false, target = context) => {
           const { text, x: labelX, y: labelY, hit, nameBox } = labels[index];
-          const color = plotted[index].sticky ? stickyColor :
+          const color = plotted[index].person.id === ME_ID ? "#000" : plotted[index].sticky ? stickyColor :
             state.colorByRelationship ? relationshipColor(plotted[index].person, mePerson.relationshipColors) : "#000";
           target.globalAlpha = !plotted[index].sticky && hoveredIndex !== -1 && !hovered && index !== focusedIndex ? 0.4 : 1;
           if (hovered && nameBox) {
