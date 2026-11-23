@@ -76,7 +76,10 @@
       .demo-graph.has-selection .demo-person:not(.selected):not(.sticky) { opacity: .4; }
       .demo-person.selected { z-index: 4; }
       .demo-person-dot { position: relative; box-sizing: border-box; flex: none; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: var(--person-color); transform: scale(var(--proximity-scale, 1)); }
+      .demo-person-dot.me-dot { display: grid; place-items: center; border: 0; background: transparent; font: normal 16px/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+      .demo-person-dot.me-dot::before { content: "⭐"; }
       .demo-person.sticky .demo-person-dot { background: rgba(0, 0, 0, .23); }
+      .demo-person.sticky .demo-person-dot.me-dot { background: transparent; opacity: .23; }
       .demo-person.selected .demo-person-dot { transform: scale(1.5); }
       .demo-person.selected .demo-person-name { position: absolute; top: -4px; left: 7px; padding: 2px 6px; border: 1px solid currentColor; border-radius: 3px; background: #fff; font: bold 16px serif; line-height: 18px; transform: translate(-50%, -100%); }
       .demo-person.selected.label-left .demo-person-name { right: 7px; left: auto; transform: translate(50%, -100%); }
@@ -213,10 +216,12 @@
       .people-count-content::before { content: "1 person"; visibility: hidden; }
       .people-count-content::after { content: attr(data-size); visibility: hidden; }
       #people-sort-select { top: calc(100% + var(--control-gap)); right: 0; width: max-content; }
-      #people-filter-menu:not([hidden]) { position: absolute; z-index: 2; top: calc(100% + var(--control-gap)); right: 0; min-width: 110px; box-sizing: border-box; padding: 4px; border: 1px solid #767676; border-radius: 2px; background: #fff; }
-      #people-filter-menu button { display: grid; grid-template-columns: 1fr auto; gap: 1em; width: 100%; border: 0; padding: 4px 6px; background: #fff; color: #000; font: 13.3333px Arial, sans-serif; text-align: left; cursor: pointer; }
-      #people-filter-menu button[aria-checked="true"], #people-filter-menu button:hover, #people-filter-menu button:focus-visible { outline: none; background: var(--highlight-blue); color: #fff; }
-      #people-filter-menu button span:last-child { text-align: right; }
+      #people-filter-menu:not([hidden]), #people-sort-menu:not([hidden]) { position: absolute; z-index: 2; top: calc(100% + var(--control-gap)); right: 0; min-width: 110px; box-sizing: border-box; padding: 4px; border: 1px solid #767676; border-radius: 2px; background: #fff; }
+      #people-filter-menu button, #people-sort-menu button { display: grid; grid-template-columns: 1fr auto; gap: 1em; width: 100%; border: 0; padding: 4px 6px; background: #fff; color: #000; font: 13.3333px Arial, sans-serif; text-align: left; cursor: pointer; }
+      #people-filter-menu button[aria-checked="true"], #people-filter-menu button:hover, #people-filter-menu button:focus-visible,
+      #people-sort-menu button[aria-checked="true"], #people-sort-menu button:hover, #people-sort-menu button:focus-visible { outline: none; background: var(--highlight-blue); color: #fff; }
+      #people-filter-menu button span:last-child, #people-sort-menu button span:last-child { text-align: right; }
+      #people-sort-menu { width: max-content; }
       #people-sort-toggle { position: relative; }
       #people-sort-toggle svg { position: absolute; top: 50%; left: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%); }
       #people-sort-toggle .sort-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
@@ -272,7 +277,8 @@
       .person-relationship { position: relative; flex: none; width: calc(5.75rem - 25px); min-width: 0; }
       .relationship-toggle { box-sizing: border-box; padding-left: 2px; padding-right: 15px; }
       .relationship-toggle.unclassified span, .person-relationship option[value=""] { font-style: italic; }
-      .person-relationship select { position: fixed; z-index: 20; min-width: 0; }
+      .person-relationship select { position: fixed; z-index: 20; min-width: 0; max-height: none; overflow-y: hidden; scrollbar-width: none; -ms-overflow-style: none; }
+      .person-relationship select::-webkit-scrollbar { display: none; width: 0; height: 0; }
       .person-relationship .dropdown-highlight { position: fixed; z-index: 21; }
       .person-relationship .dropdown-hover { z-index: 22; }
       .person-age { appearance: textfield; flex: none; width: calc(3.5rem - 20px); min-width: 0; box-sizing: border-box; text-align: center; }
@@ -293,7 +299,8 @@
       .chart-footer { display: flex; flex-wrap: wrap; align-items: center; gap: .5em; width: 100%; margin-top: .5em; }
       .graph-footer-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--control-gap); }
       .history-controls { display: flex; gap: var(--control-gap); margin-left: auto; }
-      .graph-options, .proximity { position: relative; display: flex; align-items: center; }
+      .graph-options, .proximity, .shuffle-axis-controls { position: relative; display: flex; align-items: center; }
+      .shuffle-axis-controls { gap: var(--control-gap); }
       #edit-graph-toggle, .graph-options-toggle { position: relative; padding-right: 24px; padding-left: 2px; text-align: left; }
       .graph-options-toggle::after { content: ""; position: absolute; right: 6px; top: 50%; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 5px solid currentColor; transform: translateY(-50%); pointer-events: none; }
       .graph-options-menu:not([hidden]) { position: absolute; z-index: 4; bottom: calc(100% + var(--control-gap)); left: 0; min-width: 100%; width: max-content; box-sizing: border-box; border: 1px solid #767676; border-radius: 2px; padding: 4px; background: #fff; color: #000; }
@@ -515,7 +522,7 @@
                 <span class="graph-options">
                   <button class="graph-options-toggle" id="demo-options-toggle" type="button" aria-expanded="false" aria-controls="demo-options-menu">Options</button>
                   <span class="graph-options-menu" id="demo-options-menu" role="group" aria-label="Sample graph options" hidden>
-                    <label><input type="checkbox" id="demo-relationship-colors"> Color by relationship</label>
+                    <label><input type="checkbox" id="demo-relationship-colors" checked> Color by relationship</label>
                     <label><input type="checkbox" id="demo-show-names" checked> Names</label>
                     <span class="graph-options-separator" role="separator"></span>
                     <label><input type="checkbox" data-demo-relationship="friend" checked> Friend</label>
@@ -524,13 +531,17 @@
                     <label><input type="checkbox" data-demo-relationship="lover" checked> Lover</label>
                   </span>
                 </span>
-                <button type="button" id="demo-shuffle" title="Randomly choose two different traits">Shuffle axes</button>
                 <span class="proximity">
                   <button class="graph-options-toggle proximity-toggle" id="demo-proximity-toggle" type="button" aria-expanded="false" aria-controls="demo-proximity-menu"><span aria-live="polite">Proximity</span></button>
                   <span class="graph-options-menu proximity-menu" id="demo-proximity-menu" role="group" aria-label="Sample graph proximity" hidden>
                     <label><input id="demo-proximity-closest" type="checkbox" checked> Current closest</label>
                     <label><input id="demo-proximity-furthest" type="checkbox" checked> Current furthest</label>
                   </span>
+                </span>
+                <span class="shuffle-axis-controls">
+                  <button type="button" id="demo-shuffle" title="Randomly choose two different traits">Shuffle axes</button>
+                  <button type="button" id="demo-shuffle-x" title="Randomly choose a different horizontal trait">Shuffle X</button>
+                  <button type="button" id="demo-shuffle-y" title="Randomly choose a different vertical trait">Shuffle Y</button>
                 </span>
                 <button type="button" id="demo-reset" hidden>Reset view</button>
               </span>
@@ -596,7 +607,6 @@
                           <label><input type="checkbox" data-graph-relationship="lover"> Lover</label>
                         </span>
                       </span>
-                      <button id="shuffle-axes" type="button" title="Randomly choose two different traits">Shuffle axes</button>
                       <span class="proximity">
                         <button class="graph-options-toggle proximity-toggle" id="proximity-toggle" type="button" aria-expanded="false" aria-controls="proximity-menu"><span aria-live="polite">Proximity</span></button>
                         <span class="graph-options-menu proximity-menu" id="proximity-menu" role="group" aria-label="Proximity" hidden>
@@ -607,6 +617,11 @@
                           <span class="graph-options-separator" role="separator"></span>
                           <button id="proximity-clear" type="button" aria-label="Clear proximity selections">Clear</button>
                         </span>
+                      </span>
+                      <span class="shuffle-axis-controls">
+                        <button id="shuffle-axes" type="button" title="Randomly choose two different traits">Shuffle axes</button>
+                        <button id="shuffle-x" type="button" title="Randomly choose a different horizontal trait">Shuffle X</button>
+                        <button id="shuffle-y" type="button" title="Randomly choose a different vertical trait">Shuffle Y</button>
                       </span>
                       <button id="reset-zoom" type="button" hidden>Reset view</button>
                     </span>
@@ -637,8 +652,14 @@
                       </div>
                     </span>
                     <span class="people-sort">
-                      <button id="people-sort-toggle" type="button" aria-label="Sort people" aria-haspopup="listbox" aria-expanded="false" aria-controls="people-sort-select" title="Sort people"><span class="sort-label"></span><span class="sort-size" aria-hidden="true">Sort</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12M2 7h8M2 11h4M11 9v5m-2-2 2 2 2-2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                      <select id="people-sort-select" aria-label="Sort people" size="4" hidden>
+                      <button id="people-sort-toggle" type="button" aria-label="Sort people" aria-haspopup="menu" aria-expanded="false" aria-controls="people-sort-menu" title="Sort people"><span class="sort-label"></span><span class="sort-size" aria-hidden="true">Sort</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12M2 7h8M2 11h4M11 9v5m-2-2 2 2 2-2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                      <div id="people-sort-menu" role="menu" aria-label="Sort people" hidden>
+                        <button type="button" role="menuitemradio" aria-checked="true" data-sort="recent"><span>Creation order</span><span aria-hidden="true">✓</span></button>
+                        <button type="button" role="menuitemradio" aria-checked="false" data-sort="name"><span>Alphabetical (A–Z)</span><span aria-hidden="true"></span></button>
+                        <button type="button" role="menuitemradio" aria-checked="false" data-sort="age"><span>Age (descending)</span><span aria-hidden="true"></span></button>
+                        <button type="button" role="menuitemradio" aria-checked="false" data-sort="visibility"><span>Show/hide (hidden first)</span><span aria-hidden="true"></span></button>
+                      </div>
+                      <select id="people-sort-select" aria-label="Sort people" hidden>
                         <option value="recent" selected>Creation order</option>
                         <option value="name">Alphabetical (A–Z)</option>
                         <option value="age">Age (descending)</option>
@@ -657,7 +678,6 @@
                   <span class="person-relationship">
                     <button class="relationship-toggle" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="new-person-relationship"><span>Type</span></button>
                     <select id="new-person-relationship" aria-label="New person's relationship" size="4" hidden>
-                      <option value="" selected disabled hidden>Type</option>
                       <option value="friend">Friend</option>
                       <option value="family">Family</option>
                       <option value="enemy">Foe</option>
@@ -665,7 +685,6 @@
                     </select>
                   </span>
                   <input class="person-age" id="new-person-age" type="number" min="0" step="1" placeholder="Age" aria-label="New person's age">
-                  <button class="person-color" id="new-person-color" type="button" aria-label="Choose color for new person"></button>
                   <button class="button" type="submit" aria-label="Add person">Add</button>
                 </form>
                 <span id="trait-slider-instructions" class="visually-hidden">Use up and down arrows to move between trait sliders, and left and right arrows to adjust the score.</span>
@@ -830,7 +849,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./proximity.js?v=proximity-menu-overlap"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
-    <script src="./guided-intro.js?v=orbitofu-rebrand"></script>
+    <script src="./guided-intro.js?v=orbitofu-me-star"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
         hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground } = window.orbitofuProximity;
@@ -863,6 +882,10 @@
       };
       const COLORS = ["#145c92", "#c52d83", "#468949", "#dc7720", "#744aa0", "#009a9a", "#ba3a35", "#5555a4"];
       const FUNNY_TRAIT = { id: "not-funny-funny", name: "Funny", opposite: "Not funny" };
+      const ADDITIONAL_DEFAULT_TRAITS = [
+        { id: "like-dislike", name: "Dislike", opposite: "Like" },
+        { id: "rigid-flexible", name: "Flexible", opposite: "Rigid" }
+      ];
       const DEFAULT_TRAITS = [
         { id: "openness", name: "Open", opposite: "Closed" },
         { id: "sociability", name: "Extrovert", opposite: "Introvert" },
@@ -878,6 +901,7 @@
         { id: "indoor-outdoor-cat", name: "Outdoor cat", opposite: "Indoor cat" },
         { id: "distracted-focused", name: "Focused", opposite: "Distracted" },
         { id: "grounded-head-in-clouds", name: "Head in clouds", opposite: "Grounded" },
+        ...ADDITIONAL_DEFAULT_TRAITS,
         FUNNY_TRAIT
       ];
 
@@ -928,6 +952,7 @@
         peopleCountLabel: document.getElementById("people-count-label"),
         peopleFilterMenu: document.getElementById("people-filter-menu"),
         peopleSortToggle: document.getElementById("people-sort-toggle"),
+        peopleSortMenu: document.getElementById("people-sort-menu"),
         peopleSortSelect: document.getElementById("people-sort-select"),
         renameGraph: document.getElementById("rename-graph"),
         renameGraphDialog: document.getElementById("rename-graph-dialog"),
@@ -988,6 +1013,8 @@
         graphFooterControls: document.querySelector("#workspace .graph-footer-controls"),
         graphOptionsToggle: document.getElementById("graph-options-toggle"),
         graphOptionsMenu: document.getElementById("graph-options-menu"),
+        shuffleX: document.getElementById("shuffle-x"),
+        shuffleY: document.getElementById("shuffle-y"),
         undo: document.getElementById("undo"),
         redo: document.getElementById("redo"),
         shuffleAxes: document.getElementById("shuffle-axes"),
@@ -1019,7 +1046,6 @@
         newPersonName: document.getElementById("new-person-name"),
         newPersonRelationship: document.getElementById("new-person-relationship"),
         newPersonAge: document.getElementById("new-person-age"),
-        newPersonColor: document.getElementById("new-person-color"),
         addTraitForm: document.getElementById("add-trait-form"),
         newTraitLow: document.getElementById("new-trait-low"),
         swapNewTrait: document.getElementById("swap-new-trait"),
@@ -1089,7 +1115,6 @@
       let renamingGraph = false;
       let traitsDraft = null;
       let savingTraits = false;
-      let colorPerson = null;
       let colorRelationship = null;
       let colorButton = null;
       let colorHue = 0;
@@ -1098,17 +1123,17 @@
       let colorDraft = "";
       let colorDragging = false;
       let savingColor = false;
-      let newPersonColor = randomPersonColor();
-      el.newPersonColor.style.backgroundColor = newPersonColor;
 
       function initialState() {
         return {
           funnyTraitMigrated: true,
+          defaultTraitsExpanded: true,
           traits: DEFAULT_TRAITS.map(trait => ({ ...trait })),
           people: [],
           xTrait: "lame-cool",
           yTrait: "benevolent-malevolent",
-          colorByRelationship: false,
+          colorByRelationship: true,
+          relationshipColorDefaulted: true,
           hideNames: false,
           hiddenRelationships: [],
           proximityModes: []
@@ -1180,7 +1205,7 @@
         }
 
         function sync() {
-          const label = options.label ? options.label() : select.selectedOptions[0]?.textContent || "Choose a graph";
+          const label = options.label ? options.label() : select.selectedOptions[0]?.textContent || options.emptyLabel || "Choose a graph";
           (toggle.querySelector("span") || toggle).textContent = label;
           if (options.italicEmpty) toggle.classList.toggle("unclassified", select.value === "");
           toggle.setAttribute("aria-label", `${select.getAttribute("aria-label")}: ${label}`);
@@ -1245,7 +1270,7 @@
                 ? `${window.innerHeight - bounds.top}px`
                 : "calc(100% + var(--control-gap))";
             }
-            select.style.maxHeight = `${opensUp ? above : below}px`;
+            select.style.maxHeight = options.fixed ? "none" : `${opensUp ? above : below}px`;
           }
           toggle.setAttribute("aria-expanded", "true");
           select.focus();
@@ -1300,9 +1325,10 @@
       }
 
       const graphDropdown = setupDropdown(el.graphToggle, el.graphSelect, true);
-      const peopleSortDropdown = setupDropdown(el.peopleSortToggle, el.peopleSortSelect, true, { alignRight: true });
-      peopleSortDropdown.sync();
-      const newPersonDropdown = setupDropdown(el.newPersonRelationship.previousElementSibling, el.newPersonRelationship, true, { fixed: true, italicEmpty: true });
+      const newPersonDropdown = setupDropdown(el.newPersonRelationship.previousElementSibling, el.newPersonRelationship, true, {
+        fixed: true, italicEmpty: true, emptyLabel: "Type"
+      });
+      el.newPersonRelationship.selectedIndex = -1;
       newPersonDropdown.sync();
       let personDropdowns = [];
       const axisDropdowns = new Map();
@@ -1340,6 +1366,8 @@
             (trait.hidden === undefined || typeof trait.hidden === "boolean")) &&
           Array.isArray(value.people) &&
           (value.colorByRelationship === undefined || typeof value.colorByRelationship === "boolean") &&
+          (value.relationshipColorDefaulted === undefined || typeof value.relationshipColorDefaulted === "boolean") &&
+          (value.defaultTraitsExpanded === undefined || typeof value.defaultTraitsExpanded === "boolean") &&
           (value.hideNames === undefined || typeof value.hideNames === "boolean") &&
           (value.hiddenRelationships === undefined || (Array.isArray(value.hiddenRelationships) &&
             value.hiddenRelationships.every(relationship => typeof relationship === "string" && Object.hasOwn(RELATIONSHIP_COLORS, relationship)))) &&
@@ -1381,6 +1409,18 @@
           }
           if (!existing) traits.push({ ...FUNNY_TRAIT });
         }
+        if (value.defaultTraitsExpanded !== true) {
+          for (const addition of ADDITIONAL_DEFAULT_TRAITS) {
+            const existing = traits.find(trait => trait.id === addition.id);
+            if (existing && (existing.name !== addition.name || existing.opposite !== addition.opposite)) {
+              throw new Error(`This graph already uses the ${addition.name} trait's ID.`);
+            }
+            if (!existing) {
+              const funnyIndex = traits.findIndex(trait => trait.id === FUNNY_TRAIT.id);
+              traits.splice(funnyIndex < 0 ? traits.length : funnyIndex, 0, { ...addition });
+            }
+          }
+        }
         const [xTrait, yTrait] = resolveTraitAxes(traits, value.xTrait, value.yTrait);
         const people = value.people.map((person, index) => ({
           ...person,
@@ -1392,11 +1432,13 @@
         }));
         return {
           funnyTraitMigrated: true,
+          defaultTraitsExpanded: true,
+          relationshipColorDefaulted: true,
           traits,
           people,
           xTrait,
           yTrait,
-          colorByRelationship: value.colorByRelationship ?? false,
+          colorByRelationship: value.relationshipColorDefaulted ? (value.colorByRelationship ?? true) : true,
           hideNames: value.hideNames ?? false,
           hiddenRelationships: value.hiddenRelationships ? [...value.hiddenRelationships] : [],
           proximityModes: value.proximityModes ? [...value.proximityModes] : []
@@ -2460,12 +2502,11 @@
         updateColorPicker();
       }
 
-      function openColorDialog(person, button, relationship = null) {
-        colorPerson = person;
+      function openColorDialog(button, relationship) {
         colorButton = button;
         colorRelationship = relationship;
-        el.colorTitle.textContent = relationship ? `${button.nextElementSibling.textContent} color` : "Person color";
-        setColorFromHex(relationship ? mePerson.relationshipColors[relationship] : person ? person.color : newPersonColor);
+        el.colorTitle.textContent = `${button.nextElementSibling.textContent} color`;
+        setColorFromHex(mePerson.relationshipColors[relationship]);
         el.colorNotice.classList.remove("visible");
         el.colorDialog.showModal();
       }
@@ -2482,6 +2523,8 @@
         const visibleTraits = state.traits.filter(trait => !trait.hidden);
         [state.xTrait, state.yTrait] = resolveTraitAxes(state.traits, state.xTrait, state.yTrait);
         el.shuffleAxes.disabled = visibleTraits.length < 2;
+        el.shuffleX.disabled = visibleTraits.length < 2;
+        el.shuffleY.disabled = visibleTraits.length < 2;
         for (const [controls, selected] of [[el.xAxes, state.xTrait], [el.yAxes, state.yTrait]]) {
           controls.forEach(select => {
             const age = new Option("Age", AGE_AXIS, false, selected === AGE_AXIS);
@@ -2672,7 +2715,6 @@
               summary.setAttribute("aria-label", person.name.trim() || `Person ${personIndex + 1}`);
               remove.setAttribute("aria-label", `Remove ${person.name || "person"}`);
               updateVisibilityButton();
-              color.setAttribute("aria-label", `Change color for ${person.name || "person"}`);
               relationship.setAttribute("aria-label", `Relationship for ${person.name || "person"}`);
               relationshipDropdown.sync();
               for (const slider of card.querySelectorAll("input[type=range]")) {
@@ -2707,7 +2749,9 @@
           relationshipToggle.setAttribute("aria-controls", relationship.id);
           relationshipToggle.append(document.createElement("span"));
           relationshipWrapper.append(relationshipToggle, relationship);
-          const relationshipDropdown = setupDropdown(relationshipToggle, relationship, true, { fixed: true, italicEmpty: true });
+          const relationshipDropdown = setupDropdown(relationshipToggle, relationship, true, {
+            fixed: true, italicEmpty: true, emptyLabel: "Type"
+          });
           relationshipDropdown.sync();
           personDropdowns.push(relationshipDropdown);
           relationship.addEventListener("change", () => {
@@ -2799,19 +2843,10 @@
             event.preventDefault();
             event.stopPropagation();
           });
-          const color = document.createElement("button");
-          color.className = "person-color";
-          color.type = "button";
-          color.style.backgroundColor = person.color;
-          color.setAttribute("aria-label", `Change color for ${person.name || "person"}`);
-          color.addEventListener("click", event => {
-            event.stopPropagation();
-            openColorDialog(person, color);
-          });
-          for (const control of [nameControl, relationshipWrapper, ageInput, color, visibility, remove]) {
+          for (const control of [nameControl, relationshipWrapper, ageInput, visibility, remove]) {
             control.addEventListener("keydown", event => event.stopPropagation());
           }
-          summaryName.append(caret, nameControl, relationshipWrapper, ageInput, color);
+          summaryName.append(caret, nameControl, relationshipWrapper, ageInput);
           actions.append(visibility);
           if (!isMe) actions.append(remove);
           summary.append(summaryName, actions);
@@ -3055,6 +3090,12 @@
         return [traits[x].id, traits[y].id];
       }
 
+      function shuffledTraitId(traits, currentId) {
+        const choices = traits.filter(trait => trait.id !== currentId);
+        const available = choices.length ? choices : traits;
+        return available[Math.floor(Math.random() * available.length)]?.id ?? currentId;
+      }
+
       function createAxisTransition(draw) {
         const duration = 320;
         let start = null;
@@ -3160,6 +3201,7 @@
           button.setAttribute("aria-label", `${person.name}, sample person. Use arrow keys to adjust.`);
           const dot = document.createElement("span");
           dot.className = "demo-person-dot";
+          dot.classList.toggle("me-dot", person.id === ME_ID);
           dot.setAttribute("aria-hidden", "true");
           const name = document.createElement("span");
           name.className = "demo-person-name";
@@ -3520,6 +3562,17 @@
           axisTransition.begin(origins);
           draw();
         });
+        const shuffleDemoAxis = axis => {
+          if (traits.length < 2) return;
+          const { viewed } = bounds();
+          const origins = new Map(people.map(person => [person.id, pointFor(person, viewed)]));
+          if (axis === "xTrait") xTrait = shuffledTraitId(traits, xTrait);
+          else yTrait = shuffledTraitId(traits, yTrait);
+          axisTransition.begin(origins);
+          draw();
+        };
+        document.getElementById("demo-shuffle-x").addEventListener("click", () => shuffleDemoAxis("xTrait"));
+        document.getElementById("demo-shuffle-y").addEventListener("click", () => shuffleDemoAxis("yTrait"));
         reducedMotion.addEventListener("change", () => {
           if (reducedMotion.matches) axisTransition.stop();
           draw();
@@ -4419,6 +4472,16 @@
           context.strokeStyle = "#fff";
           const scale = index === selectedIndex || (hoveredPersonId !== null && index === hoveredIndex)
             ? 1.5 : Math.max(1, ...pulses.filter(pulse => pulse.person === person).map(pulse => pulse.scale));
+          if (person.id === ME_ID) {
+            context.save();
+            context.globalAlpha *= sticky ? .23 : 1;
+            context.font = `${personDotRadius * 2.2 * scale}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            context.fillText("⭐", x, y);
+            context.restore();
+            return;
+          }
           context.lineWidth = personDotBorderWidth * scale;
           context.beginPath();
           context.arc(x, y, personDotRadius * scale, 0, Math.PI * 2);
@@ -4810,7 +4873,6 @@
         el.peopleScroll.focus({ preventScroll: true });
       });
 
-      el.newPersonColor.addEventListener("click", () => openColorDialog(null, el.newPersonColor));
       el.chartSettingsButton.addEventListener("click", () => {
         for (const button of el.relationshipColorButtons) {
           button.style.backgroundColor = mePerson.relationshipColors[button.dataset.relationshipColor];
@@ -4819,7 +4881,7 @@
       });
       el.closeGraphSettings.addEventListener("click", () => el.graphSettingsDialog.close());
       for (const button of el.relationshipColorButtons) {
-        button.addEventListener("click", () => openColorDialog(null, button, button.dataset.relationshipColor));
+        button.addEventListener("click", () => openColorDialog(button, button.dataset.relationshipColor));
       }
       el.colorWheel.addEventListener("pointerdown", event => {
         if (!event.isPrimary || event.button !== 0 || colorDragging) return;
@@ -4892,45 +4954,6 @@
           }
           return;
         }
-        if (!colorPerson) {
-          newPersonColor = color.toLowerCase();
-          el.newPersonColor.style.backgroundColor = newPersonColor;
-          el.colorDialog.close();
-          return;
-        }
-        if (color.toLowerCase() === colorPerson.color.toLowerCase()) {
-          el.colorDialog.close();
-          return;
-        }
-        const previousColor = colorPerson.color;
-        const previousModifiedAt = colorPerson.modifiedAt;
-        savingColor = true;
-        el.saveColor.disabled = true;
-        el.cancelColor.disabled = true;
-        el.colorFields.inert = true;
-        try {
-          colorPerson.color = color.toLowerCase();
-          markPersonModified(colorPerson);
-          schedulePersonSave(colorPerson, false);
-          await flushPendingSave();
-          recordHistory(colorPerson === mePerson ? "me" : "graph");
-          colorButton.style.backgroundColor = colorPerson.color;
-          drawChart();
-          el.colorDialog.close();
-        } catch (error) {
-          colorPerson.color = previousColor;
-          if (previousModifiedAt === undefined) delete colorPerson.modifiedAt;
-          else colorPerson.modifiedAt = previousModifiedAt;
-          updatePersonModifiedBadge(colorPerson);
-          schedulePersonSave(colorPerson, false);
-          setSaveStatus(`Save failed: ${error.message}`, { isError: true });
-          showNotice(el.colorNotice, `Couldn't save this color: ${error.message}`);
-        } finally {
-          savingColor = false;
-          el.saveColor.disabled = false;
-          el.cancelColor.disabled = false;
-          el.colorFields.inert = false;
-        }
       });
 
       for (const [controls, axis] of [[el.xAxes, "xTrait"], [el.yAxes, "yTrait"]]) {
@@ -4954,6 +4977,19 @@
         drawChart();
         scheduleSave();
       });
+
+      function shuffleChartAxis(axis) {
+        const traits = state.traits.filter(trait => !trait.hidden);
+        if (traits.length < 2) return;
+        const origins = chartAxisOrigins();
+        state[axis] = shuffledTraitId(traits, state[axis]);
+        renderAxes();
+        chartAxisTransition.begin(origins);
+        drawChart();
+        scheduleSave();
+      }
+      el.shuffleX.addEventListener("click", () => shuffleChartAxis("xTrait"));
+      el.shuffleY.addEventListener("click", () => shuffleChartAxis("yTrait"));
 
       el.openTraits.addEventListener("click", () => {
         el.traitsNotice.classList.remove("visible");
@@ -5109,7 +5145,62 @@
         });
       }
 
-      el.peopleSortSelect.addEventListener("change", sortPeopleCards);
+      function closePeopleSort(restoreFocus = false) {
+        if (el.peopleSortMenu.hidden) return;
+        el.peopleSortMenu.hidden = true;
+        el.peopleSortToggle.setAttribute("aria-expanded", "false");
+        if (restoreFocus) el.peopleSortToggle.focus();
+      }
+
+      function updatePeopleSortMenu() {
+        for (const option of el.peopleSortMenu.children) {
+          const selected = option.dataset.sort === el.peopleSortSelect.value;
+          option.setAttribute("aria-checked", String(selected));
+          option.lastElementChild.textContent = selected ? "✓" : "";
+        }
+      }
+
+      el.peopleSortToggle.addEventListener("click", () => {
+        if (!el.peopleSortMenu.hidden) {
+          closePeopleSort();
+          return;
+        }
+        closePeopleFilter();
+        updatePeopleSortMenu();
+        el.peopleSortMenu.hidden = false;
+        el.peopleSortToggle.setAttribute("aria-expanded", "true");
+        el.peopleSortMenu.querySelector('[aria-checked="true"]').focus();
+      });
+      el.peopleSortMenu.addEventListener("keydown", event => {
+        const options = [...el.peopleSortMenu.children];
+        const index = options.indexOf(document.activeElement);
+        let next;
+        if (event.key === "ArrowDown") next = (index + 1) % options.length;
+        else if (event.key === "ArrowUp") next = (index + options.length - 1) % options.length;
+        else if (event.key === "Home") next = 0;
+        else if (event.key === "End") next = options.length - 1;
+        else if (event.key === "Escape") {
+          event.preventDefault();
+          closePeopleSort(true);
+          return;
+        } else return;
+        event.preventDefault();
+        options[next].focus();
+      });
+      el.peopleSortMenu.addEventListener("focusout", event => {
+        if (!el.peopleSortToggle.parentElement.contains(event.relatedTarget)) closePeopleSort();
+      });
+      document.addEventListener("pointerdown", event => {
+        if (!el.peopleSortToggle.parentElement.contains(event.target)) closePeopleSort();
+      });
+      el.peopleSortMenu.addEventListener("click", event => {
+        const option = event.target.closest("button[data-sort]");
+        if (!option) return;
+        el.peopleSortSelect.value = option.dataset.sort;
+        updatePeopleSortMenu();
+        closePeopleSort(true);
+        sortPeopleCards();
+      });
 
       function closePeopleFilter(restoreFocus = false) {
         if (el.peopleFilterMenu.hidden) return;
@@ -5123,6 +5214,7 @@
           closePeopleFilter();
           return;
         }
+        closePeopleSort();
         el.peopleFilterMenu.hidden = false;
         el.peopleCount.setAttribute("aria-expanded", "true");
         el.peopleFilterMenu.querySelector('[aria-checked="true"]').focus();
@@ -5181,7 +5273,7 @@
         const values = Object.fromEntries(state.traits.map(trait => [trait.id, 50]));
         const now = new Date().toISOString();
         const person = {
-          id: makeId("person"), name, color: newPersonColor, values, awaitingPlacement: true, addedAt: now, modifiedAt: now,
+          id: makeId("person"), name, color: randomPersonColor(), values, awaitingPlacement: true, addedAt: now, modifiedAt: now,
           ...(el.newPersonRelationship.value === "" ? {} : { relationship: el.newPersonRelationship.value }),
           ...(el.newPersonAge.value === "" ? {} : { age: el.newPersonAge.valueAsNumber })
         };
@@ -5190,8 +5282,6 @@
         el.newPersonRelationship.value = "";
         newPersonDropdown.sync();
         el.newPersonAge.value = "";
-        newPersonColor = randomPersonColor();
-        el.newPersonColor.style.backgroundColor = newPersonColor;
         render();
         const card = [...el.peopleList.children].find(item => item.dataset.personId === person.id);
         if (card && !card.hidden) {
