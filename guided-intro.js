@@ -348,6 +348,7 @@
       button.classList.toggle("label-left", x > size - 90);
       button.classList.toggle("selected", index === selectedIndex);
       button.classList.toggle("sticky", x !== actualX || y !== actualY);
+      button.querySelector(".demo-person-dot").classList.toggle("me-dot", person.relationship === "me");
       button.querySelector(".demo-person-name").textContent = person.name;
       button.setAttribute("aria-label",
         person.name + ", " + (person.relationship === "enemy" ? "foe" : person.relationship) +
