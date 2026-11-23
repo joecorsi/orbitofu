@@ -31,7 +31,8 @@
       .masthead { justify-content: space-between; width: min(100%, var(--workspace-width, 100%)); margin-inline: auto; }
       .page:has(#workspace:not([hidden])) .masthead { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
       .masthead .brand { align-self: start; }
-      .brand a { color: inherit; text-decoration: none; }
+      .brand a { display: inline-block; color: inherit; cursor: pointer; text-decoration: none; }
+      .brand a * { cursor: pointer; }
       .brand-mark { display: inline-block; transform: scale(1.2); transform-origin: center; }
       .account-bar:not([hidden]) { position: relative; justify-content: flex-end; min-width: 0; max-width: 100%; }
       .masthead .account-bar { justify-self: end; }
