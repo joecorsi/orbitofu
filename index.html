@@ -311,7 +311,7 @@
       .graph-options-menu input { margin: 0; }
       .graph-options-separator { display: block; border-top: 1px solid #767676; margin: 4px 0; }
       #proximity-menu { max-width: calc(100vw - 20px); }
-      #proximity-menu .proximity-option-name { min-width: 0; max-width: 14rem; margin-left: auto; padding-left: 1em; overflow: hidden; text-align: right; text-overflow: ellipsis; }
+      #proximity-menu .proximity-option-name { min-width: 0; max-width: 14rem; margin-left: auto; padding-left: 1em; overflow: hidden; font-weight: bold; text-align: right; text-overflow: ellipsis; }
       #proximity-clear { display: block; width: 100%; border: 0; padding: 4px 6px; background: transparent; color: #000; font: 13.3333px Arial, sans-serif; text-align: left; cursor: pointer; }
       #proximity-clear:is(:hover, :focus-visible) { outline: none; background: var(--highlight-blue); color: #fff; }
       .proximity-toggle span { display: block; max-width: 150px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -2181,6 +2181,7 @@
           return option;
         });
         el.graphSelect.replaceChildren(...options);
+        el.graphSelect.size = Math.max(1, Math.min(9, options.length));
         graphDropdown.sync();
       }
 
