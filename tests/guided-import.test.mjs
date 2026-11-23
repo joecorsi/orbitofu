@@ -195,7 +195,7 @@ test("saved graph menu lists current targets even when modes are disabled", () =
     html.slice(start, end) + "\nreturn updateProximity;")(
     { xTrait: "x", yTrait: "y", people }, me, checks, { proximityToggle: toggle, proximityMenu: menu },
     { point: (_id, point) => point }, person => !person.hidden,
-    window.thePearProximity.findProximity, window.thePearProximity.setProximityLabel, "__age__", () => null
+    window.orbitofuProximity.findProximity, window.orbitofuProximity.setProximityLabel, "__age__", () => null
   );
   assert.deepEqual(update(), []);
   assert.deepEqual(Object.values(names).map(name => name.textContent), ["same", "vertical", "vertical", "horizontal"]);
@@ -470,7 +470,7 @@ function navigationHarness({ session = { user: { id: "user-1" } }, saveError = n
   const calls = [];
   const el = { workspace: { hidden: false }, accountBar: { hidden: false }, authScreen: { hidden: true } };
   const client = { auth: { getSession: async () => ({ data: { session }, error: null }) } };
-  const window = { thePearStarter: {
+  const window = { orbitofuStarter: {
     showHomepage: () => calls.push("homepage"),
     pendingPeople: () => pending
   } };

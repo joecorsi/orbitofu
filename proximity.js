@@ -268,7 +268,7 @@
     return { update };
   }
 
-  window.thePearProximity = {
+  window.orbitofuProximity = {
     findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
     hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground
   };

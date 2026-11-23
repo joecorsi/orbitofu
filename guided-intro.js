@@ -2,14 +2,15 @@
 (() => {
   "use strict";
 
-  const KEY = "the-pear-first-graph-v2";
+  const KEY = "orbitofu-first-graph-v2";
+  const LEGACY_KEY = "the-pear-first-graph-v2";
   const OLD_KEY = "the-pear-first-graph-v1";
   const FLOW_ROUTE = "#/try";
   const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
   const ROLES = ["friend", "family", "choice", "me"];
   const COLORS = ["#e83c9b", "#35a84d", "#ed8615", "#145c92"];
   const { findProximity, setProximityLabel, setupProximityMenu, drawProximityCanvas, setupProximityHover,
-    updateProximityMenuBackground } = window.thePearProximity;
+    updateProximityMenuBackground } = window.orbitofuProximity;
   const $ = id => document.getElementById(id);
   const ui = {
     flow: $("starter-flow"),
@@ -98,16 +99,19 @@
     try {
       // The old draft format did not collect relationships or self-ratings.
       localStorage.removeItem(OLD_KEY);
-      const raw = localStorage.getItem(KEY);
+      const raw = localStorage.getItem(KEY) ?? localStorage.getItem(LEGACY_KEY);
       if (!raw) return null;
       const valid = validateDraft(JSON.parse(raw));
       if (!valid?.ready) {
         localStorage.removeItem(KEY);
+        localStorage.removeItem(LEGACY_KEY);
         return null;
       }
+      if (!localStorage.getItem(KEY)) localStorage.setItem(KEY, raw);
+      localStorage.removeItem(LEGACY_KEY);
       return valid;
     } catch {
-      try { localStorage.removeItem(KEY); } catch { /* storage unavailable */ }
+      try { localStorage.removeItem(KEY); localStorage.removeItem(LEGACY_KEY); } catch { /* storage unavailable */ }
       return null;
     }
   }
@@ -116,8 +120,9 @@
   let returnedHomeAfterReload = isReload && window.location.hash === FLOW_ROUTE;
   if (isReload) {
     try {
-      returnedHomeAfterReload ||= localStorage.getItem(KEY) !== null || localStorage.getItem(OLD_KEY) !== null;
+      returnedHomeAfterReload ||= localStorage.getItem(KEY) !== null || localStorage.getItem(LEGACY_KEY) !== null || localStorage.getItem(OLD_KEY) !== null;
       localStorage.removeItem(KEY);
+      localStorage.removeItem(LEGACY_KEY);
       localStorage.removeItem(OLD_KEY);
     } catch (storageError) {
       returnedHomeAfterReload = true;
@@ -153,6 +158,7 @@
         ignoreStoredDraft = false;
       } else if (hasStoredDraft) {
         localStorage.removeItem(KEY);
+        localStorage.removeItem(LEGACY_KEY);
         hasStoredDraft = false;
       }
       error("");
@@ -171,14 +177,14 @@
   }
 
   function confirmImported() {
-    try { localStorage.removeItem(KEY); } catch { /* import already succeeded */ }
+    try { localStorage.removeItem(KEY); localStorage.removeItem(LEGACY_KEY); } catch { /* import already succeeded */ }
     draft = emptyDraft();
     hasStoredDraft = false;
     showAuth(false);
   }
 
   // Only an explicitly saved questionnaire can be read by the authenticated editor.
-  window.thePearStarter = {
+  window.orbitofuStarter = {
     pendingPeople, confirmImported, showHomepage, returnedHomeAfterReload,
     inFlow: () => window.location.hash === FLOW_ROUTE
   };

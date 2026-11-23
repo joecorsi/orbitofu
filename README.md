@@ -1,8 +1,8 @@
-# The Pear
+# Orbit of U
 
 A no-build HTML/CSS/JavaScript app for rating people on adjustable traits and comparing them on a canvas scatter plot. It uses no UI framework. Supabase JS is used only for authentication and database access.
 
-The hosted app is available at [joecorsi.github.io/thepear/](https://joecorsi.github.io/thepear/).
+Orbit of U is a personal space for mapping how you see the people in your life. Your graphs remain private to your account. The hosted app is available at [joecorsi.github.io/orbitofu/](https://joecorsi.github.io/orbitofu/).
 
 ## First-use guided graph
 
@@ -11,7 +11,7 @@ The questionnaire has its own `#/try` route; the base URL remains the homepage.
 **Reset view** is available throughout the questionnaire and after the graph is revealed. Zooming becomes available once the results appear.
 
 Visitors without an active session can sign in by email link or Google. A valid existing session is restored automatically and opens their graphs.
-The Pear logo returns to the homepage without signing out; the account remains visible there and its **My graphs** menu item returns to the workspace. **Sign in** returns to the account when its session is still active.
+The Orbit of U logo returns to the homepage without signing out; the account remains visible there and its **My graphs** menu item returns to the workspace. **Sign in** returns to the account when its session is still active.
 After a successful Google sign-in, this browser remembers that Google was used. If the person later signs out, the header's **Sign in** button starts Google sign-in again; Google may request account selection or confirmation. Someone already signed out when this feature is introduced must sign in with Google once to establish that preference. Clearing browser storage removes it.
 
 An unfinished guest draft is held in memory and is deleted on reload or tab close. After **Save this graph**, it is temporarily kept in browser local storage for up to seven days so Google redirects or email sign-in can finish; it is **not uploaded** until the visitor authenticates. Reloading clears even a saved handoff and returns the guided flow to the homepage demo. Normal sign-in navigation keeps the handoff. The three non-Me people are imported into a new graph with Friend, Family, and Lover/Foe relationships and default values for other traits. The self-rating sets the two corresponding scores on the account's shared **Me** profile, which is visible across graphs; other Me scores remain unchanged. For new accounts, the imported people populate the first graph; for existing accounts, they go to a separate **My people** graph, without overwriting any existing graph data. The Me profile is saved before the graph is inserted, and the draft is cleared only after both saves succeed. If graph creation fails, the draft remains for retry unless the page is reloaded, although the Me scores might already have been saved. Imported accounts skip the original six-step tour.
@@ -67,10 +67,10 @@ Each graph is one row in `public.graphs`; its creation time is recorded in `crea
 
 ## Supabase setup
 
-1. Create a Supabase project.
+1. Create a Supabase project and name it **orbitofu**. For an existing project, change its display name in project settings; keep the project reference and API URL unchanged so existing sign-in and data continue to work.
 2. For a new installation, run [`supabase/schema.sql`](./supabase/schema.sql) in the Supabase SQL Editor. For an existing installation, first deploy this version of the app, rerun the schema, then run [`supabase/migrate_funny_trait.sql`](./supabase/migrate_funny_trait.sql) once. The migration backs up graph and Me data in a restricted database schema, preserves graph modification dates, and blocks saves from outdated tabs until they reload.
-3. In **Authentication → Providers**, enable Google and email. Configure Google OAuth credentials in Supabase; the provider secret stays in Supabase and is never entered into this app.
-4. In **Authentication → URL Configuration**, set the site URL to `https://joecorsi.github.io/thepear/` and allow that URL as a redirect. For local development, also allow `http://localhost:8000/` and `http://127.0.0.1:8000/`.
+3. In **Authentication → Providers**, enable Google and email. Configure Google OAuth credentials in Supabase; keep the provider secret in Supabase. Set the Google OAuth consent-screen app name to **Orbit of U** and its homepage to the hosted URL. The Google authorized redirect URI remains the Supabase callback URL (https://auhvnhytuxhhzdsjiugt.supabase.co/auth/v1/callback); changing the GitHub repository name does not change it.
+4. In **Authentication → URL Configuration**, set the site URL to `https://joecorsi.github.io/orbitofu/` and allow that URL as a redirect. For local development, also allow `http://localhost:8000/` and `http://127.0.0.1:8000/`.
 5. In this directory, start a static server:
 
    ```sh

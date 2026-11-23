@@ -6,7 +6,7 @@ const source = readFileSync(new URL("../proximity.js", import.meta.url), "utf8")
 const window = {};
 new Function("window", "document", source)(window, {});
 const { findProximity, setProximityLabel, drawProximityLine, drawProximityCanvas, hitProximityLine,
-  updateProximityMenuBackground } = window.thePearProximity;
+  updateProximityMenuBackground } = window.orbitofuProximity;
 
 test("proximity menu becomes translucent only when an active target overlaps it", () => {
   const classes = new Set();
@@ -185,7 +185,7 @@ test("homepage proximity hover follows the pointer and clears on exit or draggin
   const from = { x: 20, y: 10 };
   let lines = [{ to: { x: 180, y: 10 }, mode: "furthest", progress: 1 }];
   let dragging = false, draws = 0;
-  const hover = win.thePearProximity.setupProximityHover(frame, label, () => {
+  const hover = win.orbitofuProximity.setupProximityHover(frame, label, () => {
     draws++;
     hover.update(from, lines);
   }, () => dragging);
@@ -281,7 +281,7 @@ test("proximity modes sweep and pulse independently, including cancellation and 
   const targets = { closest: "near", furthest: "far" };
   const draws = [];
   const menu = { hidden: true, style: {}, getBoundingClientRect: () => ({ right: 100 }) };
-  const control = fakeWindow.thePearProximity.setupProximityMenu(
+  const control = fakeWindow.orbitofuProximity.setupProximityMenu(
     toggle, menu, closest, furthest, () => {
       draws.push({
         closest: control.progress("closest"), furthest: control.progress("furthest"),

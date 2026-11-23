@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 const source = readFileSync(new URL("../guided-intro.js", import.meta.url), "utf8");
 const proximitySource = readFileSync(new URL("../proximity.js", import.meta.url), "utf8");
-const DRAFT_KEY = "the-pear-first-graph-v2";
+const DRAFT_KEY = "orbitofu-first-graph-v2";
 
 function mount(initialStorage = {}, initialHash = "", navigationType = "navigate", failRemoval = false) {
   const store = new Map(Object.entries(initialStorage));
@@ -120,7 +120,7 @@ function mount(initialStorage = {}, initialHash = "", navigationType = "navigate
     frames.clear();
     callbacks.forEach(callback => callback(time));
   };
-  return { el, store, api: win.thePearStarter, win, advance };
+  return { el, store, api: win.orbitofuStarter, win, advance };
 }
 
 function answer(ui, name, x, y, kind = null) {

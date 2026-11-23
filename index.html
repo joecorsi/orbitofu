@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>The Pear</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%90%3C/text%3E%3C/svg%3E">
+    <title>Orbit of U</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%AA%90%3C/text%3E%3C/svg%3E">
     <style>
       :root { --highlight-blue: #0075ff; --control-gap: .4rem; }
       @supports (color: AccentColor) { :root { --highlight-blue: AccentColor; } }
@@ -379,7 +379,7 @@
   <body>
     <main class="page">
       <header class="masthead">
-        <p class="brand"><a id="home-link" href="./"><span aria-hidden="true">🍐</span> The Pear</a></p>
+        <p class="brand"><a id="home-link" href="./"><span aria-hidden="true">🪐</span> Orbit of U</a></p>
         <p class="privacy-note">Your graphs are private to your account.</p>
         <p class="starter-privacy" id="starter-privacy" hidden>This draft is private to this browser session and all data is deleted unless saved.</p>
         <button class="starter-sign-in" id="starter-skip" type="button">Sign in</button>
@@ -398,7 +398,7 @@
       <div class="content">
         <section class="panel auth-panel" id="auth-screen" aria-labelledby="auth-title">
           <div class="auth-copy">
-            <h1 id="auth-title">Welcome to The Pear!</h1>
+            <h1 id="auth-title">Welcome to Orbit of U!</h1>
             <section class="starter-flow" id="starter-flow" aria-label="Your first graph" hidden>
               <div class="starter-content">
                 <div class="starter-prompt">
@@ -439,7 +439,7 @@
               </div>
             </section>
             <div class="auth-details" id="auth-details">
-              <p class="muted" id="auth-intro">See your world from a new angle. Your graphs are private and only accesible in your account.</p>
+              <p class="muted" id="auth-intro">Map your world from a new angle. Your graphs stay private in your account.</p>
               <form class="auth-form" id="sign-in-form">
                 <label class="field-label" for="auth-email">Your email address</label>
                 <input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com" required>
@@ -793,7 +793,7 @@
       <div class="tutorial-shade" id="tutorial-shade" aria-hidden="true" hidden></div>
       <div class="tutorial-spotlight" id="tutorial-spotlight" aria-hidden="true"></div>
       <div class="tutorial-window">
-        <div class="tutorial-titlebar"><span><span aria-hidden="true">🍐</span> The Pear</span><span>Getting Started</span></div>
+        <div class="tutorial-titlebar"><span><span aria-hidden="true">🪐</span> Orbit of U</span><span>Getting Started</span></div>
         <div class="tutorial-body">
           <div aria-live="polite" aria-atomic="true">
             <h2 id="tutorial-heading"></h2>
@@ -816,7 +816,7 @@
 
     <div id="loading-overlay" class="loading-overlay" role="status" aria-live="polite" hidden>
       <div class="loading-window">
-        <div class="loading-title"><span aria-hidden="true">🍐</span> The Pear</div>
+        <div class="loading-title"><span aria-hidden="true">🪐</span> Orbit of U</div>
         <div class="loading-body">
           <p>Loading your graphs...</p>
           <div class="loading-progress" role="progressbar" aria-label="Loading your graphs" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -830,12 +830,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./proximity.js?v=proximity-menu-overlap"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
-    <script src="./guided-intro.js?v=proximity-menu-overlap"></script>
+    <script src="./guided-intro.js?v=orbitofu-rebrand"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
-        hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground } = window.thePearProximity;
-      const CONFIG_KEY = "people-map-supabase-config";
-      const GOOGLE_SIGN_IN_KEY = "the-pear-previous-google-sign-in";
+        hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground } = window.orbitofuProximity;
+      const CONFIG_KEY = "orbitofu-supabase-config";
+      const LEGACY_CONFIG_KEY = "people-map-supabase-config";
+      const GOOGLE_SIGN_IN_KEY = "orbitofu-previous-google-sign-in";
+      const LEGACY_GOOGLE_SIGN_IN_KEY = "the-pear-previous-google-sign-in";
       const AGE_AXIS = "__person_age__";
       const ME_ID = "__me__";
       const RING_EXPANSION_DURATION = 650;
@@ -1032,7 +1034,7 @@
 
       let client = null;
       let currentUser = null;
-      let showingHomepage = window.thePearStarter.inFlow() || window.thePearStarter.returnedHomeAfterReload;
+      let showingHomepage = window.orbitofuStarter.inFlow() || window.orbitofuStarter.returnedHomeAfterReload;
       let tutorialIndex = 0;
       let tutorialSaving = false;
       let tutorialSaveFailed = false;
@@ -1480,7 +1482,7 @@
 
       async function saveTutorialStatus(status) {
         const userId = currentUser.id;
-        const { data, error } = await client.auth.updateUser({ data: { thepear_tutorial: status } });
+        const { data, error } = await client.auth.updateUser({ data: { orbitofu_tutorial: status } });
         if (error) throw error;
         if (!data.user || data.user.id !== userId) throw new Error("The updated account could not be verified.");
         if (currentUser?.id === userId) currentUser = data.user;
@@ -1571,7 +1573,7 @@
         for (const button of [el.tutorialSkip, el.tutorialRestart, el.tutorialBack, el.tutorialNext]) button.disabled = true;
         el.tutorialError.hidden = true;
         try {
-          if (currentUser.user_metadata?.thepear_tutorial !== "done") await saveTutorialStatus("done");
+          if ((currentUser.user_metadata?.orbitofu_tutorial ?? currentUser.user_metadata?.thepear_tutorial) !== "done") await saveTutorialStatus("done");
           if (tutorialSession === session && currentUser?.id === userId && el.tutorialDialog.open) {
             clearTutorialStep();
             el.tutorialDialog.close();
@@ -1732,6 +1734,7 @@
         if (!usedGoogle) return;
         try {
           localStorage.setItem(GOOGLE_SIGN_IN_KEY, "1");
+          localStorage.removeItem(LEGACY_GOOGLE_SIGN_IN_KEY);
         } catch (error) {
           console.warn("Couldn't remember Google sign-in on this browser:", error);
           showNotice(el.workspace.hidden ? el.authNotice : el.appNotice,
@@ -1749,7 +1752,11 @@
 
       function readConfig() {
         try {
-          const value = localStorage.getItem(CONFIG_KEY);
+          const value = localStorage.getItem(CONFIG_KEY) ?? localStorage.getItem(LEGACY_CONFIG_KEY);
+          if (value && !localStorage.getItem(CONFIG_KEY)) {
+            localStorage.setItem(CONFIG_KEY, value);
+            localStorage.removeItem(LEGACY_CONFIG_KEY);
+          }
           return value ? JSON.parse(value) : null;
         } catch (error) {
           showNotice(el.authNotice, `Couldn't read the saved Supabase connection: ${error.message}`);
@@ -1802,7 +1809,7 @@
           el.accountBar.hidden = false;
         }
         if (!currentUser && nextUser && showingHomepage &&
-            (window.thePearStarter.inFlow() || window.thePearStarter.returnedHomeAfterReload) && !returnFromHomepage) {
+            (window.orbitofuStarter.inFlow() || window.orbitofuStarter.returnedHomeAfterReload) && !returnFromHomepage) {
           currentUser = nextUser;
           return;
         }
@@ -1884,7 +1891,7 @@
           updateLoadingProgress();
           await loadGraphs(load);
           if (!activeGraphLoads.has(load)) return;
-          if (load.importedStarter && currentUser.user_metadata?.thepear_tutorial !== "done") {
+          if (load.importedStarter && (currentUser.user_metadata?.orbitofu_tutorial ?? currentUser.user_metadata?.thepear_tutorial) !== "done") {
             // The hands-on first graph replaces the passive six-step tour.
             try { await saveTutorialStatus("done"); }
             catch (error) { console.warn("Couldn't mark guided onboarding complete:", error); }
@@ -1894,7 +1901,7 @@
           updateLoadingProgress();
           el.workspace.hidden = false;
           drawChart();
-          const tutorialStatus = currentUser.user_metadata?.thepear_tutorial;
+          const tutorialStatus = (currentUser.user_metadata?.orbitofu_tutorial ?? currentUser.user_metadata?.thepear_tutorial);
           load.startTutorial = !load.importedStarter && (tutorialStatus === "pending" || (load.newAccount && !tutorialStatus));
           if (load.newAccount && !tutorialStatus && !load.importedStarter) {
             try {
@@ -1935,7 +1942,7 @@
         el.workspace.hidden = true;
         el.accountBar.hidden = !currentUser;
         el.authScreen.hidden = false;
-        if (!preserveRoute) window.thePearStarter.showHomepage();
+        if (!preserveRoute) window.orbitofuStarter.showHomepage();
       }
 
       async function returnToAccount(useRememberedGoogle = false) {
@@ -1945,13 +1952,14 @@
         const session = data.session;
         if (!session?.user) {
           if (currentUser) await applySession(null);
-          if (useRememberedGoogle && localStorage.getItem(GOOGLE_SIGN_IN_KEY) === "1") {
+          if (useRememberedGoogle && (localStorage.getItem(GOOGLE_SIGN_IN_KEY) === "1" ||
+              localStorage.getItem(LEGACY_GOOGLE_SIGN_IN_KEY) === "1")) {
             await signInWithGoogle();
           }
           return;
         }
         if (showingHomepage && currentUser?.id === session.user.id && state &&
-            !window.thePearStarter.pendingPeople()) {
+            !window.orbitofuStarter.pendingPeople()) {
           currentUser = session.user;
           el.authScreen.hidden = true;
           el.accountBar.hidden = false;
@@ -1987,7 +1995,7 @@
         void returnToAccount().catch(reportError);
       });
       document.getElementById("starter-save").addEventListener("click", () => {
-        if (currentUser && window.thePearStarter.pendingPeople()) {
+        if (currentUser && window.orbitofuStarter.pendingPeople()) {
           void returnToAccount().catch(reportError);
         }
       });
@@ -2065,7 +2073,7 @@
         graphs = data;
         load.progress = 50;
         updateLoadingProgress();
-        const starterGuests = window.thePearStarter?.pendingPeople();
+        const starterGuests = window.orbitofuStarter?.pendingPeople();
         const starterData = starterGraphData(starterGuests);
         if (starterData) {
           await saveStarterMe(starterGuests);
@@ -2076,7 +2084,7 @@
           await createGraph("My first graph", false, false, load, starterData);
           if (!activeGraphLoads.has(load)) return;
           if (starterData) {
-            window.thePearStarter.confirmImported();
+            window.orbitofuStarter.confirmImported();
             load.importedStarter = true;
           }
           return;
@@ -2085,7 +2093,7 @@
           // Import into a new graph: never overwrite the user's existing data.
           await createGraph("My people", false, false, load, starterData);
           if (!activeGraphLoads.has(load)) return;
-          window.thePearStarter.confirmImported();
+          window.orbitofuStarter.confirmImported();
           load.importedStarter = true;
           return;
         }
@@ -4578,6 +4586,7 @@
           new URL(url);
           validatePublicKey(key);
           localStorage.setItem(CONFIG_KEY, JSON.stringify({ url, key }));
+          localStorage.removeItem(LEGACY_CONFIG_KEY);
           el.connectionSummary.textContent = "Update Supabase connection";
           el.connectionDetails.open = false;
           await connectToSupabase({ url, key });
