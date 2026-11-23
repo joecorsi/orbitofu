@@ -3046,13 +3046,15 @@
       }
 
       const personDotRadius = 6;
-      const sunEmojiOffset = (() => {
+      const sunEmojiOffsets = new Map();
+      function sunEmojiOffset(fontSize) {
+        const measuredSize = Math.max(1, Math.round(fontSize * 2) / 2);
+        if (sunEmojiOffsets.has(measuredSize)) return sunEmojiOffsets.get(measuredSize);
         const measureCanvas = document.createElement("canvas");
         measureCanvas.width = 128;
         measureCanvas.height = 128;
         const measureContext = measureCanvas.getContext("2d", { willReadFrequently: true });
-        const fontSize = 40;
-        measureContext.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+        measureContext.font = `${measuredSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
         measureContext.textAlign = "center";
         measureContext.textBaseline = "middle";
         measureContext.fillText("☀️", 64, 64);
@@ -3067,11 +3069,13 @@
             bottom = Math.max(bottom, y);
           }
         }
-        return right < left ? { x: 0, y: 0 } : {
+        const offset = right < left ? { x: 0, y: 0 } : {
           x: (left + right + 1) / 2 - 64,
           y: (top + bottom + 1) / 2 - 64
         };
-      })();
+        sunEmojiOffsets.set(measuredSize, offset);
+        return offset;
+      }
 
       function chartBounds(width, height) {
         const inset = parseFloat(getComputedStyle(el.chart).getPropertyValue("--plot-inset"));
@@ -4501,11 +4505,12 @@
           if (person.id === ME_ID) {
             context.save();
             context.globalAlpha *= sticky ? .23 : 1;
-            context.font = `${personDotRadius * 2.75 * scale}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+            const fontSize = personDotRadius * 2.75 * scale;
+            context.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
             context.textAlign = "center";
             context.textBaseline = "middle";
-            const emojiScale = personDotRadius * 2.75 * scale / 40;
-            context.fillText("☀️", x - sunEmojiOffset.x * emojiScale, y - sunEmojiOffset.y * emojiScale);
+            const offset = sunEmojiOffset(fontSize);
+            context.fillText("☀️", x - offset.x, y - offset.y);
             context.restore();
             return;
           }
