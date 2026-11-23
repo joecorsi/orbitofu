@@ -68,7 +68,7 @@ test("symmetry finds the closest reflection on the opposite side of the selected
     "verticalSymmetry", point, center).x, 0.8);
 });
 
-test("proximity label reflects the active mode and empty results", () => {
+test("proximity button label stays the same for every selection", () => {
   const attributes = {};
   const toggle = {
     firstElementChild: { textContent: "" },
@@ -76,17 +76,17 @@ test("proximity label reflects the active mode and empty results", () => {
     setAttribute: (name, value) => { attributes[name] = value; }
   };
   setProximityLabel(toggle, "furthest", "Alex");
-  assert.equal(toggle.firstElementChild.textContent, "Furthest: Alex");
-  assert.equal(attributes["aria-label"], "Current furthest: Alex");
+  assert.equal(toggle.firstElementChild.textContent, "Proximity");
+  assert.equal(attributes["aria-label"], "Proximity");
   setProximityLabel(toggle, "closest", undefined);
-  assert.equal(toggle.firstElementChild.textContent, "No visible people");
+  assert.equal(toggle.firstElementChild.textContent, "Proximity");
   setProximityLabel(toggle, "verticalSymmetry", "Alex");
-  assert.equal(toggle.firstElementChild.textContent, "Vertical symmetry: Alex");
-  assert.equal(attributes["aria-label"], "Current vertical symmetry: Alex");
+  assert.equal(toggle.firstElementChild.textContent, "Proximity");
+  assert.equal(attributes["aria-label"], "Proximity");
   setProximityLabel(toggle, "horizontalSymmetry", undefined);
-  assert.equal(toggle.firstElementChild.textContent, "No opposite-side match");
+  assert.equal(toggle.firstElementChild.textContent, "Proximity");
   setProximityLabel(toggle, "horizontalSymmetry", undefined, "Me needs an age");
-  assert.equal(toggle.firstElementChild.textContent, "Me needs an age");
+  assert.equal(toggle.firstElementChild.textContent, "Proximity");
   setProximityLabel(toggle, "both", "Alex");
   assert.equal(toggle.firstElementChild.textContent, "Proximity");
   assert.equal(attributes["aria-label"], "Proximity");
