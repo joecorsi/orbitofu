@@ -76,7 +76,7 @@
       .demo-graph.has-selection .demo-person:not(.selected):not(.sticky) { opacity: .4; }
       .demo-person.selected { z-index: 4; }
       .demo-person-dot { position: relative; box-sizing: border-box; flex: none; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: var(--person-color); transform: scale(var(--proximity-scale, 1)); }
-      .demo-person-dot.me-dot { display: grid; place-items: center; border: 0; background: transparent; font: normal 16px/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+      .demo-person-dot.me-dot { display: grid; place-items: center; border: 0; background: transparent; font: normal 20px/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
       .demo-person-dot.me-dot::before { content: "☀️"; }
       .demo-person.sticky .demo-person-dot { background: rgba(0, 0, 0, .23); }
       .demo-person.sticky .demo-person-dot.me-dot { background: transparent; opacity: .23; }
@@ -4475,7 +4475,7 @@
           if (person.id === ME_ID) {
             context.save();
             context.globalAlpha *= sticky ? .23 : 1;
-            context.font = `${personDotRadius * 2.2 * scale}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+            context.font = `${personDotRadius * 2.75 * scale}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
             context.textAlign = "center";
             context.textBaseline = "middle";
             context.fillText("☀️", x, y);
