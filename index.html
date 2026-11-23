@@ -77,7 +77,7 @@
       .demo-person.selected { z-index: 4; }
       .demo-person-dot { position: relative; box-sizing: border-box; flex: none; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: var(--person-color); transform: scale(var(--proximity-scale, 1)); }
       .demo-person-dot.me-dot { display: grid; place-items: center; border: 0; background: transparent; font: normal 20px/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
-      .demo-person-dot.me-dot::before { content: "☀️"; }
+      .demo-person-dot.me-dot::before { content: "☀️"; position: absolute; left: 50%; top: 50%; width: 1em; height: 1em; line-height: 1; text-align: center; transform: translate(calc(-50% - var(--sun-offset-x, 0px)), calc(-50% - var(--sun-offset-y, 0px))); }
       .demo-person.sticky .demo-person-dot { background: rgba(0, 0, 0, .23); }
       .demo-person.sticky .demo-person-dot.me-dot { background: transparent; opacity: .23; }
       .demo-person.selected .demo-person-dot { transform: scale(1.5); }
@@ -3234,6 +3234,11 @@
           const dot = document.createElement("span");
           dot.className = "demo-person-dot";
           dot.classList.toggle("me-dot", person.id === ME_ID);
+          if (person.id === ME_ID) {
+            const offset = sunEmojiOffset(20);
+            dot.style.setProperty("--sun-offset-x", `${offset.x}px`);
+            dot.style.setProperty("--sun-offset-y", `${offset.y}px`);
+          }
           dot.setAttribute("aria-hidden", "true");
           const name = document.createElement("span");
           name.className = "demo-person-name";
