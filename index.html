@@ -32,6 +32,7 @@
       .page:has(#workspace:not([hidden])) .masthead { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
       .masthead .brand { align-self: start; }
       .brand a { color: inherit; text-decoration: none; }
+      .brand-mark { display: inline-block; transform: scale(1.2); transform-origin: center; }
       .account-bar:not([hidden]) { position: relative; justify-content: flex-end; min-width: 0; max-width: 100%; }
       .masthead .account-bar { justify-self: end; }
       .privacy-note { display: none; margin: 0; text-align: center; font-size: .85em; }
@@ -386,7 +387,7 @@
   <body>
     <main class="page">
       <header class="masthead">
-        <p class="brand"><a id="home-link" href="./"><span aria-hidden="true">🪐</span> Orbit of U</a></p>
+        <p class="brand"><a id="home-link" href="./"><span class="brand-mark" aria-hidden="true">🪐</span> Orbit of U</a></p>
         <p class="privacy-note">Your graphs are private to your account.</p>
         <p class="starter-privacy" id="starter-privacy" hidden>This draft is private to this browser session and all data is deleted unless saved.</p>
         <button class="starter-sign-in" id="starter-skip" type="button">Sign in</button>
