@@ -540,8 +540,6 @@
                 </span>
                 <span class="shuffle-axis-controls">
                   <button type="button" id="demo-shuffle" title="Randomly choose two different traits">Shuffle axes</button>
-                  <button type="button" id="demo-shuffle-x" title="Randomly choose a different horizontal trait">Shuffle X</button>
-                  <button type="button" id="demo-shuffle-y" title="Randomly choose a different vertical trait">Shuffle Y</button>
                 </span>
                 <button type="button" id="demo-reset" hidden>Reset view</button>
               </span>
@@ -620,8 +618,6 @@
                       </span>
                       <span class="shuffle-axis-controls">
                         <button id="shuffle-axes" type="button" title="Randomly choose two different traits">Shuffle axes</button>
-                        <button id="shuffle-x" type="button" title="Randomly choose a different horizontal trait">Shuffle X</button>
-                        <button id="shuffle-y" type="button" title="Randomly choose a different vertical trait">Shuffle Y</button>
                       </span>
                       <button id="reset-zoom" type="button" hidden>Reset view</button>
                     </span>
@@ -1013,8 +1009,6 @@
         graphFooterControls: document.querySelector("#workspace .graph-footer-controls"),
         graphOptionsToggle: document.getElementById("graph-options-toggle"),
         graphOptionsMenu: document.getElementById("graph-options-menu"),
-        shuffleX: document.getElementById("shuffle-x"),
-        shuffleY: document.getElementById("shuffle-y"),
         undo: document.getElementById("undo"),
         redo: document.getElementById("redo"),
         shuffleAxes: document.getElementById("shuffle-axes"),
@@ -2523,8 +2517,6 @@
         const visibleTraits = state.traits.filter(trait => !trait.hidden);
         [state.xTrait, state.yTrait] = resolveTraitAxes(state.traits, state.xTrait, state.yTrait);
         el.shuffleAxes.disabled = visibleTraits.length < 2;
-        el.shuffleX.disabled = visibleTraits.length < 2;
-        el.shuffleY.disabled = visibleTraits.length < 2;
         for (const [controls, selected] of [[el.xAxes, state.xTrait], [el.yAxes, state.yTrait]]) {
           controls.forEach(select => {
             const age = new Option("Age", AGE_AXIS, false, selected === AGE_AXIS);
@@ -3600,17 +3592,6 @@
           axisTransition.begin(origins);
           draw();
         });
-        const shuffleDemoAxis = axis => {
-          if (traits.length < 2) return;
-          const { viewed } = bounds();
-          const origins = new Map(people.map(person => [person.id, pointFor(person, viewed)]));
-          if (axis === "xTrait") xTrait = shuffledTraitId(traits, xTrait);
-          else yTrait = shuffledTraitId(traits, yTrait);
-          axisTransition.begin(origins);
-          draw();
-        };
-        document.getElementById("demo-shuffle-x").addEventListener("click", () => shuffleDemoAxis("xTrait"));
-        document.getElementById("demo-shuffle-y").addEventListener("click", () => shuffleDemoAxis("yTrait"));
         reducedMotion.addEventListener("change", () => {
           if (reducedMotion.matches) axisTransition.stop();
           draw();
@@ -5017,19 +4998,6 @@
         drawChart();
         scheduleSave();
       });
-
-      function shuffleChartAxis(axis) {
-        const traits = state.traits.filter(trait => !trait.hidden);
-        if (traits.length < 2) return;
-        const origins = chartAxisOrigins();
-        state[axis] = shuffledTraitId(traits, state[axis]);
-        renderAxes();
-        chartAxisTransition.begin(origins);
-        drawChart();
-        scheduleSave();
-      }
-      el.shuffleX.addEventListener("click", () => shuffleChartAxis("xTrait"));
-      el.shuffleY.addEventListener("click", () => shuffleChartAxis("yTrait"));
 
       el.openTraits.addEventListener("click", () => {
         el.traitsNotice.classList.remove("visible");
