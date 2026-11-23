@@ -24,14 +24,10 @@
   const modeLabels = { closest: "Closest", furthest: "Furthest",
     verticalSymmetry: "Vertical symmetry", horizontalSymmetry: "Horizontal symmetry" };
 
-  function setProximityLabel(toggle, mode, name, emptyLabel) {
-    const modeLabel = modeLabels[mode];
-    const label = modeLabel ? (name ? `${modeLabel}: ${name}` :
-      emptyLabel ?? (mode.endsWith("Symmetry") ? "No opposite-side match" : "No visible people")) : "Proximity";
-    const description = modeLabel ? `Current ${modeLabel.toLowerCase()}: ${name ?? label}` : label;
-    if (toggle.firstElementChild.textContent !== label) toggle.firstElementChild.textContent = label;
-    if (toggle.getAttribute("aria-label") !== description) toggle.setAttribute("aria-label", description);
-    if (toggle.title !== description) toggle.title = description;
+  function setProximityLabel(toggle) {
+    if (toggle.firstElementChild.textContent !== "Proximity") toggle.firstElementChild.textContent = "Proximity";
+    if (toggle.getAttribute("aria-label") !== "Proximity") toggle.setAttribute("aria-label", "Proximity");
+    if (toggle.title !== "Proximity") toggle.title = "Proximity";
   }
 
   function updateProximityMenuBackground(menu, chart, points, radius) {
