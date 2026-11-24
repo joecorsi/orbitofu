@@ -163,6 +163,7 @@
       .chart-group-popover button { display: block; width: 100%; padding: 4px; border: 0; background: #fff; color: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
       .chart-group-popover button:hover, .chart-group-popover button:focus-visible { background: #efefef; }
       .chart-label-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+      #chart-comet { position: absolute; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; border-radius: inherit; pointer-events: none; }
       #chart-labels { display: block; width: 100%; height: 100%; }
       .chart-label-hit { position: absolute; pointer-events: auto; touch-action: none; }
       .chart-info { position: absolute; top: calc(var(--control-gap) / 2); left: calc(var(--control-gap) / 2); z-index: 4; }
@@ -584,6 +585,7 @@
                     <span class="axis-end axis-y-low"><button class="axis-toggle" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="y-axis-low"><span></span></button><select id="y-axis-low" aria-label="Vertical axis trait, bottom end" size="9" hidden></select></span>
                     <span class="axis-end axis-y-high"><button class="axis-toggle" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="y-axis-high"><span></span></button><select id="y-axis-high" aria-label="Vertical axis trait, top end" size="9" hidden></select></span>
                     <div class="chart-label-layer" aria-hidden="true"><canvas id="chart-labels"></canvas><div class="chart-label-hit" hidden></div><div class="chart-label-hit" hidden></div></div>
+                    <canvas id="chart-comet" aria-hidden="true"></canvas>
                     <span class="chart-info">
                       <button class="chart-info-button" type="button" aria-label="Graph controls information" aria-describedby="chart-info-tooltip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="currentColor"/></svg></button>
                       <span class="chart-info-tooltip" id="chart-info-tooltip" role="tooltip">Scroll to zoom, drag empty space or use Shift and arrow keys to pan. Select a dot, then use the mouse or arrow keys to adjust values.</span>
@@ -4289,6 +4291,143 @@
           }
         }
       }
+
+      let cometTimer = null;
+      let cometFrame = null;
+      let activeComet = null;
+      const cometCanvas = document.getElementById("chart-comet");
+      const cometContext = cometCanvas.getContext("2d");
+
+      function scheduleComet() {
+        if (reducedMotion.matches || cometTimer !== null) return;
+        cometTimer = setTimeout(() => {
+          cometTimer = null;
+          startComet();
+        }, 10000 + Math.random() * 5000);
+      }
+
+      function startComet() {
+        const bounds = el.chart.getBoundingClientRect();
+        if (!bounds.width || !bounds.height) {
+          scheduleComet();
+          return;
+        }
+        const edgePoint = edge => {
+          const inset = 3;
+          const x = inset + Math.random() * Math.max(0, bounds.width - inset * 2);
+          const y = inset + Math.random() * Math.max(0, bounds.height - inset * 2);
+          if (edge === 0) return { x, y: inset };
+          if (edge === 1) return { x: bounds.width - inset, y };
+          if (edge === 2) return { x, y: bounds.height - inset };
+          return { x: inset, y };
+        };
+        const startEdge = Math.floor(Math.random() * 4);
+        let endEdge = Math.floor(Math.random() * 3);
+        if (endEdge >= startEdge) endEdge++;
+        const depth = Math.random();
+        activeComet = {
+          from: edgePoint(startEdge),
+          to: edgePoint(endEdge),
+          started: performance.now(),
+          duration: 1500 + depth * 850,
+          depth,
+          tailLength: 55 + depth * 55,
+          sparkles: Array.from({ length: 9 }, () => ({
+            behind: 8 + Math.random() * (45 + depth * 45),
+            offset: (Math.random() - .5) * (3 + depth * 5),
+            radius: .45 + Math.random() * (.55 + depth * .5),
+            phase: Math.random() * Math.PI * 2
+          }))
+        };
+        cometFrame = requestAnimationFrame(drawComet);
+      }
+
+      function drawComet(now) {
+        cometFrame = null;
+        const bounds = el.chart.getBoundingClientRect();
+        const ratio = window.devicePixelRatio || 1;
+        if (!bounds.width || !bounds.height) {
+          cometContext.clearRect(0, 0, cometCanvas.width, cometCanvas.height);
+          activeComet = null;
+          scheduleComet();
+          return;
+        }
+        const pixelWidth = Math.round(bounds.width * ratio);
+        const pixelHeight = Math.round(bounds.height * ratio);
+        if (cometCanvas.width !== pixelWidth || cometCanvas.height !== pixelHeight) {
+          cometCanvas.width = pixelWidth;
+          cometCanvas.height = pixelHeight;
+        }
+        cometContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+        cometContext.clearRect(0, 0, bounds.width, bounds.height);
+        const comet = activeComet;
+        if (!comet) return;
+        const progress = Math.min(1, (now - comet.started) / comet.duration);
+        const dx = comet.to.x - comet.from.x;
+        const dy = comet.to.y - comet.from.y;
+        const distance = Math.hypot(dx, dy) || 1;
+        const ux = dx / distance;
+        const uy = dy / distance;
+        const px = -uy;
+        const py = ux;
+        const head = { x: comet.from.x + dx * progress, y: comet.from.y + dy * progress };
+        const tailProgress = Math.max(0, progress - comet.tailLength / distance);
+        const tail = {
+          x: comet.from.x + dx * tailProgress,
+          y: comet.from.y + dy * tailProgress
+        };
+        const size = .85 + comet.depth * .7;
+        cometContext.save();
+        cometContext.lineCap = "round";
+        cometContext.lineWidth = size;
+        const trail = cometContext.createLinearGradient(tail.x, tail.y, head.x, head.y);
+        trail.addColorStop(0, "rgba(0, 0, 0, 0)");
+        trail.addColorStop(.65, "rgba(0, 0, 0, .24)");
+        trail.addColorStop(1, "rgba(0, 0, 0, .86)");
+        cometContext.strokeStyle = trail;
+        cometContext.beginPath();
+        cometContext.moveTo(tail.x, tail.y);
+        cometContext.lineTo(head.x, head.y);
+        cometContext.stroke();
+        for (const sparkle of comet.sparkles) {
+          if (sparkle.behind > progress * distance) continue;
+          const twinkle = .2 + .65 * (Math.sin(now * .009 + sparkle.phase) ** 2);
+          const along = Math.max(0, progress * distance - sparkle.behind);
+          const x = comet.from.x + ux * along + px * sparkle.offset;
+          const y = comet.from.y + uy * along + py * sparkle.offset;
+          cometContext.globalAlpha = twinkle;
+          cometContext.fillStyle = "#000";
+          cometContext.beginPath();
+          cometContext.arc(x, y, sparkle.radius, 0, Math.PI * 2);
+          cometContext.fill();
+        }
+        cometContext.globalAlpha = 1;
+        cometContext.fillStyle = "#000";
+        cometContext.beginPath();
+        cometContext.arc(head.x, head.y, 1.35 + comet.depth * 1.1, 0, Math.PI * 2);
+        cometContext.fill();
+        cometContext.restore();
+        if (progress < 1) {
+          cometFrame = requestAnimationFrame(drawComet);
+        } else {
+          activeComet = null;
+          cometContext.clearRect(0, 0, bounds.width, bounds.height);
+          scheduleComet();
+        }
+      }
+
+      reducedMotion.addEventListener("change", () => {
+        if (reducedMotion.matches) {
+          if (cometTimer !== null) clearTimeout(cometTimer);
+          if (cometFrame !== null) cancelAnimationFrame(cometFrame);
+          cometTimer = cometFrame = null;
+          activeComet = null;
+          cometContext.clearRect(0, 0, cometCanvas.width, cometCanvas.height);
+        } else {
+          scheduleComet();
+        }
+      });
+      scheduleComet();
 
       function drawChart() {
         const proximityPeople = updateProximity();
