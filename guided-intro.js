@@ -10,7 +10,7 @@
   const ROLES = ["friend", "family", "choice", "me"];
   const COLORS = ["#e83c9b", "#35a84d", "#ed8615", "#145c92"];
   const { findProximity, setProximityLabel, setupProximityMenu, drawProximityCanvas, setupProximityHover,
-    updateProximityMenuBackground } = window.orbitofuProximity;
+    updateProximityMenuBackground, sunEmojiOffset } = window.orbitofuProximity;
   const $ = id => document.getElementById(id);
   const ui = {
     flow: $("starter-flow"),
@@ -348,7 +348,14 @@
       button.classList.toggle("label-left", x > size - 90);
       button.classList.toggle("selected", index === selectedIndex);
       button.classList.toggle("sticky", x !== actualX || y !== actualY);
-      button.querySelector(".demo-person-dot").classList.toggle("me-dot", person.relationship === "me");
+      const dot = button.querySelector(".demo-person-dot");
+      const isMe = person.relationship === "me";
+      dot.classList.toggle("me-dot", isMe);
+      if (isMe) {
+        const offset = sunEmojiOffset(16.5);
+        dot.style.setProperty("--sun-offset-x", `${offset.x}px`);
+        dot.style.setProperty("--sun-offset-y", `${offset.y}px`);
+      }
       button.querySelector(".demo-person-name").textContent = person.name;
       button.setAttribute("aria-label",
         person.name + ", " + (person.relationship === "enemy" ? "foe" : person.relationship) +
