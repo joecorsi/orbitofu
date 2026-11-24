@@ -352,7 +352,7 @@
       const isMe = person.relationship === "me";
       dot.classList.toggle("me-dot", isMe);
       if (isMe) {
-        const offset = sunEmojiOffset(16.5);
+        const offset = sunEmojiOffset(15);
         dot.style.setProperty("--sun-offset-x", `${offset.x}px`);
         dot.style.setProperty("--sun-offset-y", `${offset.y}px`);
       }
