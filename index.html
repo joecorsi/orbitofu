@@ -60,7 +60,7 @@
       .demo-axis-horizontal { left: 20px; right: 20px; top: var(--demo-axis-y); border-top: 1px solid #000; }
       .demo-axis-vertical { top: 20px; bottom: 20px; left: var(--demo-axis-x); border-left: 1px solid #000; }
       .demo-center { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: #fff; transform: translate(-50%, -50%); pointer-events: none; }
-      .demo-axis-label { position: absolute; z-index: 1; font: 13.3333px Arial, sans-serif; pointer-events: none; }
+      .demo-axis-label { position: absolute; z-index: 2; font: 13.3333px Arial, sans-serif; pointer-events: none; }
       .demo-x-low, .demo-x-high { top: calc(var(--demo-axis-y) - 19px); }
       .demo-x-low { left: 20px; }
       .demo-x-high { right: 20px; }
@@ -78,7 +78,7 @@
       .demo-graph.has-selection .demo-person:not(.selected):not(.sticky) { opacity: .4; }
       .demo-person.selected { z-index: 4; }
       .demo-person-dot { position: relative; box-sizing: border-box; flex: none; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: var(--person-color); transform: scale(var(--proximity-scale, 1)); }
-      .demo-person-dot.me-dot { display: grid; place-items: center; border: 0; background: transparent; font: normal 16.5px/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+      .demo-person-dot.me-dot { display: grid; place-items: center; border: 0; background: transparent; font: normal 15px/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
       .demo-person-dot.me-dot::before { content: "☀️"; position: absolute; left: 50%; top: 50%; width: 1em; height: 1em; line-height: 1; text-align: center; transform: translate(calc(-50% - var(--sun-offset-x, 0px)), calc(-50% - var(--sun-offset-y, 0px))); }
       .demo-person.sticky .demo-person-dot { background: rgba(0, 0, 0, .23); }
       .demo-person.sticky .demo-person-dot.me-dot { background: transparent; opacity: .23; }
@@ -605,7 +605,7 @@
                         <span class="graph-options-menu" id="graph-options-menu" role="group" aria-label="Graph options" hidden>
                           <label><input type="checkbox" id="relationship-colors"> Color by relationship</label>
                           <label><input type="checkbox" id="show-names"> Names</label>
-                          <label><input type="checkbox" id="show-comets" checked> Comets</label>
+                          <label><input type="checkbox" id="show-comets" checked> Comets &amp; Stars</label>
                           <span class="graph-options-separator" role="separator"></span>
                           <label><input type="checkbox" data-graph-relationship="friend"> Friend</label>
                           <label><input type="checkbox" data-graph-relationship="family"> Family</label>
@@ -853,7 +853,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./proximity.js?v=sun-centering"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
-    <script src="./guided-intro.js?v=orbitofu-sun-centering"></script>
+    <script src="./guided-intro.js?v=orbitofu-sun-stars"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
         hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground, sunEmojiOffset } = window.orbitofuProximity;
@@ -3206,7 +3206,7 @@
           dot.className = "demo-person-dot";
           dot.classList.toggle("me-dot", person.id === ME_ID);
           if (person.id === ME_ID) {
-            const offset = sunEmojiOffset(16.5);
+            const offset = sunEmojiOffset(15);
             dot.style.setProperty("--sun-offset-x", `${offset.x}px`);
             dot.style.setProperty("--sun-offset-y", `${offset.y}px`);
           }
@@ -4268,15 +4268,66 @@
 
       let cometsEnabled = true;
 
-      function createCometController(canvas, isEnabled = () => true) {
+      function createCometController(canvas, isEnabled = () => true, drawStarsOnSurface = true) {
         const context = canvas.getContext("2d");
         let timer = null;
         let frame = null;
         let comets = [];
+        const stars = Array.from({ length: 42 }, () => ({
+          x: Math.random(),
+          y: Math.random(),
+          radius: .65 + Math.random() * 1.55,
+          opacity: .22 + Math.random() * .28,
+          ray: Math.random() < .72
+        }));
+
+        const drawStars = (target, width, height) => {
+          target.save();
+          target.fillStyle = "#000";
+          target.strokeStyle = "#000";
+          for (const star of stars) {
+            const x = star.x * width;
+            const y = star.y * height;
+            target.globalAlpha = star.opacity;
+            target.beginPath();
+            target.arc(x, y, star.radius * .32, 0, Math.PI * 2);
+            target.fill();
+            if (star.ray) {
+              const ray = star.radius;
+              target.globalAlpha = star.opacity * .8;
+              target.lineWidth = .25 + star.radius * .12;
+              target.beginPath();
+              target.moveTo(x - ray, y);
+              target.lineTo(x + ray, y);
+              target.moveTo(x, y - ray);
+              target.lineTo(x, y + ray);
+              target.stroke();
+            }
+          }
+          target.restore();
+        };
 
         const clear = () => {
-          context.setTransform(1, 0, 0, 1, 0, 0);
+          context.setTransform(1, 0, 0, 0, 1, 0);
           context.clearRect(0, 0, canvas.width, canvas.height);
+        };
+
+        const paintSurface = () => {
+          const bounds = canvas.getBoundingClientRect();
+          if (!bounds.width || !bounds.height) {
+            clear();
+            return;
+          }
+          const ratio = window.devicePixelRatio || 1;
+          const pixelWidth = Math.round(bounds.width * ratio);
+          const pixelHeight = Math.round(bounds.height * ratio);
+          if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+            canvas.width = pixelWidth;
+            canvas.height = pixelHeight;
+          }
+          context.setTransform(ratio, 0, 0, ratio, 0, 0);
+          context.clearRect(0, 0, bounds.width, bounds.height);
+          if (drawStarsOnSurface) drawStars(context, bounds.width, bounds.height);
         };
 
         const makeComet = bounds => {
@@ -4424,26 +4475,36 @@
           }
           context.setTransform(ratio, 0, 0, ratio, 0, 0);
           context.clearRect(0, 0, bounds.width, bounds.height);
+          if (drawStarsOnSurface) drawStars(context, bounds.width, bounds.height);
           comets = comets.filter(comet => drawOne(comet, now));
           if (comets.length) frame = requestAnimationFrame(draw);
           else schedule();
         };
 
-        const stop = () => {
+        const stop = (clearBackground = true) => {
           if (timer !== null) clearTimeout(timer);
           if (frame !== null) cancelAnimationFrame(frame);
           timer = frame = null;
           comets = [];
-          clear();
+          if (clearBackground) clear();
+          else paintSurface();
         };
 
-        const setEnabled = enabled => enabled ? schedule() : stop();
+        const setEnabled = enabled => {
+          if (enabled) {
+            paintSurface();
+            schedule();
+          } else stop();
+        };
+        const resizeObserver = new ResizeObserver(paintSurface);
+        resizeObserver.observe(canvas);
+        paintSurface();
         schedule();
-        return { setEnabled, stop };
+        return { setEnabled, stop, drawStars };
       }
 
       const mainCometController = createCometController(
-        document.getElementById("chart-comet"), () => cometsEnabled);
+        document.getElementById("chart-comet"), () => cometsEnabled, false);
       const demoCometControllers = [...document.querySelectorAll(".demo-comet")]
         .map(canvas => createCometController(canvas));
 
@@ -4455,13 +4516,14 @@
       el.showComets.addEventListener("change", () => {
         state.cometsEnabled = el.showComets.checked;
         setCometsEnabled(state.cometsEnabled);
+        drawChart();
         scheduleSave();
       });
 
       reducedMotion.addEventListener("change", () => {
         if (reducedMotion.matches) {
-          mainCometController.stop();
-          demoCometControllers.forEach(controller => controller.stop());
+          mainCometController.stop(!cometsEnabled);
+          demoCometControllers.forEach(controller => controller.stop(false));
         } else {
           mainCometController.setEnabled(cometsEnabled);
           demoCometControllers.forEach(controller => controller.setEnabled(true));
@@ -4500,6 +4562,7 @@
         context.clearRect(0, 0, width, height);
         context.fillStyle = "#fff";
         context.fillRect(0, 0, width, height);
+        if (cometsEnabled) mainCometController.drawStars(context, width, height);
 
         const { left, top, right, bottom } = chartBounds(width, height);
         const viewBounds = viewedChartBounds(width, height);
