@@ -4371,17 +4371,22 @@
         const uy = dy / distance;
         const px = -uy;
         const py = ux;
+        const entryDistance = comet.tailLength + 8;
         const exitDistance = distance + comet.tailLength + 8;
+        const entry = {
+          x: comet.from.x - ux * entryDistance,
+          y: comet.from.y - uy * entryDistance
+        };
         const exit = {
           x: comet.from.x + ux * exitDistance,
           y: comet.from.y + uy * exitDistance
         };
-        const head = { x: comet.from.x + (exit.x - comet.from.x) * progress, y: comet.from.y + (exit.y - comet.from.y) * progress };
-        const travelDistance = exitDistance;
+        const travelDistance = entryDistance + exitDistance;
+        const head = { x: entry.x + (exit.x - entry.x) * progress, y: entry.y + (exit.y - entry.y) * progress };
         const tailProgress = Math.max(0, progress - comet.tailLength / travelDistance);
         const tail = {
-          x: comet.from.x + (exit.x - comet.from.x) * tailProgress,
-          y: comet.from.y + (exit.y - comet.from.y) * tailProgress
+          x: entry.x + (exit.x - entry.x) * tailProgress,
+          y: entry.y + (exit.y - entry.y) * tailProgress
         };
         const size = .85 + comet.depth * .7;
         cometContext.save();
