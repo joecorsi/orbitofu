@@ -298,8 +298,16 @@
     return offset;
   }
 
+  function drawSunEmoji(context, x, y, fontSize) {
+    context.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    const offset = sunEmojiOffset(fontSize);
+    context.fillText("☀️", x - offset.x, y - offset.y);
+  }
+
   window.orbitofuProximity = {
     findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
-    hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground, sunEmojiOffset
+    hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground, sunEmojiOffset, drawSunEmoji
   };
 })();
