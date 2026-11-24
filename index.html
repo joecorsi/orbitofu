@@ -78,7 +78,7 @@
       .demo-graph.has-selection .demo-person:not(.selected):not(.sticky) { opacity: .4; }
       .demo-person.selected { z-index: 4; }
       .demo-person-dot { position: relative; box-sizing: border-box; flex: none; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: var(--person-color); transform: scale(var(--proximity-scale, 1)); }
-      .demo-person-dot.me-dot { display: grid; place-items: center; border: 0; background: transparent; font: normal 20px/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+      .demo-person-dot.me-dot { display: grid; place-items: center; border: 0; background: transparent; font: normal 16.5px/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
       .demo-person-dot.me-dot::before { content: "☀️"; position: absolute; left: 50%; top: 50%; width: 1em; height: 1em; line-height: 1; text-align: center; transform: translate(calc(-50% - var(--sun-offset-x, 0px)), calc(-50% - var(--sun-offset-y, 0px))); }
       .demo-person.sticky .demo-person-dot { background: rgba(0, 0, 0, .23); }
       .demo-person.sticky .demo-person-dot.me-dot { background: transparent; opacity: .23; }
@@ -851,12 +851,12 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./proximity.js?v=proximity-menu-overlap"></script>
+    <script src="./proximity.js?v=sun-centering"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
-    <script src="./guided-intro.js?v=orbitofu-me-star"></script>
+    <script src="./guided-intro.js?v=orbitofu-sun-centering"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
-        hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground } = window.orbitofuProximity;
+        hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground, sunEmojiOffset } = window.orbitofuProximity;
       const CONFIG_KEY = "orbitofu-supabase-config";
       const LEGACY_CONFIG_KEY = "people-map-supabase-config";
       const GOOGLE_SIGN_IN_KEY = "orbitofu-previous-google-sign-in";
@@ -3051,40 +3051,6 @@
       }
 
       const personDotRadius = 6;
-      const sunEmojiOffsets = new Map();
-      function sunEmojiOffset(fontSize) {
-        const measuredSize = Math.max(1, Math.round(fontSize * 2) / 2);
-        const ratio = window.devicePixelRatio || 1;
-        const cacheKey = `${measuredSize}:${ratio}`;
-        if (sunEmojiOffsets.has(cacheKey)) return sunEmojiOffsets.get(cacheKey);
-        const measureCanvas = document.createElement("canvas");
-        measureCanvas.width = Math.ceil(128 * ratio);
-        measureCanvas.height = Math.ceil(128 * ratio);
-        const measureContext = measureCanvas.getContext("2d", { willReadFrequently: true });
-        measureContext.setTransform(ratio, 0, 0, ratio, 0, 0);
-        measureContext.font = `${measuredSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
-        measureContext.textAlign = "center";
-        measureContext.textBaseline = "middle";
-        measureContext.fillText("☀️", 64, 64);
-        const { data, width, height } = measureContext.getImageData(0, 0, measureCanvas.width, measureCanvas.height);
-        let alphaTotal = 0, xTotal = 0, yTotal = 0;
-        for (let y = 0; y < height; y++) {
-          for (let x = 0; x < width; x++) {
-            const alpha = data[(y * width + x) * 4 + 3];
-            if (alpha === 0) continue;
-            alphaTotal += alpha;
-            xTotal += (x + .5) * alpha;
-            yTotal += (y + .5) * alpha;
-          }
-        }
-        const offset = alphaTotal === 0 ? { x: 0, y: 0 } : {
-          x: xTotal / alphaTotal / ratio - 64,
-          y: yTotal / alphaTotal / ratio - 64
-        };
-        sunEmojiOffsets.set(cacheKey, offset);
-        return offset;
-      }
-
       function chartBounds(width, height) {
         const inset = parseFloat(getComputedStyle(el.chart).getPropertyValue("--plot-inset"));
         return { left: inset, top: inset, right: width - inset, bottom: height - inset };
@@ -3240,7 +3206,7 @@
           dot.className = "demo-person-dot";
           dot.classList.toggle("me-dot", person.id === ME_ID);
           if (person.id === ME_ID) {
-            const offset = sunEmojiOffset(20);
+            const offset = sunEmojiOffset(16.5);
             dot.style.setProperty("--sun-offset-x", `${offset.x}px`);
             dot.style.setProperty("--sun-offset-y", `${offset.y}px`);
           }
