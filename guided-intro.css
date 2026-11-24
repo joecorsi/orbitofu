@@ -41,8 +41,8 @@
 #starter-try {
   box-sizing: border-box;
   margin-top: .4em;
-  border: 1px solid #005fcc;
-  border-radius: 3px;
+  border: 0;
+  border-radius: 5px;
   padding: 7px 11px;
   background: #0075ff;
   color: #fff;

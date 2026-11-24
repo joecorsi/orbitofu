@@ -31,7 +31,9 @@
       .masthead { justify-content: space-between; width: min(100%, var(--workspace-width, 100%)); margin-inline: auto; }
       .page:has(#workspace:not([hidden])) .masthead { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
       .masthead .brand { align-self: start; }
-      .brand a { color: inherit; text-decoration: none; }
+      .brand a { display: inline-block; color: inherit; cursor: pointer; text-decoration: none; }
+      .brand a * { cursor: pointer; }
+      .brand-mark { display: inline-block; transform: scale(1.2); transform-origin: center; }
       .account-bar:not([hidden]) { position: relative; justify-content: flex-end; min-width: 0; max-width: 100%; }
       .masthead .account-bar { justify-self: end; }
       .privacy-note { display: none; margin: 0; text-align: center; font-size: .85em; }
@@ -77,7 +79,7 @@
       .demo-person.selected { z-index: 4; }
       .demo-person-dot { position: relative; box-sizing: border-box; flex: none; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: var(--person-color); transform: scale(var(--proximity-scale, 1)); }
       .demo-person-dot.me-dot { display: grid; place-items: center; border: 0; background: transparent; font: normal 20px/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
-      .demo-person-dot.me-dot::before { content: "☀️"; }
+      .demo-person-dot.me-dot::before { content: "☀️"; position: absolute; left: 50%; top: 50%; width: 1em; height: 1em; line-height: 1; text-align: center; transform: translate(calc(-50% - var(--sun-offset-x, 0px)), calc(-50% - var(--sun-offset-y, 0px))); }
       .demo-person.sticky .demo-person-dot { background: rgba(0, 0, 0, .23); }
       .demo-person.sticky .demo-person-dot.me-dot { background: transparent; opacity: .23; }
       .demo-person.selected .demo-person-dot { transform: scale(1.5); }
@@ -309,7 +311,7 @@
       .graph-options-menu input { margin: 0; }
       .graph-options-separator { display: block; border-top: 1px solid #767676; margin: 4px 0; }
       #proximity-menu { max-width: calc(100vw - 20px); }
-      #proximity-menu .proximity-option-name { min-width: 0; max-width: 14rem; margin-left: auto; padding-left: 1em; overflow: hidden; text-align: right; text-overflow: ellipsis; }
+      #proximity-menu .proximity-option-name { min-width: 0; max-width: 14rem; margin-left: auto; padding-left: 1em; overflow: hidden; font-weight: bold; text-align: right; text-overflow: ellipsis; }
       #proximity-clear { display: block; width: 100%; border: 0; padding: 4px 6px; background: transparent; color: #000; font: 13.3333px Arial, sans-serif; text-align: left; cursor: pointer; }
       #proximity-clear:is(:hover, :focus-visible) { outline: none; background: var(--highlight-blue); color: #fff; }
       .proximity-toggle span { display: block; max-width: 150px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -381,12 +383,12 @@
         .relationship-toggle span { font-size: 11px; }
       }
     </style>
-    <link rel="stylesheet" href="./guided-intro.css">
+    <link rel="stylesheet" href="./guided-intro.css?v=try-button-corners">
   </head>
   <body>
     <main class="page">
       <header class="masthead">
-        <p class="brand"><a id="home-link" href="./"><span aria-hidden="true">🪐</span> Orbit of U</a></p>
+        <p class="brand"><a id="home-link" href="./"><span class="brand-mark" aria-hidden="true">🪐</span> Orbit of U</a></p>
         <p class="privacy-note">Your graphs are private to your account.</p>
         <p class="starter-privacy" id="starter-privacy" hidden>This draft is private to this browser session and all data is deleted unless saved.</p>
         <button class="starter-sign-in" id="starter-skip" type="button">Sign in</button>
@@ -540,8 +542,6 @@
                 </span>
                 <span class="shuffle-axis-controls">
                   <button type="button" id="demo-shuffle" title="Randomly choose two different traits">Shuffle axes</button>
-                  <button type="button" id="demo-shuffle-x" title="Randomly choose a different horizontal trait">Shuffle X</button>
-                  <button type="button" id="demo-shuffle-y" title="Randomly choose a different vertical trait">Shuffle Y</button>
                 </span>
                 <button type="button" id="demo-reset" hidden>Reset view</button>
               </span>
@@ -620,8 +620,6 @@
                       </span>
                       <span class="shuffle-axis-controls">
                         <button id="shuffle-axes" type="button" title="Randomly choose two different traits">Shuffle axes</button>
-                        <button id="shuffle-x" type="button" title="Randomly choose a different horizontal trait">Shuffle X</button>
-                        <button id="shuffle-y" type="button" title="Randomly choose a different vertical trait">Shuffle Y</button>
                       </span>
                       <button id="reset-zoom" type="button" hidden>Reset view</button>
                     </span>
@@ -861,7 +859,7 @@
       const ME_ID = "__me__";
       const RING_EXPANSION_DURATION = 650;
       const PLACEMENT_RING_INTERVAL = 1450;
-      const RELATIONSHIP_COLORS = { friend: "#009b4f", enemy: "#382110", lover: "#f25416", family: "#7441a6" };
+      const RELATIONSHIP_COLORS = { friend: "#2ad53b", enemy: "#372112", lover: "#fb1c8f", family: "#0b6af8" };
       const UNCLASSIFIED_COLOR = "#d3d3d3";
       const VISIBILITY_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/><path class="visibility-slash" d="M2 14 14 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
       const REMOVE_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
@@ -1013,8 +1011,6 @@
         graphFooterControls: document.querySelector("#workspace .graph-footer-controls"),
         graphOptionsToggle: document.getElementById("graph-options-toggle"),
         graphOptionsMenu: document.getElementById("graph-options-menu"),
-        shuffleX: document.getElementById("shuffle-x"),
-        shuffleY: document.getElementById("shuffle-y"),
         undo: document.getElementById("undo"),
         redo: document.getElementById("redo"),
         shuffleAxes: document.getElementById("shuffle-axes"),
@@ -2185,6 +2181,7 @@
           return option;
         });
         el.graphSelect.replaceChildren(...options);
+        el.graphSelect.size = Math.max(1, Math.min(9, options.length));
         graphDropdown.sync();
       }
 
@@ -2523,8 +2520,6 @@
         const visibleTraits = state.traits.filter(trait => !trait.hidden);
         [state.xTrait, state.yTrait] = resolveTraitAxes(state.traits, state.xTrait, state.yTrait);
         el.shuffleAxes.disabled = visibleTraits.length < 2;
-        el.shuffleX.disabled = visibleTraits.length < 2;
-        el.shuffleY.disabled = visibleTraits.length < 2;
         for (const [controls, selected] of [[el.xAxes, state.xTrait], [el.yAxes, state.yTrait]]) {
           controls.forEach(select => {
             const age = new Option("Age", AGE_AXIS, false, selected === AGE_AXIS);
@@ -3046,6 +3041,39 @@
       }
 
       const personDotRadius = 6;
+      const sunEmojiOffsets = new Map();
+      function sunEmojiOffset(fontSize) {
+        const measuredSize = Math.max(1, Math.round(fontSize * 2) / 2);
+        const ratio = window.devicePixelRatio || 1;
+        const cacheKey = `${measuredSize}:${ratio}`;
+        if (sunEmojiOffsets.has(cacheKey)) return sunEmojiOffsets.get(cacheKey);
+        const measureCanvas = document.createElement("canvas");
+        measureCanvas.width = Math.ceil(128 * ratio);
+        measureCanvas.height = Math.ceil(128 * ratio);
+        const measureContext = measureCanvas.getContext("2d", { willReadFrequently: true });
+        measureContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+        measureContext.font = `${measuredSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+        measureContext.textAlign = "center";
+        measureContext.textBaseline = "middle";
+        measureContext.fillText("☀️", 64, 64);
+        const { data, width, height } = measureContext.getImageData(0, 0, measureCanvas.width, measureCanvas.height);
+        let alphaTotal = 0, xTotal = 0, yTotal = 0;
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            const alpha = data[(y * width + x) * 4 + 3];
+            if (alpha === 0) continue;
+            alphaTotal += alpha;
+            xTotal += (x + .5) * alpha;
+            yTotal += (y + .5) * alpha;
+          }
+        }
+        const offset = alphaTotal === 0 ? { x: 0, y: 0 } : {
+          x: xTotal / alphaTotal / ratio - 64,
+          y: yTotal / alphaTotal / ratio - 64
+        };
+        sunEmojiOffsets.set(cacheKey, offset);
+        return offset;
+      }
 
       function chartBounds(width, height) {
         const inset = parseFloat(getComputedStyle(el.chart).getPropertyValue("--plot-inset"));
@@ -3201,6 +3229,11 @@
           const dot = document.createElement("span");
           dot.className = "demo-person-dot";
           dot.classList.toggle("me-dot", person.id === ME_ID);
+          if (person.id === ME_ID) {
+            const offset = sunEmojiOffset(20);
+            dot.style.setProperty("--sun-offset-x", `${offset.x}px`);
+            dot.style.setProperty("--sun-offset-y", `${offset.y}px`);
+          }
           dot.setAttribute("aria-hidden", "true");
           const name = document.createElement("span");
           name.className = "demo-person-name";
@@ -3562,17 +3595,6 @@
           axisTransition.begin(origins);
           draw();
         });
-        const shuffleDemoAxis = axis => {
-          if (traits.length < 2) return;
-          const { viewed } = bounds();
-          const origins = new Map(people.map(person => [person.id, pointFor(person, viewed)]));
-          if (axis === "xTrait") xTrait = shuffledTraitId(traits, xTrait);
-          else yTrait = shuffledTraitId(traits, yTrait);
-          axisTransition.begin(origins);
-          draw();
-        };
-        document.getElementById("demo-shuffle-x").addEventListener("click", () => shuffleDemoAxis("xTrait"));
-        document.getElementById("demo-shuffle-y").addEventListener("click", () => shuffleDemoAxis("yTrait"));
         reducedMotion.addEventListener("change", () => {
           if (reducedMotion.matches) axisTransition.stop();
           draw();
@@ -4475,10 +4497,12 @@
           if (person.id === ME_ID) {
             context.save();
             context.globalAlpha *= sticky ? .23 : 1;
-            context.font = `${personDotRadius * 2.75 * scale}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+            const fontSize = personDotRadius * 2.75 * scale;
+            context.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
             context.textAlign = "center";
             context.textBaseline = "middle";
-            context.fillText("☀️", x, y);
+            const offset = sunEmojiOffset(fontSize);
+            context.fillText("☀️", x - offset.x, y - offset.y);
             context.restore();
             return;
           }
@@ -4977,19 +5001,6 @@
         drawChart();
         scheduleSave();
       });
-
-      function shuffleChartAxis(axis) {
-        const traits = state.traits.filter(trait => !trait.hidden);
-        if (traits.length < 2) return;
-        const origins = chartAxisOrigins();
-        state[axis] = shuffledTraitId(traits, state[axis]);
-        renderAxes();
-        chartAxisTransition.begin(origins);
-        drawChart();
-        scheduleSave();
-      }
-      el.shuffleX.addEventListener("click", () => shuffleChartAxis("xTrait"));
-      el.shuffleY.addEventListener("click", () => shuffleChartAxis("yTrait"));
 
       el.openTraits.addEventListener("click", () => {
         el.traitsNotice.classList.remove("visible");
