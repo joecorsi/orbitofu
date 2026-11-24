@@ -4303,7 +4303,7 @@
         cometTimer = setTimeout(() => {
           cometTimer = null;
           startComet();
-        }, 10000 + Math.random() * 5000);
+        }, 8000 + Math.random() * 4000);
       }
 
       function startComet() {
@@ -4329,14 +4329,15 @@
           from: edgePoint(startEdge),
           to: edgePoint(endEdge),
           started: performance.now(),
-          duration: 1500 + depth * 850,
+          duration: 2200 + depth * 900,
           depth,
           tailLength: 55 + depth * 55,
-          sparkles: Array.from({ length: 9 }, () => ({
-            behind: 8 + Math.random() * (45 + depth * 45),
-            offset: (Math.random() - .5) * (3 + depth * 5),
-            radius: .45 + Math.random() * (.55 + depth * .5),
-            phase: Math.random() * Math.PI * 2
+          sparkles: Array.from({ length: 16 }, () => ({
+            behind: 6 + Math.random() * (55 + depth * 45),
+            offset: (Math.random() - .5) * (4 + depth * 6),
+            radius: .55 + Math.random() * (.75 + depth * .5),
+            phase: Math.random() * Math.PI * 2,
+            star: Math.random() < .4
           }))
         };
         cometFrame = requestAnimationFrame(drawComet);
@@ -4370,11 +4371,17 @@
         const uy = dy / distance;
         const px = -uy;
         const py = ux;
-        const head = { x: comet.from.x + dx * progress, y: comet.from.y + dy * progress };
-        const tailProgress = Math.max(0, progress - comet.tailLength / distance);
+        const exitDistance = distance + comet.tailLength + 8;
+        const exit = {
+          x: comet.from.x + ux * exitDistance,
+          y: comet.from.y + uy * exitDistance
+        };
+        const head = { x: comet.from.x + (exit.x - comet.from.x) * progress, y: comet.from.y + (exit.y - comet.from.y) * progress };
+        const travelDistance = exitDistance;
+        const tailProgress = Math.max(0, progress - comet.tailLength / travelDistance);
         const tail = {
-          x: comet.from.x + dx * tailProgress,
-          y: comet.from.y + dy * tailProgress
+          x: comet.from.x + (exit.x - comet.from.x) * tailProgress,
+          y: comet.from.y + (exit.y - comet.from.y) * tailProgress
         };
         const size = .85 + comet.depth * .7;
         cometContext.save();
@@ -4390,9 +4397,9 @@
         cometContext.lineTo(head.x, head.y);
         cometContext.stroke();
         for (const sparkle of comet.sparkles) {
-          if (sparkle.behind > progress * distance) continue;
-          const twinkle = .2 + .65 * (Math.sin(now * .009 + sparkle.phase) ** 2);
-          const along = Math.max(0, progress * distance - sparkle.behind);
+          if (sparkle.behind > progress * travelDistance) continue;
+          const twinkle = .3 + .7 * (Math.sin(now * .009 + sparkle.phase) ** 2);
+          const along = Math.max(0, progress * travelDistance - sparkle.behind);
           const x = comet.from.x + ux * along + px * sparkle.offset;
           const y = comet.from.y + uy * along + py * sparkle.offset;
           cometContext.globalAlpha = twinkle;
@@ -4400,6 +4407,18 @@
           cometContext.beginPath();
           cometContext.arc(x, y, sparkle.radius, 0, Math.PI * 2);
           cometContext.fill();
+          if (sparkle.star) {
+            const ray = sparkle.radius * (2.2 + .8 * twinkle);
+            cometContext.globalAlpha = twinkle * .85;
+            cometContext.strokeStyle = "#000";
+            cometContext.lineWidth = .45 + comet.depth * .35;
+            cometContext.beginPath();
+            cometContext.moveTo(x - ray, y);
+            cometContext.lineTo(x + ray, y);
+            cometContext.moveTo(x, y - ray);
+            cometContext.lineTo(x, y + ray);
+            cometContext.stroke();
+          }
         }
         cometContext.globalAlpha = 1;
         cometContext.fillStyle = "#000";
