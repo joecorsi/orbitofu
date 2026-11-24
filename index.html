@@ -4339,12 +4339,14 @@
           duration: 2200 + depth * 900,
           depth,
           tailLength: 55 + depth * 55,
-          sparkles: Array.from({ length: 22 }, () => ({
-            behind: 3 + Math.random() * (12 + depth * 18),
-            offset: (Math.random() - .5) * (5 + depth * 7),
-            radius: .7 + Math.random() * (.75 + depth * .6),
+          sparkles: Array.from({ length: 8 }, (_, index) => ({
+            behind: index < 5
+              ? 3 + Math.random() * (12 + depth * 8)
+              : 22 + Math.random() * (8 + depth * 22),
+            offset: (Math.random() - .5) * (3 + depth * 5),
+            radius: .45 + Math.random() * (.55 + depth * .4),
             phase: Math.random() * Math.PI * 2,
-            star: Math.random() < .55
+            star: Math.random() < .25
           }))
         };
         cometFrame = requestAnimationFrame(drawComet);
@@ -4410,17 +4412,17 @@
         cometContext.stroke();
         for (const sparkle of comet.sparkles) {
           if (sparkle.behind > progress * travelDistance) continue;
-          const twinkle = .3 + .7 * (Math.sin(now * .009 + sparkle.phase) ** 2);
-          const along = Math.max(0, progress * travelDistance - sparkle.behind);
-          const x = comet.from.x + ux * along + px * sparkle.offset;
-          const y = comet.from.y + uy * along + py * sparkle.offset;
+          if (sparkle.behind > comet.tailLength) continue;
+          const twinkle = .2 + .65 * (Math.sin(now * .009 + sparkle.phase) ** 2);
+          const x = head.x - ux * sparkle.behind + px * sparkle.offset;
+          const y = head.y - uy * sparkle.behind + py * sparkle.offset;
           cometContext.globalAlpha = twinkle;
           cometContext.fillStyle = "#000";
           cometContext.beginPath();
           cometContext.arc(x, y, sparkle.radius, 0, Math.PI * 2);
           cometContext.fill();
           if (sparkle.star) {
-            const ray = sparkle.radius * (2.6 + 1.5 * twinkle);
+            const ray = sparkle.radius * (2.2 + .8 * twinkle);
             cometContext.globalAlpha = twinkle * .85;
             cometContext.strokeStyle = "#000";
             cometContext.lineWidth = .45 + comet.depth * .35;
