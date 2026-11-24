@@ -602,6 +602,7 @@
                         <span class="graph-options-menu" id="graph-options-menu" role="group" aria-label="Graph options" hidden>
                           <label><input type="checkbox" id="relationship-colors"> Color by relationship</label>
                           <label><input type="checkbox" id="show-names"> Names</label>
+                          <label><input type="checkbox" id="show-comets" checked> Comets</label>
                           <span class="graph-options-separator" role="separator"></span>
                           <label><input type="checkbox" data-graph-relationship="friend"> Friend</label>
                           <label><input type="checkbox" data-graph-relationship="family"> Family</label>
@@ -1025,6 +1026,7 @@
         proximityClear: document.getElementById("proximity-clear"),
         relationshipColors: document.getElementById("relationship-colors"),
         showNames: document.getElementById("show-names"),
+        showComets: document.getElementById("show-comets"),
         graphRelationships: document.querySelectorAll("[data-graph-relationship]"),
         meRow: document.getElementById("me-row"),
         peopleSearch: document.getElementById("people-search"),
@@ -1133,6 +1135,7 @@
           colorByRelationship: true,
           relationshipColorDefaulted: true,
           hideNames: false,
+          cometsEnabled: true,
           hiddenRelationships: [],
           proximityModes: []
         };
@@ -1367,6 +1370,7 @@
           (value.relationshipColorDefaulted === undefined || typeof value.relationshipColorDefaulted === "boolean") &&
           (value.defaultTraitsExpanded === undefined || typeof value.defaultTraitsExpanded === "boolean") &&
           (value.hideNames === undefined || typeof value.hideNames === "boolean") &&
+          (value.cometsEnabled === undefined || typeof value.cometsEnabled === "boolean") &&
           (value.hiddenRelationships === undefined || (Array.isArray(value.hiddenRelationships) &&
             value.hiddenRelationships.every(relationship => typeof relationship === "string" && Object.hasOwn(RELATIONSHIP_COLORS, relationship)))) &&
           (value.proximityModes === undefined || (Array.isArray(value.proximityModes) &&
@@ -1438,6 +1442,7 @@
           yTrait,
           colorByRelationship: value.relationshipColorDefaulted ? (value.colorByRelationship ?? true) : true,
           hideNames: value.hideNames ?? false,
+          cometsEnabled: value.cometsEnabled ?? true,
           hiddenRelationships: value.hiddenRelationships ? [...value.hiddenRelationships] : [],
           proximityModes: value.proximityModes ? [...value.proximityModes] : []
         };
@@ -4295,18 +4300,20 @@
       let cometTimer = null;
       let cometFrame = null;
       let activeComet = null;
+      let cometsEnabled = true;
       const cometCanvas = document.getElementById("chart-comet");
       const cometContext = cometCanvas.getContext("2d");
 
       function scheduleComet() {
-        if (reducedMotion.matches || cometTimer !== null) return;
+        if (!cometsEnabled || reducedMotion.matches || cometTimer !== null) return;
         cometTimer = setTimeout(() => {
           cometTimer = null;
           startComet();
-        }, 8000 + Math.random() * 4000);
+        }, 5000 + Math.random() * 3000);
       }
 
       function startComet() {
+        if (!cometsEnabled) return;
         const bounds = el.chart.getBoundingClientRect();
         if (!bounds.width || !bounds.height) {
           scheduleComet();
@@ -4332,12 +4339,12 @@
           duration: 2200 + depth * 900,
           depth,
           tailLength: 55 + depth * 55,
-          sparkles: Array.from({ length: 16 }, () => ({
-            behind: 6 + Math.random() * (55 + depth * 45),
-            offset: (Math.random() - .5) * (4 + depth * 6),
-            radius: .55 + Math.random() * (.75 + depth * .5),
+          sparkles: Array.from({ length: 22 }, () => ({
+            behind: 3 + Math.random() * (12 + depth * 18),
+            offset: (Math.random() - .5) * (5 + depth * 7),
+            radius: .7 + Math.random() * (.75 + depth * .6),
             phase: Math.random() * Math.PI * 2,
-            star: Math.random() < .4
+            star: Math.random() < .55
           }))
         };
         cometFrame = requestAnimationFrame(drawComet);
@@ -4413,7 +4420,7 @@
           cometContext.arc(x, y, sparkle.radius, 0, Math.PI * 2);
           cometContext.fill();
           if (sparkle.star) {
-            const ray = sparkle.radius * (2.2 + .8 * twinkle);
+            const ray = sparkle.radius * (2.6 + 1.5 * twinkle);
             cometContext.globalAlpha = twinkle * .85;
             cometContext.strokeStyle = "#000";
             cometContext.lineWidth = .45 + comet.depth * .35;
@@ -4439,6 +4446,25 @@
           scheduleComet();
         }
       }
+
+      function setCometsEnabled(enabled) {
+        cometsEnabled = enabled;
+        if (!enabled) {
+          if (cometTimer !== null) clearTimeout(cometTimer);
+          if (cometFrame !== null) cancelAnimationFrame(cometFrame);
+          cometTimer = cometFrame = null;
+          activeComet = null;
+          cometContext.clearRect(0, 0, cometCanvas.width, cometCanvas.height);
+        } else {
+          scheduleComet();
+        }
+      }
+
+      el.showComets.addEventListener("change", () => {
+        state.cometsEnabled = el.showComets.checked;
+        setCometsEnabled(state.cometsEnabled);
+        scheduleSave();
+      });
 
       reducedMotion.addEventListener("change", () => {
         if (reducedMotion.matches) {
@@ -4807,6 +4833,8 @@
         chartAxisTransition.stop();
         el.relationshipColors.checked = state.colorByRelationship;
         el.showNames.checked = !state.hideNames;
+        el.showComets.checked = state.cometsEnabled;
+        setCometsEnabled(state.cometsEnabled);
         let proximityChanged = false;
         for (const [mode, checkbox] of Object.entries(proximityChecks)) {
           const checked = state.proximityModes.includes(mode);
