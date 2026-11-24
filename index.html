@@ -81,7 +81,8 @@
       .demo-person-dot.me-dot { display: grid; place-items: center; border: 0; background: transparent; font: normal 15px/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
       .demo-person-dot.me-dot::before { content: "☀️"; position: absolute; left: 50%; top: 50%; width: 1em; height: 1em; line-height: 1; text-align: center; transform: translate(calc(-50% - var(--sun-offset-x, 0px)), calc(-50% - var(--sun-offset-y, 0px))); }
       .demo-person.sticky .demo-person-dot { background: rgba(0, 0, 0, .23); }
-      .demo-person.sticky .demo-person-dot.me-dot { background: transparent; opacity: .23; }
+      .demo-person.sticky .demo-person-dot.me-dot { display: block; border: 2px solid #fff; background: rgba(0, 0, 0, .23); opacity: 1; }
+      .demo-person.sticky .demo-person-dot.me-dot::before { content: none; }
       .demo-person.selected .demo-person-dot { transform: scale(1.5); }
       .demo-person.selected .demo-person-name { position: absolute; top: -4px; left: 7px; padding: 2px 6px; border: 1px solid currentColor; border-radius: 3px; background: #fff; font: bold 16px serif; line-height: 18px; transform: translate(-50%, -100%); }
       .demo-person.selected.label-left .demo-person-name { right: 7px; left: auto; transform: translate(50%, -100%); }
@@ -4295,7 +4296,7 @@
             if (star.ray) {
               const ray = star.radius;
               target.globalAlpha = star.opacity * .8;
-              target.lineWidth = .25 + star.radius * .12;
+              target.lineWidth = .7 + star.radius * .22;
               target.beginPath();
               target.moveTo(x - ray, y);
               target.lineTo(x + ray, y);
@@ -4735,9 +4736,8 @@
           context.strokeStyle = "#fff";
           const scale = index === selectedIndex || (hoveredPersonId !== null && index === hoveredIndex)
             ? 1.5 : Math.max(1, ...pulses.filter(pulse => pulse.person === person).map(pulse => pulse.scale));
-          if (person.id === ME_ID) {
+          if (person.id === ME_ID && !sticky) {
             context.save();
-            context.globalAlpha *= sticky ? .23 : 1;
             const fontSize = personDotRadius * 2.75 * scale;
             context.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
             context.textAlign = "center";
