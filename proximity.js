@@ -264,8 +264,42 @@
     return { update };
   }
 
+  const sunEmojiOffsets = new Map();
+  function sunEmojiOffset(fontSize) {
+    const measuredSize = Math.max(1, Math.round(fontSize * 2) / 2);
+    const ratio = window.devicePixelRatio || 1;
+    const cacheKey = `${measuredSize}:${ratio}`;
+    if (sunEmojiOffsets.has(cacheKey)) return sunEmojiOffsets.get(cacheKey);
+    const measureCanvas = document.createElement("canvas");
+    measureCanvas.width = Math.ceil(128 * ratio);
+    measureCanvas.height = Math.ceil(128 * ratio);
+    const measureContext = measureCanvas.getContext("2d", { willReadFrequently: true });
+    measureContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+    measureContext.font = `${measuredSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+    measureContext.textAlign = "center";
+    measureContext.textBaseline = "middle";
+    measureContext.fillText("☀️", 64, 64);
+    const { data, width, height } = measureContext.getImageData(0, 0, measureCanvas.width, measureCanvas.height);
+    let alphaTotal = 0, xTotal = 0, yTotal = 0;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const alpha = data[(y * width + x) * 4 + 3];
+        if (alpha === 0) continue;
+        alphaTotal += alpha;
+        xTotal += (x + .5) * alpha;
+        yTotal += (y + .5) * alpha;
+      }
+    }
+    const offset = alphaTotal === 0 ? { x: 0, y: 0 } : {
+      x: xTotal / alphaTotal / ratio - 64,
+      y: yTotal / alphaTotal / ratio - 64
+    };
+    sunEmojiOffsets.set(cacheKey, offset);
+    return offset;
+  }
+
   window.orbitofuProximity = {
     findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
-    hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground
+    hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground, sunEmojiOffset
   };
 })();
