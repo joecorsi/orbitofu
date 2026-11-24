@@ -4278,7 +4278,7 @@
           x: Math.random(),
           y: Math.random(),
           radius: 1 + Math.random() * 1.7,
-          opacity: .22 + Math.random() * .28,
+          opacity: .4 + Math.random() * .3,
           ray: Math.random() < .72
         }));
 
@@ -4296,7 +4296,7 @@
             if (star.ray) {
               const ray = star.radius;
               target.globalAlpha = star.opacity * .8;
-              target.lineWidth = .7 + star.radius * .22;
+              target.lineWidth = .85 + star.radius * .25;
               target.beginPath();
               target.moveTo(x - ray, y);
               target.lineTo(x + ray, y);
@@ -4727,6 +4727,7 @@
         const foregroundIndex = plotted.findIndex(({ person }) => person.id === foregroundPersonId);
         const focusedIndex = plotted.findIndex(({ person }) => person.id === focusedNamePersonId);
         const selectedIndex = plotted.findIndex(({ person }) => person.id === selectedPersonId);
+        const stickyMeIndex = plotted.findIndex(({ person, sticky }) => person.id === ME_ID && sticky);
         const drawDot = index => {
           const { person, point, sticky } = plotted[index];
           const { x, y } = point;
@@ -4839,6 +4840,7 @@
           drawHighlight(selectedIndex);
         }
         if (hoveredIndex !== -1 && hoveredIndex !== selectedIndex && hoveredPersonId !== null) drawHighlight(hoveredIndex);
+        if (stickyMeIndex !== -1) drawDot(stickyMeIndex);
         context.globalAlpha = 1;
         if (!state.hideNames) {
           if (selectedIndex !== -1 && labels[selectedIndex].nameBox) drawLabel(selectedIndex, true, labelContext);
