@@ -369,9 +369,10 @@
       .mobile-notice:not([hidden]) { position: fixed; inset: 15px; z-index: 10000; display: grid; box-sizing: border-box; place-items: center; border: 1px solid rgba(0, 0, 0, .15); border-radius: 8px; padding: 24px; background: #fff; color: #000; text-align: center; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
       .mobile-sky { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none; }
       .mobile-notice-content { position: relative; z-index: 1; width: min(100%, 28rem); }
+      .mobile-notice-copy { box-sizing: border-box; max-width: 100%; margin-inline: auto; }
       .mobile-notice-mark { display: block; margin-bottom: .5rem; font-size: 2.5rem; }
-      .mobile-notice h1 { margin: 0 0 .65rem; font-size: min(1.7rem, 4.4vw); white-space: nowrap; }
-      .mobile-notice p { margin: 0; line-height: 1.5; }
+      .mobile-notice h1 { width: max-content; max-width: 100%; margin: 0 auto .65rem; font-size: min(1.7rem, 4.4vw); white-space: nowrap; }
+      .mobile-notice p { width: 100%; margin: 0; line-height: 1.5; text-align: justify; }
       @media (max-width: 760px) {
         .layout { grid-template-columns: 1fr; grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
       }
@@ -400,8 +401,10 @@
       <canvas class="mobile-sky" id="mobile-sky" aria-hidden="true"></canvas>
       <div class="mobile-notice-content">
         <span class="mobile-notice-mark" aria-hidden="true">🪐</span>
-        <h1 id="mobile-notice-title">Please use Orbit of U on a desktop</h1>
-        <p>The graph and its controls work best on a desktop or laptop. Mobile screens are not fully supported yet.</p>
+        <div class="mobile-notice-copy" id="mobile-notice-copy">
+          <h1 id="mobile-notice-title">Please use Orbit of U on a desktop</h1>
+          <p>The graph and its controls work best on a desktop or laptop. Mobile screens are not fully supported yet.</p>
+        </div>
       </div>
     </section>
     <main class="page">
@@ -5732,6 +5735,20 @@
       let mobileBlocked = false;
       let appInitialized = false;
       let mobileSkyController = null;
+      const mobileNoticeCopy = document.getElementById("mobile-notice-copy");
+      const mobileNoticeTitle = document.getElementById("mobile-notice-title");
+
+      function fitMobileNoticeCopy() {
+        if (!mobileBlocked) {
+          mobileNoticeCopy.style.width = "";
+          return;
+        }
+        const width = `${mobileNoticeTitle.getBoundingClientRect().width}px`;
+        if (mobileNoticeCopy.style.width !== width) mobileNoticeCopy.style.width = width;
+      }
+
+      const mobileNoticeTitleObserver = new ResizeObserver(fitMobileNoticeCopy);
+      mobileNoticeTitleObserver.observe(mobileNoticeTitle);
 
       function updateMobileNotice() {
         mobileBlocked = mobileDevice || mobileViewport.matches;
@@ -5739,6 +5756,7 @@
         document.querySelector(".page").inert = mobileBlocked;
         mobileSkyController?.setEnabled(mobileBlocked);
         if (mobileBlocked) mobileNotice.focus();
+        fitMobileNoticeCopy();
       }
 
       updateMobileNotice();
@@ -5747,7 +5765,7 @@
         () => 1000 + Math.random() * 1000,
         () => {
           const canvasBounds = document.getElementById("mobile-sky").getBoundingClientRect();
-          const contentBounds = document.querySelector(".mobile-notice-content").getBoundingClientRect();
+          const contentBounds = document.getElementById("mobile-notice-copy").getBoundingClientRect();
           const clearSpace = 10;
           return {
             left: contentBounds.left - canvasBounds.left - clearSpace,
