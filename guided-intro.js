@@ -10,7 +10,7 @@
   const ROLES = ["friend", "family", "choice", "me"];
   const COLORS = ["#e83c9b", "#35a84d", "#ed8615", "#145c92"];
   const { findProximity, setProximityLabel, setupProximityMenu, drawProximityCanvas, setupProximityHover,
-    updateProximityMenuBackground, sunEmojiOffset } = window.orbitofuProximity;
+    updateProximityMenuBackground, drawSunEmoji } = window.orbitofuProximity;
   const $ = id => document.getElementById(id);
   const ui = {
     flow: $("starter-flow"),
@@ -42,6 +42,7 @@
     authEmail: $("auth-email"),
     demo: $("demo-column"),
     graph: $("starter-graph"),
+    sunCanvas: $("starter-graph").querySelector(".demo-sun-layer"),
     center: $("starter-center"),
     footer: $("starter-footer"),
     reset: $("starter-reset"),
@@ -54,6 +55,7 @@
     proximityLabel: $("starter-proximity-label")
   };
   const proximityContext = ui.proximityCanvas.getContext("2d");
+  const sunContext = ui.sunCanvas.getContext("2d");
   const proximityControl = setupProximityMenu(ui.proximityToggle, ui.proximityMenu, ui.proximityClosest, ui.proximityFurthest, updateDots);
   const proximityHover = setupProximityHover(ui.graph, ui.proximityLabel, updateDots, () => Boolean(drag));
 
@@ -61,6 +63,20 @@
     version: 2, answers: [], step: 0, phase: "questions", ready: false, updatedAt: Date.now()
   });
   const clamp = value => Math.max(0, Math.min(100, Math.round(value)));
+  function paintGuidedSun(point, scale = 1) {
+    const width = ui.graph.clientWidth;
+    const height = ui.graph.clientHeight;
+    const ratio = window.devicePixelRatio || 1;
+    ui.sunCanvas.width = Math.round(width * ratio);
+    ui.sunCanvas.height = Math.round(height * ratio);
+    sunContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+    sunContext.clearRect(0, 0, width, height);
+    if (point) {
+      sunContext.save();
+      drawSunEmoji(sunContext, point.x, point.y, 16.5 * scale);
+      sunContext.restore();
+    }
+  }
   const validScore = value => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100;
 
   function validateDraft(value) {
@@ -282,6 +298,10 @@
       updateDots();
     });
     ui.graph.append(button);
+    if (index === 3) {
+      button.addEventListener("pointerenter", updateDots);
+      button.addEventListener("pointerleave", updateDots);
+    }
     nodes.set(index, button);
   }
 
@@ -324,7 +344,10 @@
     if (!reveal) proximityControl.close();
     ui.proximityCanvas.hidden = !reveal;
     const { size, inset, span, viewedSpan, left, top } = graphBounds();
-    if (!size || !span) return;
+    if (!size || !span) {
+      paintGuidedSun(null);
+      return;
+    }
     const midX = left + viewedSpan / 2;
     const midY = top + viewedSpan / 2;
     ui.graph.style.setProperty("--demo-axis-x", `${Math.max(20, Math.min(size - 20, midX))}px`);
@@ -349,13 +372,7 @@
       button.classList.toggle("selected", index === selectedIndex);
       button.classList.toggle("sticky", x !== actualX || y !== actualY);
       const dot = button.querySelector(".demo-person-dot");
-      const isMe = person.relationship === "me";
-      dot.classList.toggle("me-dot", isMe);
-      if (isMe) {
-        const offset = sunEmojiOffset(15);
-        dot.style.setProperty("--sun-offset-x", `${offset.x}px`);
-        dot.style.setProperty("--sun-offset-y", `${offset.y}px`);
-      }
+      dot.classList.toggle("me-dot", person.relationship === "me");
       button.querySelector(".demo-person-name").textContent = person.name;
       button.setAttribute("aria-label",
         person.name + ", " + (person.relationship === "enemy" ? "foe" : person.relationship) +
@@ -382,6 +399,14 @@
       button.querySelector(".demo-person-dot").style.setProperty("--proximity-scale",
         index !== selectedIndex ? Math.max(1, ...pulses.filter(pulse => pulse.index === index).map(pulse => pulse.scale)) : 1);
     }
+    const meIndex = me ? draft.answers.indexOf(me) : -1;
+    const meButton = meIndex >= 0 ? nodes.get(meIndex) : null;
+    const mePoint = reveal && meButton && !meButton.hidden && !meButton.classList.contains("sticky")
+      ? displayedPoint(me) : null;
+    const meDot = meButton?.querySelector(".demo-person-dot");
+    const meScale = meButton && (meIndex === selectedIndex || meButton.matches(":hover"))
+      ? 1.5 : Number(meDot?.style.getPropertyValue("--proximity-scale")) || 1;
+    paintGuidedSun(mePoint, meScale);
   }
 
   ui.graph.addEventListener("wheel", event => {

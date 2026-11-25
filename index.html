@@ -78,8 +78,9 @@
       .demo-graph.has-selection .demo-person:not(.selected):not(.sticky) { opacity: .4; }
       .demo-person.selected { z-index: 4; }
       .demo-person-dot { position: relative; box-sizing: border-box; flex: none; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: var(--person-color); transform: scale(var(--proximity-scale, 1)); }
-      .demo-person-dot.me-dot { display: grid; place-items: center; border: 0; background: transparent; font: normal 15px/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
-      .demo-person-dot.me-dot::before { content: "☀️"; position: absolute; left: 50%; top: 50%; width: 1em; height: 1em; line-height: 1; text-align: center; transform: translate(calc(-50% - var(--sun-offset-x, 0px)), calc(-50% - var(--sun-offset-y, 0px))); }
+      .demo-person-dot.me-dot { display: block; border: 0; background: transparent; }
+      .demo-person-dot.me-dot::before { content: none; }
+      .demo-sun-layer { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; }
       .demo-person.sticky .demo-person-dot { background: rgba(0, 0, 0, .23); }
       .demo-person.sticky .demo-person-dot.me-dot { display: block; border: 2px solid #fff; background: rgba(0, 0, 0, .23); opacity: 1; }
       .demo-person.sticky .demo-person-dot.me-dot::before { content: none; }
@@ -498,6 +499,7 @@
               <span class="demo-axis-label demo-y-high">Malevolent</span>
               <canvas class="demo-proximity" id="starter-proximity-line" aria-hidden="true" hidden></canvas>
               <canvas class="demo-comet" aria-hidden="true"></canvas>
+              <canvas class="demo-sun-layer" aria-hidden="true"></canvas>
               <span class="demo-proximity-label" id="starter-proximity-label" aria-hidden="true" hidden></span>
               <span class="chart-info">
                 <button class="chart-info-button" type="button" aria-label="Graph controls information" aria-describedby="starter-info-tooltip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="currentColor"/></svg></button>
@@ -526,6 +528,7 @@
               <span class="demo-axis-label demo-y-high">Malevolent</span>
               <canvas class="demo-proximity" id="demo-proximity-line" aria-hidden="true"></canvas>
               <canvas class="demo-comet" aria-hidden="true"></canvas>
+              <canvas class="demo-sun-layer" aria-hidden="true"></canvas>
               <span class="demo-proximity-label" id="demo-proximity-label" aria-hidden="true" hidden></span>
               <span class="chart-info">
                 <button class="chart-info-button" type="button" aria-label="Graph controls information" aria-describedby="demo-info-tooltip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="currentColor"/></svg></button>
@@ -864,12 +867,12 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./proximity.js?v=sun-centering"></script>
+    <script src="./proximity.js?v=sun-canvas-render"></script>
     <!-- Update this version when guided-intro.js changes to avoid stale cached behavior. -->
-    <script src="./guided-intro.js?v=orbitofu-sun-stars"></script>
+    <script src="./guided-intro.js?v=orbitofu-sun-canvas"></script>
     <script>
       const { findProximity, setProximityLabel, setupProximityMenu, drawProximityLine, drawProximityCanvas,
-        hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground, sunEmojiOffset } = window.orbitofuProximity;
+        hitProximityLine, modeLabels, setupProximityHover, updateProximityMenuBackground, drawSunEmoji } = window.orbitofuProximity;
       const CONFIG_KEY = "orbitofu-supabase-config";
       const LEGACY_CONFIG_KEY = "people-map-supabase-config";
       const GOOGLE_SIGN_IN_KEY = "orbitofu-previous-google-sign-in";
@@ -3157,6 +3160,8 @@
         const proximityFurthest = document.getElementById("demo-proximity-furthest");
         const proximityCanvas = document.getElementById("demo-proximity-line");
         const proximityContext = proximityCanvas.getContext("2d");
+        const sunCanvas = frame.querySelector(".demo-sun-layer");
+        const sunContext = sunCanvas.getContext("2d");
         const proximityControl = setupProximityMenu(proximityToggle, proximityMenu, proximityClosest, proximityFurthest, draw);
         const proximityHover = setupProximityHover(frame, document.getElementById("demo-proximity-label"), draw, () => Boolean(drag));
         const optionsToggle = document.getElementById("demo-options-toggle");
@@ -3218,17 +3223,16 @@
           const dot = document.createElement("span");
           dot.className = "demo-person-dot";
           dot.classList.toggle("me-dot", person.id === ME_ID);
-          if (person.id === ME_ID) {
-            const offset = sunEmojiOffset(15);
-            dot.style.setProperty("--sun-offset-x", `${offset.x}px`);
-            dot.style.setProperty("--sun-offset-y", `${offset.y}px`);
-          }
           dot.setAttribute("aria-hidden", "true");
           const name = document.createElement("span");
           name.className = "demo-person-name";
           name.textContent = person.name;
           button.append(dot, name);
           frame.append(button);
+          if (person.id === ME_ID) {
+            button.addEventListener("pointerenter", draw);
+            button.addEventListener("pointerleave", draw);
+          }
           return button;
         });
         const bounds = () => {
@@ -3247,6 +3251,20 @@
           return { x: event.clientX - rect.left - frame.clientLeft, y: event.clientY - rect.top - frame.clientTop };
         };
         const clamp = value => Math.max(0, Math.min(100, Math.round(value)));
+        const paintDemoSun = (point, scale = 1) => {
+          const width = frame.clientWidth;
+          const height = frame.clientHeight;
+          const ratio = window.devicePixelRatio || 1;
+          sunCanvas.width = Math.round(width * ratio);
+          sunCanvas.height = Math.round(height * ratio);
+          sunContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+          sunContext.clearRect(0, 0, width, height);
+          if (point) {
+            sunContext.save();
+            drawSunEmoji(sunContext, point.x, point.y, personDotRadius * 2.75 * scale);
+            sunContext.restore();
+          }
+        };
         function closeGroup(restoreFocus = false) {
           if (!openGroup) return;
           const button = groupButtons.get(openGroup);
@@ -3442,6 +3460,12 @@
             button.querySelector(".chart-group-dot").style.transform =
               !button.classList.contains("group-selected") && pulse !== 1 ? `scale(${pulse})` : "";
           }
+          const meEntry = plotted.find(entry => entry.person.id === ME_ID);
+          const meButton = meEntry && buttons[meEntry.index];
+          const mePoint = meEntry && !meEntry.sticky && !meButton.hidden ? meEntry.point : null;
+          const meScale = meButton && (selected === meEntry.index || meButton.matches(":hover"))
+            ? 1.5 : Number(meButton?.querySelector(".demo-person-dot").style.getPropertyValue("--proximity-scale")) || 1;
+          paintDemoSun(mePoint, meScale);
           reset.hidden = view.zoom === 1;
         }
         frame.addEventListener("wheel", event => {
@@ -4290,7 +4314,7 @@
           x: Math.random(),
           y: Math.random(),
           radius: 1 + Math.random() * 1.7,
-          opacity: .22 + Math.random() * .28,
+          opacity: .4 + Math.random() * .3,
           ray: Math.random() < .72
         }));
 
@@ -4308,7 +4332,7 @@
             if (star.ray) {
               const ray = star.radius;
               target.globalAlpha = star.opacity * .8;
-              target.lineWidth = .7 + star.radius * .22;
+              target.lineWidth = .85 + star.radius * .25;
               target.beginPath();
               target.moveTo(x - ray, y);
               target.lineTo(x + ray, y);
@@ -4739,6 +4763,7 @@
         const foregroundIndex = plotted.findIndex(({ person }) => person.id === foregroundPersonId);
         const focusedIndex = plotted.findIndex(({ person }) => person.id === focusedNamePersonId);
         const selectedIndex = plotted.findIndex(({ person }) => person.id === selectedPersonId);
+        const stickyMeIndex = plotted.findIndex(({ person, sticky }) => person.id === ME_ID && sticky);
         const drawDot = index => {
           const { person, point, sticky } = plotted[index];
           const { x, y } = point;
@@ -4754,8 +4779,7 @@
             context.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
             context.textAlign = "center";
             context.textBaseline = "middle";
-            const offset = sunEmojiOffset(fontSize);
-            context.fillText("☀️", x - offset.x, y - offset.y);
+            drawSunEmoji(context, x, y, fontSize);
             context.restore();
             return;
           }
@@ -4851,6 +4875,7 @@
           drawHighlight(selectedIndex);
         }
         if (hoveredIndex !== -1 && hoveredIndex !== selectedIndex && hoveredPersonId !== null) drawHighlight(hoveredIndex);
+        if (stickyMeIndex !== -1) drawDot(stickyMeIndex);
         context.globalAlpha = 1;
         if (!state.hideNames) {
           if (selectedIndex !== -1 && labels[selectedIndex].nameBox) drawLabel(selectedIndex, true, labelContext);
