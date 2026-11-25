@@ -365,6 +365,11 @@
       #color-title { padding-right: calc(52px + 1em); }
       .color-preview { position: absolute; top: calc(1em + 20px); right: calc(1em + 20px); width: 52px; height: 52px; border-radius: 50%; }
       .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+      .mobile-notice:not([hidden]) { position: fixed; inset: 0; z-index: 10000; display: grid; box-sizing: border-box; place-items: center; padding: 24px; background: #fff; color: #000; text-align: center; }
+      .mobile-notice-content { width: min(100%, 28rem); }
+      .mobile-notice-mark { display: block; margin-bottom: .5rem; font-size: 2.5rem; }
+      .mobile-notice h1 { margin: 0 0 .65rem; font-size: clamp(1.5rem, 7vw, 2rem); }
+      .mobile-notice p { margin: 0; line-height: 1.5; }
       @media (max-width: 760px) {
         .layout { grid-template-columns: 1fr; grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
       }
@@ -389,6 +394,13 @@
     <link rel="stylesheet" href="./guided-intro.css?v=try-button-corners">
   </head>
   <body>
+    <section class="mobile-notice" id="mobile-notice" role="dialog" aria-modal="true" aria-labelledby="mobile-notice-title" tabindex="-1" hidden>
+      <div class="mobile-notice-content">
+        <span class="mobile-notice-mark" aria-hidden="true">🪐</span>
+        <h1 id="mobile-notice-title">Please use Orbit of U on a desktop</h1>
+        <p>The graph and its controls work best on a desktop or laptop. Mobile screens are not fully supported yet.</p>
+      </div>
+    </section>
     <main class="page">
       <header class="masthead">
         <p class="brand"><a id="home-link" href="./"><span class="brand-mark" aria-hidden="true">🪐</span> Orbit of U</a></p>
@@ -5680,7 +5692,30 @@
         layoutObserver.observe(element);
       }
 
+      const mobileNotice = document.querySelector("#mobile-notice");
+      const mobileViewport = window.matchMedia("(pointer: coarse) and (max-width: 1024px)");
+      const mobileDevice = navigator.userAgentData?.mobile === true ||
+        /Android|iPhone|iPad|iPod|Mobile|IEMobile|Windows Phone/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      let mobileBlocked = false;
+      let appInitialized = false;
+
+      function updateMobileNotice() {
+        mobileBlocked = mobileDevice || mobileViewport.matches;
+        mobileNotice.hidden = !mobileBlocked;
+        document.querySelector(".page").inert = mobileBlocked;
+        if (mobileBlocked) mobileNotice.focus();
+      }
+
+      updateMobileNotice();
+      mobileViewport.addEventListener("change", () => {
+        updateMobileNotice();
+        if (!mobileBlocked) void initialize();
+      });
+
       async function initialize() {
+        if (mobileBlocked || appInitialized) return;
+        appInitialized = true;
         const config = readConfig() ?? DEFAULT_CONFIG;
         el.projectUrl.value = config.url ?? "";
         el.publicKey.value = config.key ?? "";
